@@ -751,10 +751,9 @@ void RtlEnterCriticalSection(XRTL_CRITICAL_SECTION* cs)
             return;
         }
 
-        printf("wait start\n");
+        // printf("wait start %x\n", cs);
         owningThread.wait(previousOwner);
-        printf("wait end\n");
-        break;
+        // printf("wait end\n");
     }
 }
 

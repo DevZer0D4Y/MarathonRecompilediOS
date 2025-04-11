@@ -7793,7 +7793,7 @@ GUEST_FUNCTION_STUB(sub_825586B0); // swap
 
 // GUEST_FUNCTION_STUB(sub_826FE5C0);
 // GUEST_FUNCTION_STUB(sub_828FF2B8); // audio exeutemain
-GUEST_FUNCTION_STUB(sub_829023B8); // audio exeutemain
+// GUEST_FUNCTION_STUB(sub_829023B8); // audio exeutemain
 // GUEST_FUNCTION_STUB(sub_82731038); // something with textures causes memory error
 // GUEST_FUNCTION_STUB(sub_82730C68); // something with textures causes memory error
 // GUEST_FUNCTION_STUB(sub_8255A8A8); // something audio

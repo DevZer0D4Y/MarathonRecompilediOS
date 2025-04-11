@@ -144,7 +144,20 @@ uint32_t XVirtualAlloc(void *lpAddress, unsigned int dwSize, unsigned int flAllo
     return addr;
 }
 
+uint32_t XVirtualFree(uint32_t lpAddress, unsigned int dwSize, unsigned int dwFreeType)
+{
+    printf("XVirtualFree %x\n", lpAddress);
+    if ((dwFreeType & 0x8000) != 0 && dwSize)
+    {
+        return 0;
+    }
+    if (lpAddress)
+        g_userHeap.Free(g_memory.Translate(lpAddress));
+    return 1;
+}
+
 GUEST_FUNCTION_HOOK(sub_82915668, XVirtualAlloc); // repalced
+GUEST_FUNCTION_HOOK(sub_829156B8, XVirtualFree); // repalced
 
 GUEST_FUNCTION_STUB(sub_82535588); // HeapCreate // replaced
 // GUEST_FUNCTION_STUB(sub_82BD9250); // HeapDestroy
