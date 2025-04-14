@@ -80,8 +80,8 @@ uint32_t read_be32(uint8_t* mem, uint32_t addr) {
            (mem[addr + 2] << 8) | mem[addr + 3];
 }
 
-PPC_FUNC_IMPL(__imp__sub_82650058);
-PPC_FUNC(sub_82650058)
+PPC_FUNC_IMPL(__imp__sub_82582648);
+PPC_FUNC(sub_82582648)
 {
     // __builtin_trap();
     auto _r5 = (uint8_t*)g_memory.Translate(ctx.r5.u32);
@@ -94,14 +94,14 @@ PPC_FUNC(sub_82650058)
 
     // // Read the string data from the emulated memory
     if (data_ptr && size > 0) {
-        printf("Loading file from pkg or arc: ");
+        printf("Loading file from arc: ");
         for (uint32_t i = 0; i < size; i++) {
             printf("%c", base[data_ptr + i]);
         }
         printf("\n");
     }
 
-    __imp__sub_82650058(ctx, base);
+    __imp__sub_82582648(ctx, base);
 }
 
 PPC_FUNC_IMPL(__imp__sub_825867A8);
