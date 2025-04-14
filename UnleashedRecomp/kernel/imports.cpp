@@ -38,7 +38,6 @@ struct Event final : KernelObject, HostObject<XKEVENT>
 
     uint32_t Wait(uint32_t timeout) override
     {
-        // printf("timeout is %d %x\n", timeout, timeout);
         if (timeout == 0)
         {
             if (manualReset)
@@ -434,7 +433,7 @@ uint32_t XamLoaderSetLaunchData()
 uint32_t NtWaitForSingleObjectEx(uint32_t Handle, uint32_t WaitMode, uint32_t Alertable, be<int64_t>* Timeout)
 {
     uint32_t timeout = GuestTimeoutToMilliseconds(Timeout);
-    assert(timeout == 0 || timeout == INFINITE);
+    // assert(timeout == 0 || timeout == INFINITE);
 
     if (IsKernelObject(Handle))
     {
@@ -1393,6 +1392,10 @@ uint32_t NtCreateSemaphore(be<uint32_t>* Handle, XOBJECT_ATTRIBUTES* ObjectAttri
 
 uint32_t NtReleaseSemaphore(Semaphore* Handle, uint32_t ReleaseCount, int32_t* PreviousCount)
 {
+    // the game releases semaphore with 1 maximum number of releases more than once
+    if (Handle->count + ReleaseCount > Handle->maximumCount)
+        return STATUS_SEMAPHORE_LIMIT_EXCEEDED;
+
     uint32_t previousCount;
     Handle->Release(ReleaseCount, &previousCount);
 

@@ -13,7 +13,8 @@
 #define TRUE                       0x00000001
 #define STATUS_SUCCESS             0x00000000
 #define STATUS_WAIT_0              0x00000000
-#define STATUS_USER_APC            0x000000C0 
+#define STATUS_USER_APC            0x000000C0
+#define STATUS_SEMAPHORE_LIMIT_EXCEEDED             0xC0000047 
 #define STATUS_TIMEOUT             0x00000102
 #define STATUS_FAIL_CHECK          0xC0000229
 #define INFINITE                   0xFFFFFFFF

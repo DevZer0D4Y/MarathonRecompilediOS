@@ -66,8 +66,6 @@ GUEST_FUNCTION_HOOK(sub_826FCE58, QueryPerformanceCounterImpl); // replaced
 GUEST_FUNCTION_HOOK(sub_826FC3C8, QueryPerformanceFrequencyImpl); // repalced
 GUEST_FUNCTION_HOOK(sub_826FD790, GetTickCountImpl); // replaced
 
-// GUEST_FUNCTION_HOOK(sub_826DC180, b); // replaced
-
 // GUEST_FUNCTION_HOOK(sub_82BD4BC0, GlobalMemoryStatusImpl);
 
 // sprintf
