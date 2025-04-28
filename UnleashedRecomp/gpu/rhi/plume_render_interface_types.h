@@ -154,7 +154,8 @@ namespace plume {
         BC6H_SF16,
         BC7_TYPELESS,
         BC7_UNORM,
-        BC7_UNORM_SRGB
+        BC7_UNORM_SRGB,
+        A8_UNORM,
     };
 
     enum class RenderTextureDimension {
@@ -639,6 +640,7 @@ namespace plume {
         case RenderFormat::R8_UINT:
         case RenderFormat::R8_SNORM:
         case RenderFormat::R8_SINT:
+        case RenderFormat::A8_UNORM:
             return 1;
         case RenderFormat::BC1_TYPELESS:
         case RenderFormat::BC1_UNORM:

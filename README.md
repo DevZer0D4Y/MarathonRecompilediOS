@@ -16,6 +16,6 @@ Unfortunately some wrong things are ignored and also memory corruption or race c
 - [x] Audio (probably should work OOB at some point)
 - [ ] Graphics (current code is very dependent on Unleashed)
     - [x] It's rendering something
-    - [ ] Correct texture rendering (alpha)
-    - [ ] Correct fonts rendering
+    - [x] Correct texture rendering (alpha)
+    - [x] Correct fonts rendering
     - [ ] Probably everything 3D

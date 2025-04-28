@@ -1997,6 +1997,13 @@ void Video::WaitForGPU()
     }
 }
 
+static uint32_t getSetAddress(uint32_t base, int index) {
+    uint32_t entryOffset = index * 0xC;
+    uint32_t entryAddress = base + entryOffset;
+    uint32_t setAddress = entryAddress + sizeof(uint32_t);
+    return setAddress;
+}
+
 static uint32_t CreateDevice(uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5, be<uint32_t>* a6)
 {
     LOGF_WARNING("{:p} {:p} {:p} {:p} {:p} {:p}\n", reinterpret_cast<void*>(a1), reinterpret_cast<void*>(a2), reinterpret_cast<void*>(a3), reinterpret_cast<void*>(a4), reinterpret_cast<void*>(a5), reinterpret_cast<void*>(a6));
@@ -2016,17 +2023,22 @@ static uint32_t CreateDevice(uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4,
     memset(device, 0, sizeof(*device));
 
     // Append render state functions to the end of guest function table.
-    uint32_t functionOffset = PPC_CODE_BASE + PPC_CODE_SIZE;
-    g_memory.InsertFunction(functionOffset, HostToGuestFunction<SetRenderStateUnimplemented>);
+    uint32_t functionOffsetUnimplemented = PPC_CODE_BASE + PPC_CODE_SIZE;
+    g_memory.InsertFunction(functionOffsetUnimplemented, HostToGuestFunction<SetRenderStateUnimplemented>);
+    
+    uint32_t functionOffset = 0x82B79868;
+    for (size_t i = 0; i < std::size(device->setRenderStateFunctions); i++) {
+        device->setRenderStateFunctions[i] = functionOffsetUnimplemented;
+    }
 
-    for (size_t i = 0; i < std::size(device->setRenderStateFunctions); i++)
-        device->setRenderStateFunctions[i] = functionOffset;
-
+    // InsertFucntion doesn't work, so we have to do this manually in the end
     for (auto& [state, function] : g_setRenderStateFunctions)
     {
-        functionOffset += 4;
-        g_memory.InsertFunction(functionOffset, function);
-        device->setRenderStateFunctions[state / 4] = functionOffset;
+        auto funcOffset = getSetAddress(functionOffset, state/4);
+        uint32_t addr = __builtin_bswap32(*(uint32_t*)g_memory.Translate(funcOffset));
+        printf("state %d of %x is %x\n", state, funcOffset, addr);
+        g_memory.InsertFunction(addr, function);
+        device->setRenderStateFunctions[state / 4] = addr;
     }
 
     for (size_t i = 0; i < std::size(device->setSamplerStateFunctions); i++)
@@ -5527,7 +5539,7 @@ static RenderFormat ConvertDXGIFormat(ddspp::DXGIFormat format)
     case ddspp::BC7_UNORM_SRGB:
         return RenderFormat::BC7_UNORM_SRGB;
     case ddspp::A8_UNORM:
-        return RenderFormat::R8_UNORM; // probably doesn't fit
+        return RenderFormat::A8_UNORM;
     default:
         printf("format: %x\n", format);
         assert(false && "Unsupported format from DDS.");
@@ -7744,6 +7756,25 @@ GUEST_FUNCTION_HOOK(sub_82543AC8, SetIndices); // replaced
 
 GUEST_FUNCTION_HOOK(sub_82548608, CreatePixelShader); // replaced
 GUEST_FUNCTION_HOOK(sub_82546BD8, SetPixelShader);
+
+GUEST_FUNCTION_HOOK(sub_82541A78, SetRenderState<D3DRS_ZENABLE>);
+GUEST_FUNCTION_HOOK(sub_82541AC0, SetRenderState<D3DRS_ZWRITEENABLE>);
+GUEST_FUNCTION_HOOK(sub_82541460, SetRenderState<D3DRS_ALPHATESTENABLE>);
+GUEST_FUNCTION_HOOK(sub_825415C0, SetRenderState<D3DRS_SRCBLEND>);
+GUEST_FUNCTION_HOOK(sub_82541650, SetRenderState<D3DRS_DESTBLEND>);
+GUEST_FUNCTION_HOOK(sub_82541400, SetRenderState<D3DRS_CULLMODE>);
+GUEST_FUNCTION_HOOK(sub_82541AF0, SetRenderState<D3DRS_ZFUNC>);
+GUEST_FUNCTION_HOOK(sub_825418C8, SetRenderState<D3DRS_ALPHAREF>);
+GUEST_FUNCTION_HOOK(sub_825414A0, SetRenderState<D3DRS_ALPHABLENDENABLE>);
+GUEST_FUNCTION_HOOK(sub_82541530, SetRenderState<D3DRS_BLENDOP>);
+GUEST_FUNCTION_HOOK(sub_82543ED0, SetRenderState<D3DRS_SCISSORTESTENABLE>);
+GUEST_FUNCTION_HOOK(sub_82541E90, SetRenderState<D3DRS_SLOPESCALEDEPTHBIAS>);
+GUEST_FUNCTION_HOOK(sub_82541F58, SetRenderState<D3DRS_DEPTHBIAS>);
+GUEST_FUNCTION_HOOK(sub_82541750, SetRenderState<D3DRS_SRCBLENDALPHA>);
+GUEST_FUNCTION_HOOK(sub_825417C0, SetRenderState<D3DRS_DESTBLENDALPHA>);
+GUEST_FUNCTION_HOOK(sub_825416E0, SetRenderState<D3DRS_BLENDOPALPHA>);
+GUEST_FUNCTION_HOOK(sub_82542050, SetRenderState<D3DRS_COLORWRITEENABLE>);
+
 int GetType(GuestResource* resource) {
     if (resource->type == ResourceType::Texture) return 3;
     LOGF_WARNING("unknown resource type {:d}!", (int32_t)resource->type);
