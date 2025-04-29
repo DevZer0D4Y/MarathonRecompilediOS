@@ -76,6 +76,7 @@ enum class ResourceType
 {
     Texture,
     VolumeTexture,
+    ArrayTexture,
     VertexBuffer,
     IndexBuffer,
     RenderTarget,

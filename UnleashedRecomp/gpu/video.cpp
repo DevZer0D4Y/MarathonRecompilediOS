@@ -2999,16 +2999,35 @@ static RenderFormat ConvertFormat(uint32_t format)
 
 static GuestTexture* CreateTexture(uint32_t width, uint32_t height, uint32_t depth, uint32_t levels, uint32_t usage, uint32_t format, uint32_t pool, uint32_t type) 
 {
-    const auto texture = g_userHeap.AllocPhysical<GuestTexture>(type == 17 ? ResourceType::VolumeTexture : ResourceType::Texture);
+    ResourceType resourceType;
+
+    switch (type)
+    {
+    case 17:
+        resourceType = ResourceType::VolumeTexture;
+        break;
+    case 19:
+        resourceType = ResourceType::ArrayTexture;
+        break;
+    default:
+        resourceType = ResourceType::Texture;
+        break;
+    }
+
+    const auto texture = g_userHeap.AllocPhysical<GuestTexture>(resourceType);
 
     RenderTextureDesc desc;
     desc.dimension = texture->type == ResourceType::VolumeTexture ? RenderTextureDimension::TEXTURE_3D : RenderTextureDimension::TEXTURE_2D;
     desc.width = width;
     desc.height = height;
-    desc.depth = depth;
     desc.mipLevels = levels;
-    desc.arraySize = 1;
     desc.format = ConvertFormat(format);
+
+    if (texture->type == ResourceType::ArrayTexture) {
+        desc.arraySize = depth;
+    } else {
+        desc.depth = depth;
+    }
 
     if (desc.format == RenderFormat::D32_FLOAT)
         desc.flags = RenderTextureFlag::DEPTH_TARGET;
