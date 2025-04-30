@@ -279,16 +279,16 @@ namespace plume {
         }
     }
 
-    static VkImageViewType toImageViewType(RenderTextureViewDimension dimension) {
+    static VkImageViewType toImageViewType(RenderTextureViewDimension dimension, uint16_t arraySize) {
         switch (dimension) {
-        case RenderTextureViewDimension::TEXTURE_1D:
-            return VK_IMAGE_VIEW_TYPE_1D;
-        case RenderTextureViewDimension::TEXTURE_2D:
-            return VK_IMAGE_VIEW_TYPE_2D;
+            case RenderTextureViewDimension::TEXTURE_1D:
+            return arraySize > 1 ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
+            case RenderTextureViewDimension::TEXTURE_2D:
+            return arraySize > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
         case RenderTextureViewDimension::TEXTURE_3D:
             return VK_IMAGE_VIEW_TYPE_3D;
-        case RenderTextureViewDimension::TEXTURE_CUBE:
-            return VK_IMAGE_VIEW_TYPE_CUBE;
+            case RenderTextureViewDimension::TEXTURE_CUBE:
+            return arraySize > 1 ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
         default:
             assert(false && "Unknown resource dimension.");
             return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
@@ -1033,7 +1033,7 @@ namespace plume {
         VkImageViewCreateInfo viewInfo = {};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = texture->vk;
-        viewInfo.viewType = toImageViewType(desc.dimension);
+        viewInfo.viewType = toImageViewType(desc.dimension, texture->desc.arraySize);
         viewInfo.format = toVk(desc.format);
         viewInfo.components.r = toVk(desc.componentMapping.r);
         viewInfo.components.g = toVk(desc.componentMapping.g);
@@ -2918,6 +2918,9 @@ namespace plume {
             offsetVector.clear();
             for (uint32_t i = 0; i < viewCount; i++) {
                 const VulkanBuffer *interfaceBuffer = static_cast<const VulkanBuffer *>(views[i].buffer.ref);
+                if (interfaceBuffer == nullptr && !device->nullDescriptorSupported) {
+                    interfaceBuffer = static_cast<const VulkanBuffer *>(device->nullBuffer.get());
+                }
                 bufferVector.emplace_back((interfaceBuffer != nullptr) ? interfaceBuffer->vk : VK_NULL_HANDLE);
                 offsetVector.emplace_back(views[i].buffer.offset);
             }
