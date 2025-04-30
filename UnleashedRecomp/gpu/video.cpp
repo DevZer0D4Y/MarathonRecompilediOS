@@ -7804,6 +7804,8 @@ GUEST_FUNCTION_HOOK(sub_82542050, SetRenderState<D3DRS_COLORWRITEENABLE>);
 
 int GetType(GuestResource* resource) {
     if (resource->type == ResourceType::Texture) return 3;
+    if (resource->type == ResourceType::VolumeTexture) return 17;
+    if (resource->type == ResourceType::ArrayTexture) return 19;
     LOGF_WARNING("unknown resource type {:d}!", (int32_t)resource->type);
     __builtin_trap();
     return 0;
