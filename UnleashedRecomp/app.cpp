@@ -156,6 +156,24 @@ PPC_FUNC(sub_82538B48)
     __imp__sub_82538B48(ctx, base);
 }
 
+struct DXSettings {
+    be<uint32_t> m_Width;
+    be<uint32_t> m_Height;
+};
+
+PPC_FUNC_IMPL(__imp__sub_8262A568);
+PPC_FUNC(sub_8262A568)
+{
+    auto dxSettings = reinterpret_cast<DXSettings*>(g_memory.Translate(ctx.r4.u32));
+    dxSettings->m_Width = Video::s_viewportWidth;
+    dxSettings->m_Height = Video::s_viewportHeight;
+
+    printf("Game changed settings - Width: %d, Height: %d\n", dxSettings->m_Width.get(), dxSettings->m_Height.get());
+    printf("Runtime settings: Width: %d, Height: %d\n", Video::s_viewportWidth, Video::s_viewportHeight);
+
+    __imp__sub_8262A568(ctx, base);
+}
+
 // PPC_FUNC_IMPL(__imp__sub_825B1A28);
 // PPC_FUNC(sub_825B1A28)
 // {
