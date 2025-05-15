@@ -2229,6 +2229,8 @@ static void GetSurfaceDesc(GuestSurface* surface, GuestSurfaceDesc* desc)
     }
     desc->width = surface->width;
     desc->height = surface->height;
+    desc->format = surface->guestFormat;
+    desc->type = 4; // D3DRTYPE_SURFACE
 }
 
 static void GetVertexDeclaration(GuestVertexDeclaration* vertexDeclaration, GuestVertexElement* vertexElements, be<uint32_t>* count) 
@@ -3326,8 +3328,8 @@ static bool PopulateBarriersForStretchRect(GuestSurface* renderTarget, GuestSurf
 
             AddBarrier(surface, srcLayout);
 
-            // for (const auto texture : surface->destinationTextures)
-            //     AddBarrier(texture, dstLayout);
+            for (const auto texture : surface->destinationTextures)
+                AddBarrier(texture, dstLayout);
 
             addedAny = true;
         }
