@@ -7757,7 +7757,7 @@ GUEST_FUNCTION_HOOK(sub_8253AB20, GetSurfaceDesc); // replaced
 GUEST_FUNCTION_HOOK(sub_825471F8, GetVertexDeclaration); // replaced
 // // GUEST_FUNCTION_HOOK(sub_82BE0530, HashVertexDeclaration);
 
-GUEST_FUNCTION_HOOK(sub_825B1A28, Video::Present);
+GUEST_FUNCTION_HOOK(sub_825586B0, Video::Present);
 // GUEST_FUNCTION_HOOK(sub_82558CD0, Video::Present); // wmv player present
 GUEST_FUNCTION_HOOK(sub_82543B58, GetBackBuffer);
 GUEST_FUNCTION_HOOK(sub_82543BA0, GetDepthStencil);
@@ -7774,6 +7774,7 @@ GUEST_FUNCTION_HOOK(sub_825444F0, SetRenderTarget); // replaced
 GUEST_FUNCTION_HOOK(sub_82544210, SetDepthStencilSurface); // replaced
 
 GUEST_FUNCTION_HOOK(sub_82555B30, Clear);
+GUEST_FUNCTION_HOOK(sub_82555EE0, Clear);
 
 GUEST_FUNCTION_HOOK(sub_825436F0, SetViewport); // replaced
 
@@ -7829,6 +7830,7 @@ GUEST_FUNCTION_HOOK(sub_8253AE08, GetType);
 // // GUEST_FUNCTION_HOOK(sub_82C00910, D3DXFillVolumeTexture);
 
 GUEST_FUNCTION_HOOK(sub_82656B68, MakePictureData); // GUEST_FUNCTION_HOOK(sub_82E43FC8, MakePictureData);
+GUEST_FUNCTION_HOOK(sub_82656DB8, MakePictureData); // GUEST_FUNCTION_HOOK(sub_82E43FC8, MakePictureData);
 
 // // GUEST_FUNCTION_HOOK(sub_82E9EE38, SetResolution);
 
@@ -7845,9 +7847,11 @@ GUEST_FUNCTION_HOOK(sub_82736178, ScreenShaderInit); // sub_82AE2BF8
 GUEST_FUNCTION_STUB(sub_8253EB38); // GUEST_FUNCTION_STUB(sub_82BD97A8); // set thread to d3ddevvice
 GUEST_FUNCTION_STUB(sub_8253EB78); // GUEST_FUNCTION_STUB(sub_82BD97E8); // reset thread to d3ddevice
 // // GUEST_FUNCTION_STUB(sub_82BDD370); // SetGammaRamp
+GUEST_FUNCTION_STUB(sub_82543BE0); // SetGammaRamp
+GUEST_FUNCTION_STUB(sub_82543C68); // SetGammaRamp
 GUEST_FUNCTION_STUB(sub_82547278); // set shader allocation // GUEST_FUNCTION_STUB(sub_82BE05B8);
-GUEST_FUNCTION_STUB(sub_82558F88); // GUEST_FUNCTION_STUB(sub_82BE9C98); // D3DDevice_BeginTiling
-GUEST_FUNCTION_STUB(sub_82559480); // GUEST_FUNCTION_STUB(sub_82BEA308);
+// GUEST_FUNCTION_STUB(sub_82558F88); // GUEST_FUNCTION_STUB(sub_82BE9C98); // D3DDevice_BeginTiling
+// GUEST_FUNCTION_STUB(sub_82559480); // GUEST_FUNCTION_STUB(sub_82BEA308); D3DDevice_EndTiling
 GUEST_FUNCTION_STUB(sub_8272FAD0); // GUEST_FUNCTION_STUB(sub_82CD5D68);
 GUEST_FUNCTION_STUB(sub_82558E00); // GUEST_FUNCTION_STUB(sub_82BE9B28);
 GUEST_FUNCTION_STUB(sub_82559928); // GUEST_FUNCTION_STUB(sub_82BEA018);
@@ -7855,8 +7859,8 @@ GUEST_FUNCTION_STUB(sub_82559C18); // GUEST_FUNCTION_STUB(sub_82BEA7C0);
 GUEST_FUNCTION_STUB(sub_82700C18); // GUEST_FUNCTION_STUB(sub_82BFFF88); // D3DXFilterTexture
 GUEST_FUNCTION_STUB(sub_8253EAE0);// GUEST_FUNCTION_STUB(sub_82BD96D0);
 
-GUEST_FUNCTION_STUB(sub_8253E798); // flush
-GUEST_FUNCTION_STUB(sub_825586B0); // swap
+// GUEST_FUNCTION_STUB(sub_8253E798); // flush
+// GUEST_FUNCTION_STUB(sub_825586B0); // swap
 
 // GUEST_FUNCTION_STUB(sub_8259ABE8);
 
@@ -7874,3 +7878,43 @@ GUEST_FUNCTION_STUB(sub_825586B0); // swap
 // GUEST_FUNCTION_STUB(sub_82734C50);
 
 // GUEST_FUNCTION_STUB(sub_827344C0) // I don't know
+struct Rect {
+    be<uint32_t> x1;
+    be<uint32_t> y1;
+    be<uint32_t> x2;
+    be<uint32_t> y2;
+};
+
+struct RESOLVE_PARAMS {
+    be<uint32_t> format;
+    be<uint32_t> unk;
+    be<uint32_t> format2;
+};
+
+int D3DDevice_BeginTiling(GuestDevice* device, uint32_t flags, uint32_t count, Rect* pTileRects, be<float>* pClearColor, float clearZ, uint32_t clearStencil) {
+    // printf("D3DDevice_BeginTiling: %x %x %x %x %f %x\n", flags, count, pTileRects, pClearColor, clearZ, clearStencil);
+    // for (uint32_t i = 0; i < count; i++) {
+    //     printf("pTileRects: %d %d %d %d\n", pTileRects[i].x1.get(), pTileRects[i].y1.get(), pTileRects[i].x2.get(), pTileRects[i].y2.get());
+    // }
+    Clear(device, 0, 0, pClearColor, clearZ);
+    return 0;
+}
+
+GUEST_FUNCTION_HOOK(sub_82558F88, D3DDevice_BeginTiling);
+
+int D3DDevice_EndTiling(GuestDevice* device, uint32_t flags, Rect* pResolveRects, GuestTexture* pDestTexture, be<float>* pClearColor, float clearZ, uint32_t clearStencil, RESOLVE_PARAMS* resolveParams) {
+    // printf("D3DDevice_EndTiling: %x %x %x %x %f %x %x\n", flags, pResolveRects, pDestTexture, pClearColor, clearZ, clearStencil, resolveParams);
+    // if (pResolveRects != nullptr) {
+    //     printf("pResolveRects: %x %x %x %x\n", pResolveRects->x1.get(), pResolveRects->y1.get(), pResolveRects->x2.get(), pResolveRects->y2.get());
+    // }
+    // printf("pDestTexture: %x\n", pDestTexture);
+    // if (resolveParams != nullptr) {
+    //     printf("pResolveParams: %x %x %x\n", resolveParams->format.get(), resolveParams->unk.get(), resolveParams->format2.get());
+    // }
+    if (pDestTexture) {
+        StretchRect(device, flags, 0, pDestTexture);
+    }
+    return 0;
+}
+
+GUEST_FUNCTION_HOOK(sub_82559480, D3DDevice_EndTiling);
