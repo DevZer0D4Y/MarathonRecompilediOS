@@ -5378,8 +5378,8 @@ struct GuestMyTexture
     be<uint32_t> byte60; // 0x60
     be<uint32_t> texture; // 0x64
     be<uint32_t> Surface[6]; // 0x64
-    be<uint32_t> TFlag1; // 0x80
-    be<uint32_t> TFlag2; // 0x84
+    be<uint32_t> width; // 0x80
+    be<uint32_t> height; // 0x84
     be<uint32_t> graphicsDevice; // 0x88
     be<uint32_t> guestDevice; // 0x8C
 };
