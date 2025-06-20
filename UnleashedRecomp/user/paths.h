@@ -41,5 +41,5 @@ inline std::filesystem::path GetSaveFilePath(bool checkForMods)
     if (checkForMods && !ModLoader::s_saveFilePath.empty())
         return ModLoader::s_saveFilePath;
     else
-        return GetSavePath(false) / "SYS-DATA";
+        return GetSavePath(false) / "SonicNextSaveData.bin";
 }
