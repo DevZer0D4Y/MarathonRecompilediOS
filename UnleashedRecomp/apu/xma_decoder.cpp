@@ -802,7 +802,7 @@ uint32_t XMAPlaybackDestroy(XmaPlayback *playback) {
 
 uint32_t XMAPlaybackFlushData(XmaPlayback *playback) {
   debug_printf("XMAPlaybackFlushData %x\n", playback);
-  __builtin_debugtrap();
+  // __builtin_debugtrap();
   return 0;
 }
 
@@ -890,46 +890,46 @@ uint32_t XMAPlaybackQueryCurrentPosition(XmaPlayback *playback) {
   return 0;
 }
 
-GUEST_FUNCTION_HOOK(sub_8255C090, XMAPlaybackCreate);
+// GUEST_FUNCTION_HOOK(sub_8255C090, XMAPlaybackCreate);
 
-GUEST_FUNCTION_HOOK(sub_8255CC48, XMAPlaybackRequestModifyLock);
+// GUEST_FUNCTION_HOOK(sub_8255CC48, XMAPlaybackRequestModifyLock);
 
-GUEST_FUNCTION_HOOK(sub_8255CCC8, XMAPlaybackWaitUntilModifyLockObtained);
+// GUEST_FUNCTION_HOOK(sub_8255CCC8, XMAPlaybackWaitUntilModifyLockObtained);
 
-GUEST_FUNCTION_HOOK(sub_8255C4D0, XMAPlaybackQueryReadyForMoreData);
+// GUEST_FUNCTION_HOOK(sub_8255C4D0, XMAPlaybackQueryReadyForMoreData);
 
-GUEST_FUNCTION_HOOK(sub_8255C520, XMAPlaybackIsIdle);
+// GUEST_FUNCTION_HOOK(sub_8255C520, XMAPlaybackIsIdle);
 
-GUEST_FUNCTION_HOOK(sub_8255C388, XMAPlaybackQueryContextsAllocated);
+// GUEST_FUNCTION_HOOK(sub_8255C388, XMAPlaybackQueryContextsAllocated);
 
-GUEST_FUNCTION_HOOK(sub_8255CF10, XMAPlaybackResumePlayback);
+// GUEST_FUNCTION_HOOK(sub_8255CF10, XMAPlaybackResumePlayback);
 
-GUEST_FUNCTION_HOOK(sub_8255C470, XMAPlaybackQueryInputDataPending);
+// GUEST_FUNCTION_HOOK(sub_8255C470, XMAPlaybackQueryInputDataPending);
 
-GUEST_FUNCTION_HOOK(sub_8255C9A0, XMAPlaybackGetErrorBits);
+// GUEST_FUNCTION_HOOK(sub_8255C9A0, XMAPlaybackGetErrorBits);
 
-GUEST_FUNCTION_HOOK(sub_8255C398, XMAPlaybackSubmitData);
+// GUEST_FUNCTION_HOOK(sub_8255C398, XMAPlaybackSubmitData);
 
-GUEST_FUNCTION_HOOK(sub_8255C578, XMAPlaybackQueryAvailableData);
+// GUEST_FUNCTION_HOOK(sub_8255C578, XMAPlaybackQueryAvailableData);
 
-GUEST_FUNCTION_HOOK(sub_8255C7A8, XMAPlaybackAccessDecodedData);
+// GUEST_FUNCTION_HOOK(sub_8255C7A8, XMAPlaybackAccessDecodedData);
 
-GUEST_FUNCTION_HOOK(sub_8255C5F0, XMAPlaybackConsumeDecodedData);
+// GUEST_FUNCTION_HOOK(sub_8255C5F0, XMAPlaybackConsumeDecodedData);
 
-GUEST_FUNCTION_HOOK(sub_8255CD90, XMAPlaybackQueryModifyLockObtained);
+// GUEST_FUNCTION_HOOK(sub_8255CD90, XMAPlaybackQueryModifyLockObtained);
 
-GUEST_FUNCTION_HOOK(sub_8255C8D8, XMAPlaybackFlushData);
+// GUEST_FUNCTION_HOOK(sub_8255C8D8, XMAPlaybackFlushData);
 
-GUEST_FUNCTION_HOOK(sub_8255C9D8, XmaPlaybackSetLoop);
+// GUEST_FUNCTION_HOOK(sub_8255C9D8, XmaPlaybackSetLoop);
 
-GUEST_FUNCTION_HOOK(sub_8255CA50, XMAPlaybackGetRemainingLoopCount);
+// GUEST_FUNCTION_HOOK(sub_8255CA50, XMAPlaybackGetRemainingLoopCount);
 
-GUEST_FUNCTION_HOOK(sub_8255CA90, XMAPlaybackGetStreamPosition);
+// GUEST_FUNCTION_HOOK(sub_8255CA90, XMAPlaybackGetStreamPosition);
 
-GUEST_FUNCTION_HOOK(sub_8255CB20, XMAPlaybackSetDecodePosition);
+// GUEST_FUNCTION_HOOK(sub_8255CB20, XMAPlaybackSetDecodePosition);
 
-GUEST_FUNCTION_HOOK(sub_8255C850, XMAPlaybackRewindDecodePosition);
+// GUEST_FUNCTION_HOOK(sub_8255C850, XMAPlaybackRewindDecodePosition);
 
-GUEST_FUNCTION_HOOK(sub_8255CAB0, XMAPlaybackQueryCurrentPosition);
+// GUEST_FUNCTION_HOOK(sub_8255CAB0, XMAPlaybackQueryCurrentPosition);
 
-GUEST_FUNCTION_HOOK(sub_8255C2C0, XMAPlaybackDestroy);
+// GUEST_FUNCTION_HOOK(sub_8255C2C0, XMAPlaybackDestroy);
