@@ -2050,7 +2050,7 @@ static uint32_t CreateDevice(uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4,
     }
 
     for (size_t i = 0; i < std::size(device->setSamplerStateFunctions); i++)
-        device->setSamplerStateFunctions[i] = *reinterpret_cast<uint32_t*>(g_memory.Translate(0x82B79CF8 + i * 0xC));
+        device->setSamplerStateFunctions[i] = *reinterpret_cast<uint32_t*>(g_memory.Translate(0x82B79CFC + i * 0xC));
 
     device->viewport.width = 1280.0f;
     device->viewport.height = 720.0f;
@@ -4229,30 +4229,29 @@ struct LocalRenderCommandQueue
 static void FlushRenderStateForMainThread(GuestDevice* device, LocalRenderCommandQueue& queue)
 {
     constexpr size_t BOOL_MASK = 0x100000000000000ull;
-    if ((device->dirtyFlags[4].get() & BOOL_MASK) != 0)
+    if ((device->dirtyFlags[3].get() & BOOL_MASK) != 0)
     {
         auto& cmd = queue.enqueue();
         cmd.type = RenderCommandType::SetBooleans;
         cmd.setBooleans.booleans = (device->vertexShaderBoolConstants[0].get() & 0xFF) | ((device->pixelShaderBoolConstants[0].get() & 0xFF) << 16);
 
-        device->dirtyFlags[4] = device->dirtyFlags[4].get() & ~BOOL_MASK;
+        device->dirtyFlags[3] = device->dirtyFlags[3].get() & ~BOOL_MASK;
     }
+    // for (uint32_t i = 0; i < 16; i++)
+    // {
+    //     const size_t mask = 0x8000000000000000ull >> (i + 32);
+    //     if (device->dirtyFlags[2].get() & mask)
+    //     {
+    //         auto& cmd = queue.enqueue();
+    //         cmd.type = RenderCommandType::SetSamplerState;
+    //         cmd.setSamplerState.index = i;
+    //         cmd.setSamplerState.data0 = device->samplerStates[i].data[0];
+    //         cmd.setSamplerState.data3 = device->samplerStates[i].data[3];
+    //         cmd.setSamplerState.data5 = device->samplerStates[i].data[5];
 
-    for (uint32_t i = 0; i < 16; i++)
-    {
-        const size_t mask = 0x8000000000000000ull >> (i + 32);
-        if (device->dirtyFlags[3].get() & mask)
-        {
-            auto& cmd = queue.enqueue();
-            cmd.type = RenderCommandType::SetSamplerState;
-            cmd.setSamplerState.index = i;
-            cmd.setSamplerState.data0 = device->samplerStates[i].data[0];
-            cmd.setSamplerState.data3 = device->samplerStates[i].data[3];
-            cmd.setSamplerState.data5 = device->samplerStates[i].data[5];
-
-            device->dirtyFlags[3] = device->dirtyFlags[3].get() & ~mask;
-        }
-    }
+    //         device->dirtyFlags[2] = device->dirtyFlags[2].get() & ~mask;
+    //     }
+    // }
 
     uint64_t dirtyFlags = device->dirtyFlags[0].get();
     if (dirtyFlags != 0)
@@ -7946,3 +7945,68 @@ GUEST_FUNCTION_STUB(sub_8254DB90); // BeginConditional
 GUEST_FUNCTION_STUB(sub_8254DD40); // SetScreenExtentQueryMode
 
 GUEST_FUNCTION_STUB(sub_8238D8A8); // sound, need to fix and remove this stub
+
+// HACK: need to use it via dirtyFlags, but I don't know how to do it, so call directly
+PPC_FUNC_IMPL(__imp__sub_82542DD0);
+PPC_FUNC(sub_82542DD0)
+{
+    auto device = reinterpret_cast<GuestDevice*>(g_memory.Translate(ctx.r3.u32));
+    auto r4 = ctx.r4;
+    __imp__sub_82542DD0(ctx, base);
+    LocalRenderCommandQueue queue;
+    auto& cmd = queue.enqueue();
+    cmd.type = RenderCommandType::SetSamplerState;
+    cmd.setSamplerState.index = r4.u32;
+    cmd.setSamplerState.data0 = device->samplerStates[r4.u32].data[0];
+    cmd.setSamplerState.data3 = device->samplerStates[r4.u32].data[3];
+    cmd.setSamplerState.data5 = device->samplerStates[r4.u32].data[5];
+    queue.submit();
+}
+
+PPC_FUNC_IMPL(__imp__sub_82542C48);
+PPC_FUNC(sub_82542C48)
+{
+    auto device = reinterpret_cast<GuestDevice*>(g_memory.Translate(ctx.r3.u32));
+    auto r4 = ctx.r4;
+    __imp__sub_82542C48(ctx, base);
+    LocalRenderCommandQueue queue;
+    auto& cmd = queue.enqueue();
+    cmd.type = RenderCommandType::SetSamplerState;
+    cmd.setSamplerState.index = r4.u32;
+    cmd.setSamplerState.data0 = device->samplerStates[r4.u32].data[0];
+    cmd.setSamplerState.data3 = device->samplerStates[r4.u32].data[3];
+    cmd.setSamplerState.data5 = device->samplerStates[r4.u32].data[5];
+    queue.submit();
+}
+
+PPC_FUNC_IMPL(__imp__sub_82543168);
+PPC_FUNC(sub_82543168)
+{
+    auto device = reinterpret_cast<GuestDevice*>(g_memory.Translate(ctx.r3.u32));
+    auto r4 = ctx.r4;
+    __imp__sub_82543168(ctx, base);
+    LocalRenderCommandQueue queue;
+    auto& cmd = queue.enqueue();
+    cmd.type = RenderCommandType::SetSamplerState;
+    cmd.setSamplerState.index = r4.u32;
+    cmd.setSamplerState.data0 = device->samplerStates[r4.u32].data[0];
+    cmd.setSamplerState.data3 = device->samplerStates[r4.u32].data[3];
+    cmd.setSamplerState.data5 = device->samplerStates[r4.u32].data[5];
+    queue.submit();
+}
+
+PPC_FUNC_IMPL(__imp__sub_82543208);
+PPC_FUNC(sub_82543208)
+{
+    auto device = reinterpret_cast<GuestDevice*>(g_memory.Translate(ctx.r3.u32));
+    auto r4 = ctx.r4;
+    __imp__sub_82543208(ctx, base);
+    LocalRenderCommandQueue queue;
+    auto& cmd = queue.enqueue();
+    cmd.type = RenderCommandType::SetSamplerState;
+    cmd.setSamplerState.index = r4.u32;
+    cmd.setSamplerState.data0 = device->samplerStates[r4.u32].data[0];
+    cmd.setSamplerState.data3 = device->samplerStates[r4.u32].data[3];
+    cmd.setSamplerState.data5 = device->samplerStates[r4.u32].data[5];
+    queue.submit();
+}
