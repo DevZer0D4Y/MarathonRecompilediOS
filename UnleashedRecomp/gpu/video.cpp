@@ -694,13 +694,6 @@ static void DestructTempResources()
         {
             const auto buffer = reinterpret_cast<GuestBuffer*>(resource);
 
-            // HACK: game remove index buffer before it is used
-            if (resource->type == ResourceType::IndexBuffer && buffer->buffer.get() == g_indexBufferView.buffer.ref)
-            {
-                SetDirtyValue(g_dirtyStates.indices, g_indexBufferView.buffer, RenderBufferReference{});
-                SetDirtyValue(g_dirtyStates.indices, g_indexBufferView.format, RenderFormat::R16_UINT);
-                SetDirtyValue(g_dirtyStates.indices, g_indexBufferView.size, 0u);
-            }
 
             if (buffer->mappedMemory != nullptr)
                 g_userHeap.Free(buffer->mappedMemory);
@@ -5921,6 +5914,11 @@ static int ScreenShaderInit(be<uint32_t>* a1)
     return 0;
 }
 
+// Needed for correct clearing of index buffer
+static bool IsSet() {
+    return true;
+}
+
 void MovieRendererMidAsmHook(PPCRegister& r3)
 {
     auto device = reinterpret_cast<GuestDevice*>(g_memory.Translate(r3.u32));
@@ -7832,6 +7830,8 @@ GUEST_FUNCTION_HOOK(sub_82543AC8, SetIndices); // replaced
 
 GUEST_FUNCTION_HOOK(sub_82548608, CreatePixelShader); // replaced
 GUEST_FUNCTION_HOOK(sub_82546BD8, SetPixelShader);
+
+GUEST_FUNCTION_HOOK(sub_8253B760, IsSet);
 
 GUEST_FUNCTION_HOOK(sub_82541A78, SetRenderState<D3DRS_ZENABLE>);
 GUEST_FUNCTION_HOOK(sub_82541AC0, SetRenderState<D3DRS_ZWRITEENABLE>);
