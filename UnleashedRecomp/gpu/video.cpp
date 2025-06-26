@@ -2169,17 +2169,7 @@ static void UnlockBuffer(GuestBuffer* buffer)
 {
     if (!buffer->lockedReadOnly)
     {
-        if (std::this_thread::get_id() == g_presentThreadId)
-        {
-            RenderCommand cmd;
-            cmd.type = (sizeof(T) == 2) ? RenderCommandType::UnlockBuffer16 : RenderCommandType::UnlockBuffer32;
-            cmd.unlockBuffer.buffer = buffer;
-            g_renderQueue.enqueue(cmd);
-        }
-        else
-        {
-            UnlockBuffer<T>(buffer, true);
-        }
+        UnlockBuffer<T>(buffer, true);
     }
 }
 
