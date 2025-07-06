@@ -35,14 +35,17 @@ add_custom_command(
         "${CMAKE_CURRENT_SOURCE_DIR}/config/Marathon.toml"
 )
 
-#add_custom_command(
-#    OUTPUT
-#        "${CMAKE_CURRENT_SOURCE_DIR}/private/shader_decompressed.ar"
-#    COMMAND
-#        $<TARGET_FILE:x_decompress> "${CMAKE_CURRENT_SOURCE_DIR}/private/shader.ar" "${CMAKE_CURRENT_SOURCE_DIR}/private/shader_decompressed.ar"
-#    DEPENDS
-#        "${CMAKE_CURRENT_SOURCE_DIR}/private/shader.ar"
-#)
+add_custom_command(
+    OUTPUT
+        "${CMAKE_CURRENT_SOURCE_DIR}/private/shader"
+    COMMAND
+        $<TARGET_FILE:u8extract> "${CMAKE_CURRENT_SOURCE_DIR}/private/shader.arc" "${CMAKE_CURRENT_SOURCE_DIR}/private/shader"
+    COMMAND
+        $<TARGET_FILE:u8extract> "${CMAKE_CURRENT_SOURCE_DIR}/private/shader_lt.arc" "${CMAKE_CURRENT_SOURCE_DIR}/private/shader"
+    DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/private/shader.arc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/private/shader_lt.arc"
+)
 
 set(XENOS_RECOMP_ROOT "${UNLEASHED_RECOMP_TOOLS_ROOT}/XenosRecomp/XenosRecomp")
 set(XENOS_RECOMP_INCLUDE "${XENOS_RECOMP_ROOT}/shader_common.h")
@@ -64,8 +67,8 @@ add_custom_command(
     COMMAND
         $<TARGET_FILE:XenosRecomp>
     DEPENDS 
-        "${CMAKE_CURRENT_SOURCE_DIR}/private/shader" 
-        ${XENOS_RECOMP_SOURCES} 
+        "${CMAKE_CURRENT_SOURCE_DIR}/private/shader"
+        ${XENOS_RECOMP_SOURCES}
         ${XENOS_RECOMP_INCLUDE}
 )
 
