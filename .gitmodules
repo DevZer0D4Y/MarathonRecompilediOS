@@ -7,9 +7,6 @@
 [submodule "tools/XenosRecomp"]
 	path = tools/XenosRecomp
 	url = https://github.com/ga2mer/XenosRecomp.git
-[submodule "UnleashedRecompResources"]
-	path = UnleashedRecompResources
-	url = https://github.com/hedge-dev/UnleashedRecompResources.git
 [submodule "thirdparty/msdf-atlas-gen"]
 	path = thirdparty/msdf-atlas-gen
 	url = https://github.com/Chlumsky/msdf-atlas-gen.git
@@ -61,3 +58,6 @@
 [submodule "thirdparty/FFmpeg"]
 	path = thirdparty/FFmpeg
 	url = https://github.com/IsaacMarovitz/FFmpegadixsplit
+[submodule "MarathonRecompResources"]
+	path = MarathonRecompResources
+	url = https://github.com/IsaacMarovitz/MarathonRecompResources

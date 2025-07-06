@@ -302,7 +302,7 @@ if (WIN32)
     )
 
     # Set Win32 icon path.
-    set(WIN32_ICON_PATH "${PROJECT_SOURCE_DIR}/../UnleashedRecompResources/images/game_icon.ico")
+    set(WIN32_ICON_PATH "${PROJECT_SOURCE_DIR}/../MarathonRecompResources/images/game_icon.ico")
 
     configure_file("res/win32/res.rc.template" "${CMAKE_BINARY_DIR}/res.rc" @ONLY)
     add_executable(UnleashedRecomp ${UNLEASHED_RECOMP_CXX_SOURCES} "${CMAKE_BINARY_DIR}/res.rc")
@@ -530,7 +530,7 @@ generate_aggregate_header(
     "${CMAKE_CURRENT_SOURCE_DIR}/api/SWA.h"
 )
 
-set(RESOURCES_SOURCE_PATH "${PROJECT_SOURCE_DIR}/../UnleashedRecompResources")
+set(RESOURCES_SOURCE_PATH "${PROJECT_SOURCE_DIR}/../MarathonRecompResources")
 set(RESOURCES_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/res")
 
 ## Miscellaneous ##
