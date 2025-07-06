@@ -41,7 +41,7 @@
 
 #include "../../tools/XenosRecomp/XenosRecomp/shader_common.h"
 
-#ifdef UNLEASHED_RECOMP_D3D12
+#ifdef MARATHON_RECOMP_D3D12
 #include "shader/blend_color_alpha_ps.hlsl.dxil.h"
 #include "shader/copy_vs.hlsl.dxil.h"
 #include "shader/copy_color_ps.hlsl.dxil.h"
@@ -101,7 +101,7 @@ extern "C"
 
 namespace plume
 {
-#ifdef UNLEASHED_RECOMP_D3D12
+#ifdef MARATHON_RECOMP_D3D12
     extern std::unique_ptr<RenderInterface> CreateD3D12Interface();
 #endif
 #ifdef SDL_VULKAN_ENABLED
@@ -282,7 +282,7 @@ static Profiler g_swapChainAcquireProfiler;
 static bool g_profilerVisible;
 static bool g_profilerWasToggled;
 
-#ifdef UNLEASHED_RECOMP_D3D12
+#ifdef MARATHON_RECOMP_D3D12
 static bool g_vulkan = false;
 #else
 static constexpr bool g_vulkan = true;
@@ -779,7 +779,7 @@ static void LoadEmbeddedResources()
         g_shaderCache = std::make_unique<uint8_t[]>(g_spirvCacheDecompressedSize);
         ZSTD_decompress(g_shaderCache.get(), g_spirvCacheDecompressedSize, g_compressedSpirvCache, g_spirvCacheCompressedSize);
     }
-#ifdef UNLEASHED_RECOMP_D3D12
+#ifdef MARATHON_RECOMP_D3D12
     else
     {
         g_shaderCache = std::make_unique<uint8_t[]>(g_dxilCacheDecompressedSize);
@@ -1289,7 +1289,7 @@ static GuestShader* g_csdShader;
 
 static std::unique_ptr<GuestShader> g_enhancedMotionBlurShader;
 
-#ifdef UNLEASHED_RECOMP_D3D12
+#ifdef MARATHON_RECOMP_D3D12
 
 #define CREATE_SHADER(NAME) \
     g_device->createShader( \
@@ -1663,7 +1663,7 @@ bool Video::CreateHostDevice(const char *sdlVideoDriver)
 
     GameWindow::Init(sdlVideoDriver);
 
-#ifdef UNLEASHED_RECOMP_D3D12
+#ifdef MARATHON_RECOMP_D3D12
     g_vulkan = DetectWine() || Config::GraphicsAPI == EGraphicsAPI::Vulkan;
 #endif
 
@@ -1671,7 +1671,7 @@ bool Video::CreateHostDevice(const char *sdlVideoDriver)
     using RenderInterfaceFunction = std::unique_ptr<RenderInterface>(void);
     std::vector<RenderInterfaceFunction *> interfaceFunctions;
 
-#ifdef UNLEASHED_RECOMP_D3D12
+#ifdef MARATHON_RECOMP_D3D12
     interfaceFunctions.push_back(g_vulkan ? CreateVulkanInterfaceWrapper : CreateD3D12Interface);
     interfaceFunctions.push_back(g_vulkan ? CreateD3D12Interface : CreateVulkanInterfaceWrapper);
 #else
@@ -1688,7 +1688,7 @@ bool Video::CreateHostDevice(const char *sdlVideoDriver)
             {
                 const RenderDeviceDescription &deviceDescription = g_device->getDescription();
                 
-#ifdef UNLEASHED_RECOMP_D3D12
+#ifdef MARATHON_RECOMP_D3D12
                 if (interfaceFunction == CreateD3D12Interface)
                 {
                     if (deviceDescription.vendor == RenderDeviceVendor::AMD)
@@ -3826,7 +3826,7 @@ static RenderShader* GetOrLinkShader(GuestShader* guestShader, uint32_t specCons
         shader = guestShader->linkedShaders[specConstants].get();
     }
 
-#ifdef UNLEASHED_RECOMP_D3D12
+#ifdef MARATHON_RECOMP_D3D12
     if (shader == nullptr)
     {
         static Mutex g_compiledSpecConstantLibraryBlobMutex;

@@ -12,9 +12,9 @@ endif()
 
 target_compile_definitions(XenonRecomp PRIVATE 
     XENON_RECOMP_CONFIG_FILE_PATH=\"${CMAKE_CURRENT_SOURCE_DIR}/config/Marathon.toml\"
-    XENON_RECOMP_HEADER_FILE_PATH=\"${UNLEASHED_RECOMP_TOOLS_ROOT}/XenonRecomp/XenonUtils/ppc_context.h\")
+    XENON_RECOMP_HEADER_FILE_PATH=\"${MARATHON_RECOMP_TOOLS_ROOT}/XenonRecomp/XenonUtils/ppc_context.h\")
 
-set(UNLEASHED_RECOMP_PPC_RECOMPILED_SOURCES 
+set(MARATHON_RECOMP_PPC_RECOMPILED_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/ppc/ppc_config.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/ppc/ppc_context.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/ppc/ppc_func_mapping.cpp"
@@ -22,12 +22,12 @@ set(UNLEASHED_RECOMP_PPC_RECOMPILED_SOURCES
 )
 
 foreach(i RANGE 0 145)
-    list(APPEND UNLEASHED_RECOMP_PPC_RECOMPILED_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ppc/ppc_recomp.${i}.cpp")
+    list(APPEND MARATHON_RECOMP_PPC_RECOMPILED_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ppc/ppc_recomp.${i}.cpp")
 endforeach()
 
 add_custom_command(
     OUTPUT 
-        ${UNLEASHED_RECOMP_PPC_RECOMPILED_SOURCES}
+        ${MARATHON_RECOMP_PPC_RECOMPILED_SOURCES}
     COMMAND 
         $<TARGET_FILE:XenonRecomp>
     DEPENDS 
@@ -47,7 +47,7 @@ add_custom_command(
         "${CMAKE_CURRENT_SOURCE_DIR}/private/shader_lt.arc"
 )
 
-set(XENOS_RECOMP_ROOT "${UNLEASHED_RECOMP_TOOLS_ROOT}/XenosRecomp/XenosRecomp")
+set(XENOS_RECOMP_ROOT "${MARATHON_RECOMP_TOOLS_ROOT}/XenosRecomp/XenosRecomp")
 set(XENOS_RECOMP_INCLUDE "${XENOS_RECOMP_ROOT}/shader_common.h")
 
 target_compile_definitions(XenosRecomp PRIVATE 
@@ -73,11 +73,11 @@ add_custom_command(
 )
 
 add_library(MarathonRecompLib
-    ${UNLEASHED_RECOMP_PPC_RECOMPILED_SOURCES}
+    ${MARATHON_RECOMP_PPC_RECOMPILED_SOURCES}
     "shader/shader_cache.h"
     "shader/shader_cache.cpp"
 )
 
 target_include_directories(MarathonRecompLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(MarathonRecompLib PRIVATE "${UNLEASHED_RECOMP_TOOLS_ROOT}/XenonRecomp/thirdparty/simde")
+target_include_directories(MarathonRecompLib PRIVATE "${MARATHON_RECOMP_TOOLS_ROOT}/XenonRecomp/thirdparty/simde")
 target_precompile_headers(MarathonRecompLib PUBLIC "ppc/ppc_recomp_shared.h")

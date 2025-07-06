@@ -1,11 +1,11 @@
 project("MarathonRecomp")
 
 if (WIN32)
-    option(UNLEASHED_RECOMP_D3D12 "Add D3D12 support for rendering" ON)
+    option(MARATHON_RECOMP_D3D12 "Add D3D12 support for rendering" ON)
 endif()
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    option(UNLEASHED_RECOMP_FLATPAK "Configure the build for Flatpak compatibility." OFF)
+    option(MARATHON_RECOMP_FLATPAK "Configure the build for Flatpak compatibility." OFF)
 endif()
 
 function(BIN2C)
@@ -63,11 +63,11 @@ add_compile_definitions(
     _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR # Microsoft wtf?
     _CRT_SECURE_NO_WARNINGS)
 
-set(UNLEASHED_RECOMP_PRECOMPILED_HEADERS
+set(MARATHON_RECOMP_PRECOMPILED_HEADERS
     "stdafx.h"
 )
 
-set(UNLEASHED_RECOMP_KERNEL_CXX_SOURCES
+set(MARATHON_RECOMP_KERNEL_CXX_SOURCES
     "kernel/imports.cpp"
     "kernel/xdm.cpp"
     "kernel/heap.cpp"
@@ -76,13 +76,13 @@ set(UNLEASHED_RECOMP_KERNEL_CXX_SOURCES
     "kernel/io/file_system.cpp"
 )
 
-set(UNLEASHED_RECOMP_LOCALE_CXX_SOURCES
+set(MARATHON_RECOMP_LOCALE_CXX_SOURCES
     "locale/config_locale.cpp"
     "locale/locale.cpp"
 )
 
 if (WIN32)
-    set(UNLEASHED_RECOMP_OS_CXX_SOURCES
+    set(MARATHON_RECOMP_OS_CXX_SOURCES
         "os/win32/logger_win32.cpp"
         "os/win32/media_win32.cpp"
         "os/win32/process_win32.cpp"
@@ -90,7 +90,7 @@ if (WIN32)
         "os/win32/version_win32.cpp"
     )
 elseif (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    set(UNLEASHED_RECOMP_OS_CXX_SOURCES
+    set(MARATHON_RECOMP_OS_CXX_SOURCES
         "os/linux/logger_linux.cpp"
         "os/linux/media_linux.cpp"
         "os/linux/process_linux.cpp"
@@ -98,7 +98,7 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Linux")
         "os/linux/version_linux.cpp"
     )
 elseif (APPLE)
-    set(UNLEASHED_RECOMP_OS_CXX_SOURCES
+    set(MARATHON_RECOMP_OS_CXX_SOURCES
         "os/macos/logger_macos.cpp"
         "os/macos/media_macos.cpp"
         "os/macos/process_macos.cpp"
@@ -107,11 +107,11 @@ elseif (APPLE)
     )
 endif()
 
-set(UNLEASHED_RECOMP_CPU_CXX_SOURCES
+set(MARATHON_RECOMP_CPU_CXX_SOURCES
     "cpu/guest_thread.cpp"
 )
 
-set(UNLEASHED_RECOMP_GPU_CXX_SOURCES
+set(MARATHON_RECOMP_GPU_CXX_SOURCES
     "gpu/video.cpp"
     "gpu/imgui/imgui_common.cpp"
     "gpu/imgui/imgui_font_builder.cpp"
@@ -119,25 +119,25 @@ set(UNLEASHED_RECOMP_GPU_CXX_SOURCES
     "gpu/rhi/plume_vulkan.cpp"
 )
 
-if (UNLEASHED_RECOMP_D3D12)
-    list(APPEND UNLEASHED_RECOMP_GPU_CXX_SOURCES
+if (MARATHON_RECOMP_D3D12)
+    list(APPEND MARATHON_RECOMP_GPU_CXX_SOURCES
         "gpu/rhi/plume_d3d12.cpp"
     )
 endif()
 
-set(UNLEASHED_RECOMP_APU_CXX_SOURCES
+set(MARATHON_RECOMP_APU_CXX_SOURCES
     "apu/audio.cpp"
     "apu/xma_decoder.cpp"
     "apu/embedded_player.cpp"
     "apu/driver/sdl2_driver.cpp"
 )
 
-set(UNLEASHED_RECOMP_HID_CXX_SOURCES
+set(MARATHON_RECOMP_HID_CXX_SOURCES
     "hid/hid.cpp"
     "hid/driver/sdl_hid.cpp"
 )
 
-set(UNLEASHED_RECOMP_PATCHES_CXX_SOURCES
+set(MARATHON_RECOMP_PATCHES_CXX_SOURCES
     "patches/aspect_ratio_patches.cpp"
     "patches/audio_patches.cpp"
     "patches/camera_patches.cpp"
@@ -156,7 +156,7 @@ set(UNLEASHED_RECOMP_PATCHES_CXX_SOURCES
     "patches/video_patches.cpp"
 )
 
-set(UNLEASHED_RECOMP_UI_CXX_SOURCES
+set(MARATHON_RECOMP_UI_CXX_SOURCES
     "ui/achievement_menu.cpp"
     "ui/achievement_overlay.cpp"
     "ui/black_bar.cpp"
@@ -171,7 +171,7 @@ set(UNLEASHED_RECOMP_UI_CXX_SOURCES
     "ui/tv_static.cpp"
 )
 
-set(UNLEASHED_RECOMP_INSTALL_CXX_SOURCES
+set(MARATHON_RECOMP_INSTALL_CXX_SOURCES
     "install/installer.cpp"
     "install/iso_file_system.cpp"
     "install/update_checker.cpp"
@@ -186,7 +186,7 @@ set(UNLEASHED_RECOMP_INSTALL_CXX_SOURCES
     "install/hashes/update.cpp"
 )
 
-set(UNLEASHED_RECOMP_USER_CXX_SOURCES
+set(MARATHON_RECOMP_USER_CXX_SOURCES
     "user/achievement_data.cpp"
     "user/achievement_manager.cpp"
     "user/config.cpp"
@@ -194,52 +194,52 @@ set(UNLEASHED_RECOMP_USER_CXX_SOURCES
     "user/paths.cpp"
 )
 
-set(UNLEASHED_RECOMP_MOD_CXX_SOURCES
+set(MARATHON_RECOMP_MOD_CXX_SOURCES
     "mod/mod_loader.cpp"
 )
 
-set(UNLEASHED_RECOMP_UTILS_CXX_SOURCES
+set(MARATHON_RECOMP_UTILS_CXX_SOURCES
     "utils/bit_stream.cpp"
     "utils/ring_buffer.cpp"
 )
 
-set(UNLEASHED_RECOMP_THIRDPARTY_SOURCES
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/imgui/backends/imgui_impl_sdl2.cpp"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/imgui/imgui.cpp"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/imgui/imgui_demo.cpp"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/imgui/imgui_draw.cpp"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/imgui/imgui_tables.cpp"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/imgui/imgui_widgets.cpp"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/implot/implot.cpp"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/implot/implot_demo.cpp"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/implot/implot_items.cpp"
-    "${UNLEASHED_RECOMP_TOOLS_ROOT}/XenosRecomp/thirdparty/smol-v/source/smolv.cpp"
+set(MARATHON_RECOMP_THIRDPARTY_SOURCES
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/imgui/backends/imgui_impl_sdl2.cpp"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/imgui/imgui.cpp"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/imgui/imgui_demo.cpp"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/imgui/imgui_draw.cpp"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/imgui/imgui_tables.cpp"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/imgui/imgui_widgets.cpp"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/implot/implot.cpp"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/implot/implot_demo.cpp"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/implot/implot_items.cpp"
+    "${MARATHON_RECOMP_TOOLS_ROOT}/XenosRecomp/thirdparty/smol-v/source/smolv.cpp"
 )
 
-set(UNLEASHED_RECOMP_THIRDPARTY_INCLUDES
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/concurrentqueue"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/ddspp"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/imgui"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/implot"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/json/include"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/magic_enum/include"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/stb"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/unordered_dense/include"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/volk"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/Vulkan-Headers/include"
-    "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/VulkanMemoryAllocator/include"
-    "${UNLEASHED_RECOMP_TOOLS_ROOT}/bc_diff"
-    "${UNLEASHED_RECOMP_TOOLS_ROOT}/XenosRecomp/thirdparty/smol-v/source"
+set(MARATHON_RECOMP_THIRDPARTY_INCLUDES
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/concurrentqueue"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/ddspp"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/imgui"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/implot"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/json/include"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/magic_enum/include"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/stb"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/unordered_dense/include"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/volk"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/Vulkan-Headers/include"
+    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/VulkanMemoryAllocator/include"
+    "${MARATHON_RECOMP_TOOLS_ROOT}/bc_diff"
+    "${MARATHON_RECOMP_TOOLS_ROOT}/XenosRecomp/thirdparty/smol-v/source"
 )
 
-if (UNLEASHED_RECOMP_D3D12)
-    list(APPEND UNLEASHED_RECOMP_THIRDPARTY_INCLUDES "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/D3D12MemoryAllocator/include")
-    list(APPEND UNLEASHED_RECOMP_THIRDPARTY_SOURCES "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/D3D12MemoryAllocator/src/D3D12MemAlloc.cpp")
+if (MARATHON_RECOMP_D3D12)
+    list(APPEND MARATHON_RECOMP_THIRDPARTY_INCLUDES "${MARATHON_RECOMP_THIRDPARTY_ROOT}/D3D12MemoryAllocator/include")
+    list(APPEND MARATHON_RECOMP_THIRDPARTY_SOURCES "${MARATHON_RECOMP_THIRDPARTY_ROOT}/D3D12MemoryAllocator/src/D3D12MemAlloc.cpp")
 endif()
 
-set_source_files_properties(${UNLEASHED_RECOMP_THIRDPARTY_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set_source_files_properties(${MARATHON_RECOMP_THIRDPARTY_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 
-set(UNLEASHED_RECOMP_CXX_SOURCES
+set(MARATHON_RECOMP_CXX_SOURCES
     "app.cpp"
     "exports.cpp"
     "main.cpp"
@@ -248,20 +248,20 @@ set(UNLEASHED_RECOMP_CXX_SOURCES
     "stdafx.cpp"
     "version.cpp"
     
-    ${UNLEASHED_RECOMP_KERNEL_CXX_SOURCES}
-    ${UNLEASHED_RECOMP_LOCALE_CXX_SOURCES}
-    ${UNLEASHED_RECOMP_OS_CXX_SOURCES}
-    ${UNLEASHED_RECOMP_CPU_CXX_SOURCES}
-    ${UNLEASHED_RECOMP_GPU_CXX_SOURCES}
-    ${UNLEASHED_RECOMP_APU_CXX_SOURCES}
-    ${UNLEASHED_RECOMP_HID_CXX_SOURCES}
-    ${UNLEASHED_RECOMP_PATCHES_CXX_SOURCES}
-    ${UNLEASHED_RECOMP_UI_CXX_SOURCES}
-    ${UNLEASHED_RECOMP_INSTALL_CXX_SOURCES}
-    ${UNLEASHED_RECOMP_USER_CXX_SOURCES}
-    ${UNLEASHED_RECOMP_UTILS_CXX_SOURCES}
-    ${UNLEASHED_RECOMP_MOD_CXX_SOURCES}
-    ${UNLEASHED_RECOMP_THIRDPARTY_SOURCES}
+    ${MARATHON_RECOMP_KERNEL_CXX_SOURCES}
+    ${MARATHON_RECOMP_LOCALE_CXX_SOURCES}
+    ${MARATHON_RECOMP_OS_CXX_SOURCES}
+    ${MARATHON_RECOMP_CPU_CXX_SOURCES}
+    ${MARATHON_RECOMP_GPU_CXX_SOURCES}
+    ${MARATHON_RECOMP_APU_CXX_SOURCES}
+    ${MARATHON_RECOMP_HID_CXX_SOURCES}
+    ${MARATHON_RECOMP_PATCHES_CXX_SOURCES}
+    ${MARATHON_RECOMP_UI_CXX_SOURCES}
+    ${MARATHON_RECOMP_INSTALL_CXX_SOURCES}
+    ${MARATHON_RECOMP_USER_CXX_SOURCES}
+    ${MARATHON_RECOMP_UTILS_CXX_SOURCES}
+    ${MARATHON_RECOMP_MOD_CXX_SOURCES}
+    ${MARATHON_RECOMP_THIRDPARTY_SOURCES}
 )
 
 include("version.cmake")
@@ -305,7 +305,7 @@ if (WIN32)
     set(WIN32_ICON_PATH "${PROJECT_SOURCE_DIR}/../MarathonRecompResources/images/game_icon.ico")
 
     configure_file("res/win32/res.rc.template" "${CMAKE_BINARY_DIR}/res.rc" @ONLY)
-    add_executable(MarathonRecomp ${UNLEASHED_RECOMP_CXX_SOURCES} "${CMAKE_BINARY_DIR}/res.rc")
+    add_executable(MarathonRecomp ${MARATHON_RECOMP_CXX_SOURCES} "${CMAKE_BINARY_DIR}/res.rc")
 
     # Hide console for release configurations.
     if (${CMAKE_BUILD_TYPE} MATCHES "Release")
@@ -319,7 +319,7 @@ elseif (APPLE)
     )
 
     add_executable(MarathonRecomp MACOSX_BUNDLE
-            ${UNLEASHED_RECOMP_CXX_SOURCES}
+            ${MARATHON_RECOMP_CXX_SOURCES}
             res/macos/game_icon.icns
     )
     set_source_files_properties(res/macos/game_icon.icns PROPERTIES
@@ -341,7 +341,7 @@ elseif (APPLE)
     set(MVK_DST "${CMAKE_CURRENT_BINARY_DIR}/Marathon Recompiled.app/Contents/${MVK_BUNDLED_PATH}")
     set_property(TARGET MarathonRecomp APPEND PROPERTY BUILD_RPATH "@executable_path/../${MVK_BUNDLED_PATH}")
 
-    set(MVK_ICD_SRC "${UNLEASHED_RECOMP_THIRDPARTY_ROOT}/MoltenVK/MoltenVK/MoltenVK/icd/MoltenVK_icd.json")
+    set(MVK_ICD_SRC "${MARATHON_RECOMP_THIRDPARTY_ROOT}/MoltenVK/MoltenVK/MoltenVK/icd/MoltenVK_icd.json")
     set(MVK_ICD_DST "${MVK_DST}/MoltenVK_icd.json")
     set(MVK_DYLIB_SRC "${CMAKE_BINARY_DIR}/thirdparty/MoltenVK/libMoltenVK.dylib")
     set(MVK_DYLIB_DST "${MVK_DST}/libMoltenVK.dylib")
@@ -361,20 +361,20 @@ elseif (APPLE)
     add_dependencies(CopyMoltenVK MoltenVK)
     add_dependencies(MarathonRecomp CopyMoltenVK)
 else()
-    add_executable(MarathonRecomp ${UNLEASHED_RECOMP_CXX_SOURCES})
+    add_executable(MarathonRecomp ${MARATHON_RECOMP_CXX_SOURCES})
 endif()
 
-if (UNLEASHED_RECOMP_FLATPAK)
+if (MARATHON_RECOMP_FLATPAK)
     target_compile_definitions(MarathonRecomp PRIVATE 
-        "UNLEASHED_RECOMP_FLATPAK"
+        "MARATHON_RECOMP_FLATPAK"
         "GAME_INSTALL_DIRECTORY=\"/var/data\""
     )
 endif()
 
-if (UNLEASHED_RECOMP_D3D12)
+if (MARATHON_RECOMP_D3D12)
     find_package(directx-headers CONFIG REQUIRED)
     find_package(directx12-agility CONFIG REQUIRED)
-    target_compile_definitions(MarathonRecomp PRIVATE UNLEASHED_RECOMP_D3D12)
+    target_compile_definitions(MarathonRecomp PRIVATE MARATHON_RECOMP_D3D12)
 endif()
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -384,7 +384,7 @@ endif()
 #find_package(directx-dxc REQUIRED)
 find_package(CURL REQUIRED)
 
-#if (UNLEASHED_RECOMP_D3D12)
+#if (MARATHON_RECOMP_D3D12)
 #    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/D3D12)
 #    add_custom_command(TARGET MarathonRecomp POST_BUILD
 #        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:Microsoft::DirectX12-Core,IMPORTED_LOCATION_RELEASE> ${CMAKE_CURRENT_BINARY_DIR}/D3D12
@@ -439,7 +439,7 @@ target_link_libraries(MarathonRecomp PRIVATE
 target_include_directories(MarathonRecomp PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     "${CMAKE_CURRENT_SOURCE_DIR}/api"
-    ${UNLEASHED_RECOMP_THIRDPARTY_INCLUDES}
+    ${MARATHON_RECOMP_THIRDPARTY_INCLUDES}
 )
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -448,12 +448,12 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     target_link_libraries(MarathonRecomp PRIVATE ${X11_LIBRARIES})
 endif()
 
-target_precompile_headers(MarathonRecomp PUBLIC ${UNLEASHED_RECOMP_PRECOMPILED_HEADERS})
+target_precompile_headers(MarathonRecomp PUBLIC ${MARATHON_RECOMP_PRECOMPILED_HEADERS})
 
 function(compile_shader FILE_PATH TARGET_NAME)
     set(FILE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/gpu/shader/${FILE_PATH}.hlsl)
     cmake_path(GET FILE_PATH STEM VARIABLE_NAME)
-    if (UNLEASHED_RECOMP_D3D12)
+    if (MARATHON_RECOMP_D3D12)
         add_custom_command(
             OUTPUT ${FILE_PATH}.dxil.h
             COMMAND ${DIRECTX_DXC_TOOL} -T ${TARGET_NAME} -HV 2021 -all-resources-bound -Wno-ignored-attributes -Fh ${FILE_PATH}.dxil.h ${FILE_PATH} -Vn g_${VARIABLE_NAME}_dxil

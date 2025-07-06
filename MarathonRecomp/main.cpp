@@ -33,7 +33,7 @@
 #include <timeapi.h>
 #endif
 
-#if defined(_WIN32) && defined(UNLEASHED_RECOMP_D3D12)
+#if defined(_WIN32) && defined(MARATHON_RECOMP_D3D12)
 static std::array<std::string_view, 3> g_D3D12RequiredModules =
 {
     "D3D12/D3D12Core.dll",
@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
 
     Config::Load();
 
-#if defined(_WIN32) && defined(UNLEASHED_RECOMP_D3D12)
+#if defined(_WIN32) && defined(MARATHON_RECOMP_D3D12)
     for (auto& dll : g_D3D12RequiredModules)
     {
         if (!std::filesystem::exists(g_executableRoot / dll))
