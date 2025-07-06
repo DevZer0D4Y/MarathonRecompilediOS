@@ -1,7 +1,7 @@
 project("MarathonRecomp")
 
 if (WIN32)
-    option(MARATHON_RECOMP_D3D12 "Add D3D12 support for rendering" ON)
+    option(MARATHON_RECOMP_D3D12 "Add D3D12 support for rendering" OFF)
 endif()
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
