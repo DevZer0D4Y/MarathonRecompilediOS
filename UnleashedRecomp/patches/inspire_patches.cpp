@@ -11,27 +11,6 @@ static SWA::Inspire::CScene* g_pScene;
 static bool g_isFirstFrameChecked;
 static uint32_t g_eventDispatchCount;
 
-static std::array<std::string_view, 8> g_alwaysEvilSonic =
-{
-    "evrt_m2_02", // Same As Ever
-    "evrt_s1_05", // Chun-nan Temple
-    "evrt_s3_04", // Holoskan Temple
-    "evrt_t0_02", // Shamaran Temple
-    "evrt_m7_02", // The Final Temple
-    "evrt_m7_04", // Congratulations
-    "evrt_m8_02", // The Egg Dragoon
-    "evrt_m8_03"  // Planet's End
-};
-
-static std::unordered_map<std::string_view, std::pair<float, float>> g_evilSonicTimings =
-{
-    { "evrt_m0_01_05", { 8189.97f, 10821 } }, // Opening
-    { "evrt_m0_06", { 0, 5104.07f } },        // A New Journey
-    { "evrt_m1_02", { 1162.46f, 3513 } },     // The First Night
-    { "evrt_m6_03", { 2445, 5744 } },         // No Reason
-    { "evrt_m8_04", { 0, 2314 } }             // Dark Gaia Appears
-};
-
 // Sonic's mouth EXPLODES for a single frame in Temple Entrance cutscene. 
 // Looks very nasty. Let's hide morph models inbetween certain frames to solve it.
 static bool g_loadedMouthExplosionAnimation;
@@ -131,36 +110,4 @@ void InspirePatches::Update()
 
     g_hideMorphModels = g_loadedMouthExplosionAnimation && g_pScene->m_pData->Frame >= 185.0f &&
         g_pScene->m_pData->Frame < 195.0f && InspirePatches::s_sceneName == "evrt_t0_04";
-
-    if (!g_isFirstFrameChecked && std::find(g_alwaysEvilSonic.begin(), g_alwaysEvilSonic.end(), InspirePatches::s_sceneName) != g_alwaysEvilSonic.end())
-    {
-        SDL_User_EvilSonic(true);
-        g_isFirstFrameChecked = true;
-        return;
-    }
-
-    auto findResult = g_evilSonicTimings.find(InspirePatches::s_sceneName);
-
-    if (findResult != g_evilSonicTimings.end())
-    {
-        auto& timings = findResult->second;
-        auto& frame = g_pScene->m_pData->Frame;
-
-        if (!g_isFirstFrameChecked && timings.first > 0)
-        {
-            SDL_User_EvilSonic(false);
-            g_isFirstFrameChecked = true;
-        }
-
-        if (!g_eventDispatchCount && (frame > timings.first && frame < timings.second))
-        {
-            SDL_User_EvilSonic(true);
-            g_eventDispatchCount++;
-        }
-        else if (g_eventDispatchCount == 1 && frame > timings.second)
-        {
-            SDL_User_EvilSonic(false);
-            g_eventDispatchCount++;
-        }
-    }
 }

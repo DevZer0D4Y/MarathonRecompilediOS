@@ -3,7 +3,7 @@
 #include <SDL.h>
 #include <ui/game_window.h>
 
-#define SDL_USER_EVILSONIC (SDL_USEREVENT + 1)
+#define SDL_USER_PLAYER_CHAR (SDL_USEREVENT + 1)
 
 inline void SDL_ResizeEvent(SDL_Window* pWindow, int width, int height)
 {
@@ -29,11 +29,11 @@ inline void SDL_MoveEvent(SDL_Window* pWindow, int x, int y)
     SDL_PushEvent(&event);
 }
 
-inline void SDL_User_EvilSonic(bool isEvil)
+inline void SDL_User_PlayerChar(EPlayerCharacter character)
 {
     SDL_Event event{};
-    event.type = SDL_USER_EVILSONIC;
-    event.user.code = isEvil;
+    event.type = SDL_USER_PLAYER_CHAR;
+    event.user.code = static_cast<Sint32>(character);
 
     SDL_PushEvent(&event);
 }

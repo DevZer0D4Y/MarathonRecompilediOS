@@ -9,8 +9,9 @@ public:
     static inline bool s_isMissingDLC;
     static inline bool s_isLoading;
     static inline bool s_isSaving;
-    static inline bool s_isWerehog;
     static inline bool s_isSaveDataCorrupt;
+
+    static inline EPlayerCharacter s_playerCharacter;
 
     static inline ELanguage s_language;
 

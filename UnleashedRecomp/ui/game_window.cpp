@@ -13,7 +13,6 @@
 #endif
 
 #include <res/images/game_icon.bmp.h>
-#include <res/images/game_icon_night.bmp.h>
 
 bool m_isFullscreenKeyReleased = true;
 bool m_isResizing = false;
@@ -146,9 +145,9 @@ int Window_OnSDLEvent(void*, SDL_Event* event)
             break;
         }
 
-        case SDL_USER_EVILSONIC:
-            GameWindow::s_isIconNight = event->user.code;
-            GameWindow::SetIcon(GameWindow::s_isIconNight);
+        case SDL_USER_PLAYER_CHAR:
+            GameWindow::s_playerCharacter = static_cast<EPlayerCharacter>(event->user.code);
+            GameWindow::SetIcon(GameWindow::s_playerCharacter);
             break;
     }
 
@@ -269,16 +268,29 @@ void GameWindow::SetIcon(void* pIconBmp, size_t iconSize)
     }
 }
 
-void GameWindow::SetIcon(bool isNight)
+void GameWindow::SetIcon(EPlayerCharacter player)
 {
-    if (isNight)
-    {
-        SetIcon(g_game_icon_night, sizeof(g_game_icon_night));
+    // TODO: Per-character icons
+    switch (player) {
+        case EPlayerCharacter::Sonic:
+            break;
+        case EPlayerCharacter::Shadow:
+            break;
+        case EPlayerCharacter::Silver:
+            break;
+        case EPlayerCharacter::Blaze:
+            break;
+        case EPlayerCharacter::Amy:
+            break;
+        case EPlayerCharacter::Tails:
+            break;
+        case EPlayerCharacter::Rouge:
+            break;
+        case EPlayerCharacter::Knuckles:
+            break;
     }
-    else
-    {
-        SetIcon(g_game_icon, sizeof(g_game_icon));
-    }
+
+    SetIcon(g_game_icon, sizeof(g_game_icon));
 }
 
 const char* GameWindow::GetTitle()
@@ -333,7 +345,7 @@ bool GameWindow::SetFullscreen(bool isEnabled)
         SDL_SetWindowFullscreen(s_pWindow, 0);
         SDL_ShowCursor(SDL_ENABLE);
 
-        SetIcon(GameWindow::s_isIconNight);
+        SetIcon(GameWindow::s_playerCharacter);
         SetDimensions(Config::WindowWidth, Config::WindowHeight, Config::WindowX, Config::WindowY);
     }
 

@@ -149,6 +149,18 @@ enum class EUIAlignmentMode : uint32_t
     Centre
 };
 
+enum class EPlayerCharacter : uint32_t
+{
+    Sonic,
+    Shadow,
+    Silver,
+    Blaze,
+    Amy,
+    Tails,
+    Rouge,
+    Knuckles
+};
+
 template<typename T, bool isHidden = false>
 class ConfigDef final : public IConfigDef
 {

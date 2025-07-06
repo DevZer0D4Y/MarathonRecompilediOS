@@ -187,11 +187,34 @@ static void SetControllerInputDevice(Controller* controller)
     }
 }
 
-static void SetControllerTimeOfDayLED(Controller& controller, bool isNight)
+static void SetControllerTimeOfDayLED(Controller& controller, EPlayerCharacter player)
 {
-    auto r = isNight ? 22 : 0;
-    auto g = isNight ? 0 : 37;
-    auto b = isNight ? 101 : 184;
+    uint8_t r, g, b;
+
+    // TODO: Per-character colors
+
+    switch (player) {
+        case EPlayerCharacter::Sonic:
+            break;
+        case EPlayerCharacter::Shadow:
+            break;
+        case EPlayerCharacter::Silver:
+            break;
+        case EPlayerCharacter::Blaze:
+            break;
+        case EPlayerCharacter::Amy:
+            break;
+        case EPlayerCharacter::Tails:
+            break;
+        case EPlayerCharacter::Rouge:
+            break;
+        case EPlayerCharacter::Knuckles:
+            break;
+    }
+
+    r = 0;
+    g = 37;
+    b = 184;
 
     controller.SetLED(r, g, b);
 }
@@ -210,7 +233,7 @@ int HID_OnSDLEvent(void*, SDL_Event* event)
 
                 g_controllers[freeIndex] = controller;
 
-                SetControllerTimeOfDayLED(controller, App::s_isWerehog);
+                SetControllerTimeOfDayLED(controller, App::s_playerCharacter);
             }
 
             break;
@@ -286,10 +309,10 @@ int HID_OnSDLEvent(void*, SDL_Event* event)
             break;
         }
 
-        case SDL_USER_EVILSONIC:
+        case SDL_USER_PLAYER_CHAR:
         {
             for (auto& controller : g_controllers)
-                SetControllerTimeOfDayLED(controller, event->user.code);
+                SetControllerTimeOfDayLED(controller, static_cast<EPlayerCharacter>(event->user.code));
 
             break;
         }
