@@ -6,27 +6,27 @@
 #include "iso_file_system.h"
 #include "xcontent_file_system.h"
 
-#include "hashes/apotos_shamar.h"
-#include "hashes/chunnan.h"
-#include "hashes/empire_city_adabat.h"
+#include "hashes/episode_sonic.h"
+#include "hashes/episode_shadow.h"
+#include "hashes/episode_silver.h"
+#include "hashes/episode_amigo.h"
+#include "hashes/mission_sonic.h"
+#include "hashes/mission_shadow.h"
+#include "hashes/mission_silver.h"
 #include "hashes/game.h"
-#include "hashes/holoska.h"
-#include "hashes/mazuri.h"
-#include "hashes/spagonia.h"
 
 static const std::string GameDirectory = "game";
 static const std::string DLCDirectory = "dlc";
-static const std::string ApotosShamarDirectory = DLCDirectory + "/Apotos & Shamar Adventure Pack";
-static const std::string ChunnanDirectory = DLCDirectory + "/Chun-nan Adventure Pack";
-static const std::string EmpireCityAdabatDirectory = DLCDirectory + "/Empire City & Adabat Adventure Pack";
-static const std::string HoloskaDirectory = DLCDirectory + "/Holoska Adventure Pack";
-static const std::string MazuriDirectory = DLCDirectory + "/Mazuri Adventure Pack";
-static const std::string SpagoniaDirectory = DLCDirectory + "/Spagonia Adventure Pack";
+static const std::string EpisodeSonicDirectory = DLCDirectory + "/Episode Sonic Boss Attack";
+static const std::string EpisodeShadowDirectory = DLCDirectory + "/Episode Shadow Boss Attack";
+static const std::string EpisodeSilverDirectory = DLCDirectory + "/Episode Silver Boss Attack";
+static const std::string EpisodeAmigoDirectory = DLCDirectory + "/Episode Team Attack Amigo";
+static const std::string MissionSonicDirectory = DLCDirectory + "/Mission Pack Sonic Very Hard";
+static const std::string MissionShadowDirectory = DLCDirectory + "/Mission Pack Shadow Very Hard";
+static const std::string MissionSilverDirectory = DLCDirectory + "/Mission Pack Silver Very Hard";
 static const std::string GameExecutableFile = "default.xex";
-static const std::string DLCValidationFile = "DLC.xml";
+static const std::string DLCValidationFile = "download.arc";
 static const std::string ISOExtension = ".iso";
-static const std::string OldExtension = ".old";
-static const std::string TempExtension = ".tmp";
 
 static std::string fromU8(const std::u8string &str)
 {
@@ -148,56 +148,46 @@ static bool copyFile(const FilePair &pair, const uint64_t *fileHashes, VirtualFi
 
 static DLC detectDLC(const std::filesystem::path &sourcePath, VirtualFileSystem &sourceVfs, Journal &journal)
 {
-    std::vector<uint8_t> dlcXmlBytes;
-    if (!sourceVfs.load(DLCValidationFile, dlcXmlBytes))
-    {
-        journal.lastResult = Journal::Result::FileMissing;
-        journal.lastErrorMessage = fmt::format("File {} does not exist in {}.", DLCValidationFile, sourceVfs.getName());
-        return DLC::Unknown;
+    std::string name;
+    std::ifstream dlcFile(sourcePath);
+
+    dlcFile.seekg(0x412, std::ios::beg);
+
+    char ch;
+    while (dlcFile.get(ch) && ch != '\0') {
+        // If we're reading an invalid file, don't keep reading
+        // past the maximum length of a valid DLC file name
+        if (name.length() > 41) {
+            break;
+        }
+
+        name += ch;
+        // DLC file names have one character proceeded by null,
+        // so we skip every other byte to read a continuous string
+        dlcFile.seekg(1, std::ios::cur);
     }
 
-    const char TypeStartString[] = "<Type>";
-    const char TypeEndString[] = "</Type>";
-    size_t dlcByteCount = dlcXmlBytes.size();
-    dlcXmlBytes.resize(dlcByteCount + 1);
-    dlcXmlBytes[dlcByteCount] = '\0';
-    const char *typeStartLocation = strstr((const char *)(dlcXmlBytes.data()), TypeStartString);
-    const char *typeEndLocation = typeStartLocation != nullptr ? strstr(typeStartLocation, TypeEndString) : nullptr;
-    if (typeStartLocation == nullptr || typeEndLocation == nullptr)
-    {
-        journal.lastResult = Journal::Result::DLCParsingFailed;
-        journal.lastErrorMessage = fmt::format("Failed to find DLC type for {}.", sourceVfs.getName());
-        return DLC::Unknown;
+    dlcFile.close();
+
+    if (name == "Additional Episode \"Sonic Boss Attack\"") {
+        return DLC::EpisodeSonic;
+    } else if (name == "Additional Episode \"Shadow Boss Attack\"") {
+        return DLC::EpisodeShadow;
+    } else if (name == "Additional Episode \"Silver Boss Attack\"") {
+        return DLC::EpisodeSilver;
+    } else if (name == "Additional Episode \"Team Attack Amigo\"") {
+        return DLC::EpisodeAmigo;
+    } else if (name == "Additional Mission Pack \"Sonic/Very Hard") {
+        return DLC::MissionSonic;
+    } else if (name == "Additional Mission Pack \"Shadow/Very Har") {
+        return DLC::MissionShadow;
+    } else if (name == "Additional Mission Pack \"Silver/Very Har") {
+        return DLC::MissionSilver;
     }
 
-    const char *typeNumberLocation = typeStartLocation + strlen(TypeStartString);
-    size_t typeNumberCount = typeEndLocation - typeNumberLocation;
-    if (typeNumberCount != 1)
-    {
-        journal.lastResult = Journal::Result::UnknownDLCType;
-        journal.lastErrorMessage = fmt::format("DLC type for {} is unknown.", sourceVfs.getName());
-        return DLC::Unknown;
-    }
-
-    switch (*typeNumberLocation)
-    {
-    case '1':
-        return DLC::Spagonia;
-    case '2':
-        return DLC::Chunnan;
-    case '3':
-        return DLC::Mazuri;
-    case '4':
-        return DLC::Holoska;
-    case '5':
-        return DLC::ApotosShamar;
-    case '7':
-        return DLC::EmpireCityAdabat;
-    default:
-        journal.lastResult = Journal::Result::UnknownDLCType;
-        journal.lastErrorMessage = fmt::format("DLC type for {} is unknown.", sourceVfs.getName());
-        return DLC::Unknown;
-    }
+    journal.lastResult = Journal::Result::UnknownDLCType;
+    journal.lastErrorMessage = fmt::format("DLC type for {} is unknown.", name);
+    return DLC::Unknown;
 }
 
 bool Installer::checkGameInstall(const std::filesystem::path &baseDirectory, std::filesystem::path &modulePath)
@@ -214,18 +204,20 @@ bool Installer::checkDLCInstall(const std::filesystem::path &baseDirectory, DLC 
 {
     switch (dlc)
     {
-    case DLC::Spagonia:
-        return std::filesystem::exists(baseDirectory / SpagoniaDirectory / DLCValidationFile);
-    case DLC::Chunnan:
-        return std::filesystem::exists(baseDirectory / ChunnanDirectory / DLCValidationFile);
-    case DLC::Mazuri:
-        return std::filesystem::exists(baseDirectory / MazuriDirectory / DLCValidationFile);
-    case DLC::Holoska:
-        return std::filesystem::exists(baseDirectory / HoloskaDirectory / DLCValidationFile);
-    case DLC::ApotosShamar:
-        return std::filesystem::exists(baseDirectory / ApotosShamarDirectory / DLCValidationFile);
-    case DLC::EmpireCityAdabat:
-        return std::filesystem::exists(baseDirectory / EmpireCityAdabatDirectory / DLCValidationFile);
+    case DLC::EpisodeSonic:
+        return std::filesystem::exists(baseDirectory / EpisodeSonicDirectory / DLCValidationFile);
+    case DLC::EpisodeShadow:
+        return std::filesystem::exists(baseDirectory / EpisodeShadowDirectory / DLCValidationFile);
+    case DLC::EpisodeSilver:
+        return std::filesystem::exists(baseDirectory / EpisodeSilverDirectory / DLCValidationFile);
+    case DLC::EpisodeAmigo:
+        return std::filesystem::exists(baseDirectory / EpisodeAmigoDirectory / DLCValidationFile);
+    case DLC::MissionSonic:
+        return std::filesystem::exists(baseDirectory / MissionSonicDirectory / DLCValidationFile);
+    case DLC::MissionShadow:
+        return std::filesystem::exists(baseDirectory / MissionShadowDirectory / DLCValidationFile);
+    case DLC::MissionSilver:
+        return std::filesystem::exists(baseDirectory / MissionSilverDirectory / DLCValidationFile);
     default:
         return false;
     }
@@ -272,8 +264,6 @@ bool Installer::copyFiles(std::span<const FilePair> filePairs, const uint64_t *f
         return false;
     }
 
-    FilePair validationPair = {};
-    uint32_t validationHashIndex = 0;
     uint32_t hashIndex = 0;
     uint32_t hashCount = 0;
     std::vector<uint8_t> fileData;
@@ -282,32 +272,10 @@ bool Installer::copyFiles(std::span<const FilePair> filePairs, const uint64_t *f
         hashIndex = hashCount;
         hashCount += pair.second;
 
-        if (validationFile.compare(pair.first) == 0)
-        {
-            validationPair = pair;
-            validationHashIndex = hashIndex;
-            continue;
-        }
-
         if (!copyFile(pair, &fileHashes[hashIndex], sourceVfs, targetDirectory, skipHashChecks, fileData, journal, progressCallback))
         {
             return false;
         }
-    }
-
-    // Validation file is copied last after all other files have been copied.
-    if (validationPair.first != nullptr)
-    {
-        if (!copyFile(validationPair, &fileHashes[validationHashIndex], sourceVfs, targetDirectory, skipHashChecks, fileData, journal, progressCallback))
-        {
-            return false;
-        }
-    }
-    else
-    {
-        journal.lastResult = Journal::Result::ValidationFileMissing;
-        journal.lastErrorMessage = fmt::format("Unable to find validation file {} in {}.", validationFile, sourceVfs.getName());
-        return false;
     }
 
     return true;
@@ -360,35 +328,40 @@ bool Installer::parseSources(const Input &input, Journal &journal, Sources &sour
         DLC dlc = detectDLC(path, *dlcSource.sourceVfs, journal);
         switch (dlc)
         {
-        case DLC::Spagonia:
-            dlcSource.filePairs = { SpagoniaFiles, SpagoniaFilesSize };
-            dlcSource.fileHashes = SpagoniaHashes;
-            dlcSource.targetSubDirectory = SpagoniaDirectory;
+        case DLC::EpisodeSonic:
+            dlcSource.filePairs = { EpisodeSonicFiles, EpisodeSonicFilesSize };
+            dlcSource.fileHashes = EpisodeSonicHashes;
+            dlcSource.targetSubDirectory = EpisodeSonicDirectory;
             break;
-        case DLC::Chunnan:
-            dlcSource.filePairs = { ChunnanFiles, ChunnanFilesSize };
-            dlcSource.fileHashes = ChunnanHashes;
-            dlcSource.targetSubDirectory = ChunnanDirectory;
+        case DLC::EpisodeShadow:
+            dlcSource.filePairs = { EpisodeShadowFiles, EpisodeShadowFilesSize };
+            dlcSource.fileHashes = EpisodeShadowHashes;
+            dlcSource.targetSubDirectory = EpisodeShadowDirectory;
             break;
-        case DLC::Mazuri:
-            dlcSource.filePairs = { MazuriFiles, MazuriFilesSize };
-            dlcSource.fileHashes = MazuriHashes;
-            dlcSource.targetSubDirectory = MazuriDirectory;
+        case DLC::EpisodeSilver:
+            dlcSource.filePairs = { EpisodeSilverFiles, EpisodeSilverFilesSize };
+            dlcSource.fileHashes = EpisodeSilverHashes;
+            dlcSource.targetSubDirectory = EpisodeSilverDirectory;
             break;
-        case DLC::Holoska:
-            dlcSource.filePairs = { HoloskaFiles, HoloskaFilesSize };
-            dlcSource.fileHashes = HoloskaHashes;
-            dlcSource.targetSubDirectory = HoloskaDirectory;
+        case DLC::EpisodeAmigo:
+            dlcSource.filePairs = { EpisodeAmigoFiles, EpisodeAmigoFilesSize };
+            dlcSource.fileHashes = EpisodeAmigoHashes;
+            dlcSource.targetSubDirectory = EpisodeAmigoDirectory;
             break;
-        case DLC::ApotosShamar:
-            dlcSource.filePairs = { ApotosShamarFiles, ApotosShamarFilesSize };
-            dlcSource.fileHashes = ApotosShamarHashes;
-            dlcSource.targetSubDirectory = ApotosShamarDirectory;
+        case DLC::MissionSonic:
+            dlcSource.filePairs = { MissionSonicFiles, MissionSonicFilesSize };
+            dlcSource.fileHashes = MissionSonicHashes;
+            dlcSource.targetSubDirectory = MissionSonicDirectory;
             break;
-        case DLC::EmpireCityAdabat:
-            dlcSource.filePairs = { EmpireCityAdabatFiles, EmpireCityAdabatFilesSize };
-            dlcSource.fileHashes = EmpireCityAdabatHashes;
-            dlcSource.targetSubDirectory = EmpireCityAdabatDirectory;
+        case DLC::MissionShadow:
+            dlcSource.filePairs = { MissionShadowFiles, MissionShadowFilesSize };
+            dlcSource.fileHashes = MissionShadowHashes;
+            dlcSource.targetSubDirectory = MissionShadowDirectory;
+            break;
+        case DLC::MissionSilver:
+            dlcSource.filePairs = { MissionSilverFiles, MissionSilverFilesSize };
+            dlcSource.fileHashes = MissionSilverHashes;
+            dlcSource.targetSubDirectory = MissionSilverDirectory;
             break;
         default:
             return false;

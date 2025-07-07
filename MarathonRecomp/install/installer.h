@@ -7,13 +7,14 @@
 
 enum class DLC {
     Unknown,
-    Spagonia,
-    Chunnan,
-    Mazuri,
-    Holoska,
-    ApotosShamar,
-    EmpireCityAdabat,
-    Count = EmpireCityAdabat
+    EpisodeSonic,
+    EpisodeShadow,
+    EpisodeSilver,
+    EpisodeAmigo,
+    MissionSonic,
+    MissionShadow,
+    MissionSilver,
+    Count = MissionSilver
 };
 
 struct Journal

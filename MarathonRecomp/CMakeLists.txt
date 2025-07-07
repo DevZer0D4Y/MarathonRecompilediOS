@@ -176,13 +176,14 @@ set(MARATHON_RECOMP_INSTALL_CXX_SOURCES
     "install/iso_file_system.cpp"
     "install/update_checker.cpp"
     "install/xcontent_file_system.cpp"
-    "install/hashes/apotos_shamar.cpp"
-    "install/hashes/chunnan.cpp"
-    "install/hashes/empire_city_adabat.cpp"
     "install/hashes/game.cpp"
-    "install/hashes/holoska.cpp"
-    "install/hashes/mazuri.cpp"
-    "install/hashes/spagonia.cpp"
+    "install/hashes/episode_sonic.cpp"
+    "install/hashes/episode_shadow.cpp"
+    "install/hashes/episode_silver.cpp"
+    "install/hashes/episode_amigo.cpp"
+    "install/hashes/mission_sonic.cpp"
+    "install/hashes/mission_shadow.cpp"
+    "install/hashes/mission_silver.cpp"
 )
 
 set(MARATHON_RECOMP_USER_CXX_SOURCES
