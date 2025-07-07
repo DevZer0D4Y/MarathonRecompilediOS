@@ -4,7 +4,6 @@
 #include <set>
 
 #include "virtual_file_system.h"
-#include <xex_patcher.h>
 
 enum class DLC {
     Unknown,
@@ -32,8 +31,6 @@ struct Journal
         FileWriteFailed,
         ValidationFileMissing,
         DLCParsingFailed,
-        PatchProcessFailed,
-        PatchReplacementFailed,
         UnknownDLCType
     };
 
@@ -42,7 +39,6 @@ struct Journal
     std::list<std::filesystem::path> createdFiles;
     std::set<std::filesystem::path> createdDirectories;
     Result lastResult = Result::Success;
-    XexPatcher::Result lastPatcherResult = XexPatcher::Result::Success;
     std::string lastErrorMessage;
 };
 
@@ -53,7 +49,6 @@ struct Installer
     struct Input
     {
         std::filesystem::path gameSource;
-        std::filesystem::path updateSource;
         std::list<std::filesystem::path> dlcSources;
     };
 
@@ -67,7 +62,6 @@ struct Installer
     struct Sources 
     {
         std::unique_ptr<VirtualFileSystem> game;
-        std::unique_ptr<VirtualFileSystem> update;
         std::vector<DLCSource> dlc;
         uint64_t totalSize = 0;
     };
@@ -85,12 +79,6 @@ struct Installer
     // Convenience method for checking if the specified file contains the game. This should be used when the user selects the file.
     static bool parseGame(const std::filesystem::path &sourcePath);
 
-    // Convenience method for checking if the specified file contains the update. This should be used when the user selects the file.
-    static bool parseUpdate(const std::filesystem::path &sourcePath);
-
     // Convenience method for the installer to check which DLC the file that was specified corresponds to. This should be used when the user selects the file.
     static DLC parseDLC(const std::filesystem::path &sourcePath);
-
-    // Convenience method for checking if a game and an update are compatible. This should be used when the user presses next during installation.
-    static XexPatcher::Result checkGameUpdateCompatibility(const std::filesystem::path &gameSourcePath, const std::filesystem::path &updateSourcePath);
 };

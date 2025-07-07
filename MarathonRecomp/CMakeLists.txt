@@ -183,7 +183,6 @@ set(MARATHON_RECOMP_INSTALL_CXX_SOURCES
     "install/hashes/holoska.cpp"
     "install/hashes/mazuri.cpp"
     "install/hashes/spagonia.cpp"
-    "install/hashes/update.cpp"
 )
 
 set(MARATHON_RECOMP_USER_CXX_SOURCES

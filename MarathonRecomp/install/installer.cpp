@@ -13,21 +13,17 @@
 #include "hashes/holoska.h"
 #include "hashes/mazuri.h"
 #include "hashes/spagonia.h"
-#include "hashes/update.h"
 
 static const std::string GameDirectory = "game";
 static const std::string DLCDirectory = "dlc";
-static const std::string PatchedDirectory = "patched";
 static const std::string ApotosShamarDirectory = DLCDirectory + "/Apotos & Shamar Adventure Pack";
 static const std::string ChunnanDirectory = DLCDirectory + "/Chun-nan Adventure Pack";
 static const std::string EmpireCityAdabatDirectory = DLCDirectory + "/Empire City & Adabat Adventure Pack";
 static const std::string HoloskaDirectory = DLCDirectory + "/Holoska Adventure Pack";
 static const std::string MazuriDirectory = DLCDirectory + "/Mazuri Adventure Pack";
 static const std::string SpagoniaDirectory = DLCDirectory + "/Spagonia Adventure Pack";
-static const std::string UpdateDirectory = "update";
 static const std::string GameExecutableFile = "default.xex";
 static const std::string DLCValidationFile = "DLC.xml";
-static const std::string UpdateExecutablePatchFile = "default.xexp";
 static const std::string ISOExtension = ".iso";
 static const std::string OldExtension = ".old";
 static const std::string TempExtension = ".tmp";
@@ -206,15 +202,9 @@ static DLC detectDLC(const std::filesystem::path &sourcePath, VirtualFileSystem 
 
 bool Installer::checkGameInstall(const std::filesystem::path &baseDirectory, std::filesystem::path &modulePath)
 {
-    modulePath = baseDirectory / PatchedDirectory / GameExecutableFile;
+    modulePath = baseDirectory / GameDirectory / GameExecutableFile;
 
     if (!std::filesystem::exists(modulePath))
-        return false;
-
-    if (!std::filesystem::exists(baseDirectory / UpdateDirectory / UpdateExecutablePatchFile))
-        return false;
-
-    if (!std::filesystem::exists(baseDirectory / GameDirectory / GameExecutableFile))
         return false;
 
     return true;
@@ -338,8 +328,6 @@ bool Installer::parseContent(const std::filesystem::path &sourcePath, std::uniqu
     }
 }
 
-constexpr uint32_t PatcherContribution = 512 * 1024 * 1024;
-
 bool Installer::parseSources(const Input &input, Journal &journal, Sources &sources)
 {
     journal = Journal();
@@ -354,23 +342,6 @@ bool Installer::parseSources(const Input &input, Journal &journal, Sources &sour
         }
 
         if (!computeTotalSize({ GameFiles, GameFilesSize }, GameHashes, *sources.game, journal, sources.totalSize))
-        {
-            return false;
-        }
-    }
-
-    // Parse the contents of Update.
-    if (!input.updateSource.empty())
-    {
-        // Add an arbitrary progress size for the patching process.
-        journal.progressTotal += PatcherContribution;
-
-        if (!parseContent(input.updateSource, sources.update, journal))
-        {
-            return false;
-        }
-
-        if (!computeTotalSize({ UpdateFiles, UpdateFilesSize }, UpdateHashes, *sources.update, journal, sources.totalSize))
         {
             return false;
         }
@@ -454,16 +425,10 @@ bool Installer::install(const Sources &sources, const std::filesystem::path &tar
         }
     }
 
-    // If no game or update was specified, we're finished. This means the user was only installing the DLC.
-    if ((sources.game == nullptr) && (sources.update == nullptr))
+    // If no game was specified, we're finished. This means the user was only installing the DLC.
+    if ((sources.game == nullptr))
     {
         return true;
-    }
-
-    // Install the update.
-    if (!copyFiles({ UpdateFiles, UpdateFilesSize }, UpdateHashes, *sources.update, targetDirectory / UpdateDirectory, UpdateExecutablePatchFile, skipHashChecks, journal, progressCallback))
-    {
-        return false;
     }
 
     // Install the base game.
@@ -471,38 +436,6 @@ bool Installer::install(const Sources &sources, const std::filesystem::path &tar
     {
         return false;
     }
-
-    // Create the directory where the patched executable will be stored.
-    std::error_code ec;
-    std::filesystem::path patchedDirectory = targetDirectory / PatchedDirectory;
-    if (!std::filesystem::exists(patchedDirectory) && !std::filesystem::create_directories(patchedDirectory, ec))
-    {
-        journal.lastResult = Journal::Result::DirectoryCreationFailed;
-        journal.lastErrorMessage = "Unable to create directory at " + fromPath(patchedDirectory);
-        return false;
-    }
-
-    journal.createdDirectories.insert(patchedDirectory);
-
-    // Patch the executable with the update's file.
-    std::filesystem::path baseXexPath = targetDirectory / GameDirectory / GameExecutableFile;
-    std::filesystem::path patchPath = targetDirectory / UpdateDirectory / UpdateExecutablePatchFile;
-    std::filesystem::path patchedXexPath = patchedDirectory / GameExecutableFile;
-    XexPatcher::Result patcherResult = XexPatcher::apply(baseXexPath, patchPath, patchedXexPath);
-    if (patcherResult == XexPatcher::Result::Success)
-    {
-        journal.createdFiles.push_back(patchedXexPath);
-    }
-    else
-    {
-        journal.lastResult = Journal::Result::PatchProcessFailed;
-        journal.lastPatcherResult = patcherResult;
-        journal.lastErrorMessage = "Patch process failed.";
-        return false;
-    }
-
-    // Update the progress with the artificial amount attributed to the patching.
-    journal.progressCounter += PatcherContribution;
     
     for (uint32_t i = 0; i < 2; i++)
     {
@@ -548,17 +481,6 @@ bool Installer::parseGame(const std::filesystem::path &sourcePath)
     return sourceVfs->exists(GameExecutableFile);
 }
 
-bool Installer::parseUpdate(const std::filesystem::path &sourcePath)
-{
-    std::unique_ptr<VirtualFileSystem> sourceVfs = createFileSystemFromPath(sourcePath);
-    if (sourceVfs == nullptr)
-    {
-        return false;
-    }
-
-    return sourceVfs->exists(UpdateExecutablePatchFile);
-}
-
 DLC Installer::parseDLC(const std::filesystem::path &sourcePath)
 {
     Journal journal;
@@ -569,34 +491,4 @@ DLC Installer::parseDLC(const std::filesystem::path &sourcePath)
     }
 
     return detectDLC(sourcePath, *sourceVfs, journal);
-}
-
-XexPatcher::Result Installer::checkGameUpdateCompatibility(const std::filesystem::path &gameSourcePath, const std::filesystem::path &updateSourcePath)
-{
-    std::unique_ptr<VirtualFileSystem> gameSourceVfs = createFileSystemFromPath(gameSourcePath);
-    if (gameSourceVfs == nullptr)
-    {
-        return XexPatcher::Result::FileOpenFailed;
-    }
-
-    std::unique_ptr<VirtualFileSystem> updateSourceVfs = createFileSystemFromPath(updateSourcePath);
-    if (updateSourceVfs == nullptr)
-    {
-        return XexPatcher::Result::FileOpenFailed;
-    }
-
-    std::vector<uint8_t> xexBytes;
-    std::vector<uint8_t> patchBytes;
-    if (!gameSourceVfs->load(GameExecutableFile, xexBytes))
-    {
-        return XexPatcher::Result::FileOpenFailed;
-    }
-
-    if (!updateSourceVfs->load(UpdateExecutablePatchFile, patchBytes))
-    {
-        return XexPatcher::Result::FileOpenFailed;
-    }
-
-    std::vector<uint8_t> patchedBytes;
-    return XexPatcher::apply(xexBytes.data(), xexBytes.size(), patchBytes.data(), patchBytes.size(), patchedBytes, true);
 }

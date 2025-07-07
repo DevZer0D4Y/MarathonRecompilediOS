@@ -103,7 +103,6 @@ static bool g_isQuitting = false;
 
 static std::filesystem::path g_installPath;
 static std::filesystem::path g_gameSourcePath;
-static std::filesystem::path g_updateSourcePath;
 static std::array<std::filesystem::path, int(DLC::Count)> g_dlcSourcePaths;
 static std::array<bool, int(DLC::Count)> g_dlcInstalled = {};
 static std::array<std::unique_ptr<GuestTexture>, 8> g_installTextures;
@@ -129,7 +128,7 @@ enum class WizardPage
 {
     SelectLanguage,
     Introduction,
-    SelectGameAndUpdate,
+    SelectGame,
     SelectDLC,
     CheckSpace,
     Installing,
@@ -353,7 +352,7 @@ static std::string& GetWizardText(WizardPage page)
     {
         case WizardPage::SelectLanguage: return Localise("Installer_Page_SelectLanguage");
         case WizardPage::Introduction: return Localise("Installer_Page_Introduction");
-        case WizardPage::SelectGameAndUpdate: return Localise("Installer_Page_SelectGameAndUpdate");
+        case WizardPage::SelectGame: return Localise("Installer_Page_SelectGameAndUpdate");
         case WizardPage::SelectDLC: return Localise("Installer_Page_SelectDLC");
         case WizardPage::CheckSpace: return Localise("Installer_Page_CheckSpace");
         case WizardPage::Installing: return Localise("Installer_Page_Installing");
@@ -1174,22 +1173,18 @@ static void PickerShow(bool folderMode)
 
 static bool ParseSourcePaths(std::list<std::filesystem::path> &paths)
 {
-    assert((g_currentPage == WizardPage::SelectGameAndUpdate) || (g_currentPage == WizardPage::SelectDLC));
+    assert((g_currentPage == WizardPage::SelectGame) || (g_currentPage == WizardPage::SelectDLC));
 
     constexpr size_t failedPathLimit = 5;
     bool isFailedPathsOverLimit = false;
     std::list<std::filesystem::path> failedPaths;
-    if (g_currentPage == WizardPage::SelectGameAndUpdate)
+    if (g_currentPage == WizardPage::SelectGame)
     {
         for (const std::filesystem::path &path : paths)
         {
             if (Installer::parseGame(path))
             {
                 g_gameSourcePath = path;
-            }
-            else if (Installer::parseUpdate(path))
-            {
-                g_updateSourcePath = path;
             }
             else if (failedPaths.size() < failedPathLimit)
             {
@@ -1269,7 +1264,7 @@ static void DrawSourcePickers()
 {
     bool buttonPressed = false;
     std::list<std::filesystem::path> paths;
-    if (g_currentPage == WizardPage::SelectGameAndUpdate || g_currentPage == WizardPage::SelectDLC)
+    if (g_currentPage == WizardPage::SelectGame || g_currentPage == WizardPage::SelectDLC)
     {
         constexpr float ADD_BUTTON_MAX_TEXT_WIDTH = 168.0f;
         const std::string &addFilesText = Localise("Installer_Button_AddFiles");
@@ -1298,10 +1293,9 @@ static void DrawSourcePickers()
 
 static void DrawSources()
 {
-    if (g_currentPage == WizardPage::SelectGameAndUpdate)
+    if (g_currentPage == WizardPage::SelectGame)
     {
         DrawSourceButton(ButtonColumnLeft, 0, Localise("Installer_Step_Game").c_str(), !g_gameSourcePath.empty());
-        DrawSourceButton(ButtonColumnRight, 0, Localise("Installer_Step_Update").c_str(), !g_updateSourcePath.empty());
     }
 
     if (g_currentPage == WizardPage::SelectDLC)
@@ -1378,7 +1372,6 @@ static bool InstallerParseSources(std::string &errorMessage)
 
     Installer::Input installerInput;
     installerInput.gameSource = g_gameSourcePath;
-    installerInput.updateSource = g_updateSourcePath;
 
     for (std::filesystem::path &path : g_dlcSourcePaths)
     {
@@ -1402,9 +1395,9 @@ static void DrawNavigationButton()
     }
 
     bool nextButtonEnabled = !g_isDisappearing && (g_currentPage != WizardPage::Installing);
-    if (nextButtonEnabled && g_currentPage == WizardPage::SelectGameAndUpdate)
+    if (nextButtonEnabled && g_currentPage == WizardPage::SelectGame)
     {
-        nextButtonEnabled = !g_gameSourcePath.empty() && !g_updateSourcePath.empty();
+        nextButtonEnabled = !g_gameSourcePath.empty();
     }
 
     bool skipButton = false;
@@ -1435,13 +1428,7 @@ static void DrawNavigationButton()
 
     if (buttonPressed)
     {
-        XexPatcher::Result patcherResult;
-        if (g_currentPage == WizardPage::SelectGameAndUpdate && (patcherResult = Installer::checkGameUpdateCompatibility(g_gameSourcePath, g_updateSourcePath), patcherResult != XexPatcher::Result::Success))
-        {
-            g_currentMessagePrompt = Localise("Installer_Message_IncompatibleGameData");
-            g_currentMessagePromptConfirmation = false;
-        }
-        else if (g_currentPage == WizardPage::SelectDLC)
+        if (g_currentPage == WizardPage::SelectDLC)
         {
             // Check if any of the DLC was not specified.
             bool dlcIncomplete = false;
@@ -1466,7 +1453,7 @@ static void DrawNavigationButton()
 
                 g_currentMessagePrompt = stringStream.str();
                 g_currentMessagePromptConfirmation = false;
-                g_currentPage = dlcInstallerMode ? WizardPage::SelectDLC : WizardPage::SelectGameAndUpdate;
+                g_currentPage = dlcInstallerMode ? WizardPage::SelectDLC : WizardPage::SelectGame;
             }
             else if (dlcIncomplete && !dlcInstallerMode)
             {
@@ -1827,7 +1814,6 @@ void InstallerWizard::Shutdown()
 
     // Erase the sources.
     g_installerSources.game.reset();
-    g_installerSources.update.reset();
     g_installerSources.dlc.clear();
     
     // Make sure the GPU is not currently active before deleting these textures.
