@@ -431,10 +431,15 @@ target_link_libraries(MarathonRecomp PRIVATE
     MarathonRecompLib
     xxHash::xxhash
     CURL::libcurl
-    ffmpeg::avcodec
-    ffmpeg::swresample
-    ffmpeg::avutil
 )
+
+if (NOT WIN32)
+    target_link_libraries(MarathonRecomp PRIVATE
+        ffmpeg::avcodec
+        ffmpeg::swresample
+        ffmpeg::avutil
+    )
+endif()
 
 target_include_directories(MarathonRecomp PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}

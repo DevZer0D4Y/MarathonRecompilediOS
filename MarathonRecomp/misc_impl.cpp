@@ -32,6 +32,7 @@ void GlobalMemoryStatusImpl(XLPMEMORYSTATUS lpMemoryStatus)
     lpMemoryStatus->dwAvailVirtual = 0x20000000;
 }
 
+#ifndef _WIN32
 int memcpy_s(void* dest, size_t dest_size, const void* src, size_t count) {
     if (dest == nullptr || src == nullptr) {
         return EINVAL;
@@ -43,6 +44,7 @@ int memcpy_s(void* dest, size_t dest_size, const void* src, size_t count) {
     memcpy(dest, src, count);
     return 0;
 }
+#endif
 
 GUEST_FUNCTION_HOOK(sub_826DF680, memcpy);
 // // GUEST_FUNCTION_HOOK(sub_831CCB98, memcpy);
