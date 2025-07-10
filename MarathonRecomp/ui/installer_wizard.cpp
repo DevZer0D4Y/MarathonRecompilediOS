@@ -1021,8 +1021,8 @@ static void ComputeButtonColumnCoordinates(ButtonColumn buttonColumn, float &min
         maxX = g_aspectRatioOffsetX + Scale(CONTAINER_X + CONTAINER_BUTTON_GAP + CONTAINER_BUTTON_WIDTH);
         break;
     case ButtonColumnMiddle:
-        minX = g_aspectRatioOffsetX + Scale(CONTAINER_X + CONTAINER_WIDTH / 2.0f - CONTAINER_BUTTON_WIDTH / 2.0f);
-        maxX = g_aspectRatioOffsetX + Scale(CONTAINER_X + CONTAINER_WIDTH / 2.0f + CONTAINER_BUTTON_WIDTH / 2.0f);
+        minX = g_aspectRatioOffsetX + Scale(CONTAINER_X + CONTAINER_BUTTON_GAP);
+        maxX = g_aspectRatioOffsetX + Scale(CONTAINER_X + CONTAINER_WIDTH - CONTAINER_BUTTON_GAP);
         break;
     case ButtonColumnRight:
         minX = g_aspectRatioOffsetX + Scale(CONTAINER_X + CONTAINER_WIDTH - CONTAINER_BUTTON_GAP - CONTAINER_BUTTON_WIDTH);
@@ -1296,14 +1296,14 @@ static void DrawSources()
 {
     if (g_currentPage == WizardPage::SelectGame)
     {
-        DrawSourceButton(ButtonColumnLeft, 0, Localise("Installer_Step_Game").c_str(), !g_gameSourcePath.empty());
+        DrawSourceButton(ButtonColumnMiddle, 0, Localise("Installer_Step_Game").c_str(), !g_gameSourcePath.empty());
     }
 
     if (g_currentPage == WizardPage::SelectDLC)
     {
         for (int i = 0; i < 7; i++)
         {
-            DrawSourceButton((i < 3) ? ButtonColumnLeft : ButtonColumnRight, float(i % 4), DLC_SOURCE_TEXT[i], !g_dlcSourcePaths[i].empty() || g_dlcInstalled[i]);
+            DrawSourceButton((i == 3) ? ButtonColumnMiddle : (i < 3) ? ButtonColumnLeft : ButtonColumnRight, 4 - float(i % 4), DLC_SOURCE_TEXT[i], !g_dlcSourcePaths[i].empty() || g_dlcInstalled[i]);
         }
     }
 }
