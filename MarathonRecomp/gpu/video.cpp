@@ -4856,14 +4856,6 @@ static GuestVertexDeclaration* CreateVertexDeclarationWithoutAddRef(GuestVertexE
                     vertexDeclaration->indexVertexStream = vertexElement->stream;
                 break;
 
-            case D3DDECLUSAGE_NORMAL:
-            case D3DDECLUSAGE_TANGENT:
-            case D3DDECLUSAGE_BINORMAL:
-                if (vertexElement->type == D3DDECLTYPE_FLOAT3)
-                    inputElement.format = RenderFormat::R32G32B32_UINT;
-                else
-                    vertexDeclaration->hasR11G11B10Normal = true;
-                break;
 
             case D3DDECLUSAGE_TEXCOORD:
                 switch (vertexElement->type)
