@@ -304,7 +304,7 @@ std::unordered_map<std::string_view, std::unordered_map<ELanguage, std::string>>
         "Installer_Page_Introduction",
         {
             { ELanguage::English,  "Welcome to\nMarathon Recompiled!\n\nYou'll need an Xbox 360 copy\nof Sonic the Hedgehog (2006) in order to proceed with the installation." },
-            { ELanguage::Japanese, "Marathon Recompiledへようこそ！\nインストールにはXbox 360[版:ばん]の\n「ソニック ワールドアドベンチャー」\nが必要です" },
+            { ELanguage::Japanese, "Marathon Recompiledへようこそ！\nインストールにはXbox 360[版:ばん]の\n「ソニック・ザ・ヘッジホッグ (2006)」\nが必要です" },
             { ELanguage::German,   "Willkommen zu\nMarathon Recompiled!\nEs wird eine Xbox 360 Kopie von Sonic the Hedgehog (2006) benötigt um mit der Installation fortfahren zu können." },
             { ELanguage::French,   "Bienvenue sur\nMarathon Recompiled !\n\nVous aurez besoin d'une copie de Sonic the Hedgehog (2006) pour Xbox\n360 pour procéder à l'installation." },
             { ELanguage::Spanish,  "¡Bienvenido a\nMarathon Recompiled!\n\nNecesitas una copia de\nSonic the Hedgehog (2006) de Xbox 360\npara continuar con la instalación." },
