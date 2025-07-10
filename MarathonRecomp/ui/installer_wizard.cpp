@@ -398,12 +398,13 @@ const ELanguage LANGUAGE_ENUM[] =
 
 const char *DLC_SOURCE_TEXT[] =
 {
-    "SPAGONIA",
-    "CHUN-NAN",
-    "MAZURI",
-    "HOLOSKA",
-    "APOTOS & SHAMAR",
-    "EMPIRE CITY & ADABAT",
+    "SONIC BOSS ATTACK",
+    "SHADOW BOSS ATTACK",
+    "SILVER BOSS ATTACK",
+    "AMIGO BOSS ATTACK",
+    "SONIC VERY HARD MISSIONS",
+    "SHADOW VERY HARD MISSIONS",
+    "SILVER VERY HARD MISSIONS",
 };
 
 static int DLCIndex(DLC dlc)
@@ -1300,9 +1301,9 @@ static void DrawSources()
 
     if (g_currentPage == WizardPage::SelectDLC)
     {
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 7; i++)
         {
-            DrawSourceButton((i < 3) ? ButtonColumnLeft : ButtonColumnRight, float(i % 3), DLC_SOURCE_TEXT[i], !g_dlcSourcePaths[i].empty() || g_dlcInstalled[i]);
+            DrawSourceButton((i < 3) ? ButtonColumnLeft : ButtonColumnRight, float(i % 4), DLC_SOURCE_TEXT[i], !g_dlcSourcePaths[i].empty() || g_dlcInstalled[i]);
         }
     }
 }
