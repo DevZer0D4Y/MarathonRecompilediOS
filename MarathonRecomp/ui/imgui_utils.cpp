@@ -240,7 +240,7 @@ void DrawArrows(ImVec2 min, ImVec2 max)
     {
         auto baseX = min.x + (i * leftArrowOffset) - Scale(200) - totalAnimOffset;
         auto endX = baseX + leftArrowSize;
-        auto opacity = (uint)((maxOpacity * ComputeLoopMotion(cycleTime, ((double)(leftArrows - i) / leftArrows))) * 255);
+        auto opacity = (uint)((maxOpacity * ComputeLoopMotion(cycleTime, 1.0 + ((double)(leftArrows - i) / leftArrows))) * 255);
 
         drawList->AddImage(g_texArrow.get(), { endX, leftBaseY }, { baseX, leftEndY }, GET_UV_COORDS(arrowUV), IM_COL32(255, 255, 255, opacity));
     }
@@ -252,7 +252,7 @@ void DrawArrows(ImVec2 min, ImVec2 max)
     {
         auto baseX = max.x - (i * rightArrowOffset) - rightArrowSize + Scale(20) + totalAnimOffset;
         auto endX = baseX + rightArrowSize;
-        auto opacity = (uint)((maxOpacity * ComputeLoopMotion(cycleTime, 1.0 + ((double)(rightArrows - i) / rightArrows))) * 255);
+        auto opacity = (uint)((maxOpacity * ComputeLoopMotion(cycleTime, ((double)(rightArrows - i) / rightArrows))) * 255);
 
         drawList->AddImage(g_texArrow.get(), { baseX, rightBaseY }, { endX, rightEndY }, GET_UV_COORDS(arrowUV), IM_COL32(255, 255, 255, opacity));
     }
