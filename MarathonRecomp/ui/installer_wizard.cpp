@@ -26,8 +26,6 @@
 #include <res/images/installer/install_006.dds.h>
 #include <res/images/installer/install_007.dds.h>
 #include <res/images/installer/install_008.dds.h>
-#include <res/images/installer/arrow_circle.dds.h>
-#include <res/images/installer/pulse_install.dds.h>
 #include <res/credits.h>
 
 // One Shot Animations Constants
@@ -85,8 +83,6 @@ static std::filesystem::path g_gameSourcePath;
 static std::array<std::filesystem::path, int(DLC::Count)> g_dlcSourcePaths;
 static std::array<bool, int(DLC::Count)> g_dlcInstalled = {};
 static std::array<std::unique_ptr<GuestTexture>, 8> g_installTextures;
-static std::unique_ptr<GuestTexture> g_arrowCircle;
-static std::unique_ptr<GuestTexture> g_pulseInstall;
 static std::unique_ptr<GuestTexture> g_upHedgeDev;
 static Journal g_installerJournal;
 static Installer::Sources g_installerSources;
@@ -396,16 +392,6 @@ static double ComputeMotionInstaller(double timeAppear, double timeDisappear, do
     return ComputeMotion(timeAppear, offset, total) * (1.0 - ComputeMotion(timeDisappear, ALL_ANIMATIONS_FULL_DURATION - offset - total, total));
 }
 
-static double ComputeMotionInstallerLoop(double timeAppear, double speed, double offset) 
-{
-    return std::clamp(fmodf((ImGui::GetTime() - timeAppear) * speed, 1.0f + offset) - offset, 0.0, 1.0) / 1.0;
-}
-
-static double ComputeHermiteMotionInstallerLoop(double timeAppear, double speed, double offset) 
-{
-    return (cosf(M_PI * ComputeMotionInstallerLoop(timeAppear, speed, offset) + M_PI) + 1) / 2;
-}
-
 static bool PushCursorRect(ImVec2 min, ImVec2 max, bool &cursorPressed, bool makeDefault = false)
 {
     int currentIndex = int(g_currentCursorRects.size());
@@ -450,6 +436,13 @@ static void DrawBackground()
     drawList->AddRectFilledMultiColor({ 0.0, 0.0 }, res, TOP, TOP, BOTTOM, BOTTOM);
 }
 
+static void DrawArrows()
+{
+    auto &res = ImGui::GetIO().DisplaySize;
+
+    DrawArrows({ 0, res.y / 2 - Scale(10) }, res);
+}
+
 static void DrawLeftImage()
 {
     int installTextureIndex = WIZARD_INSTALL_TEXTURE_INDEX[int(g_currentPage)];
@@ -473,11 +466,13 @@ static void DrawLeftImage()
 
 static void DrawHUDTitle()
 {
+    auto &res = ImGui::GetIO().DisplaySize;
+
     // Installer text
     auto& headerText = Localise(g_currentPage == WizardPage::Installing ? "Installer_Header_Installing" : "Installer_Header_Installer");
     auto alphaMotion = ComputeMotionInstaller(g_appearTime, g_disappearTime, TITLE_ANIMATION_TIME, TITLE_ANIMATION_DURATION);
 
-    DrawHUD({0, 0}, ImGui::GetIO().DisplaySize, g_newRodinFont, headerText.c_str());
+    DrawHUD({0, 0}, res, g_newRodinFont, headerText.c_str());
 
     DrawVersionString(g_newRodinFont, IM_COL32(0, 0, 0, 70 * alphaMotion));
 }
@@ -1528,8 +1523,6 @@ void InstallerWizard::Init()
     g_installTextures[5] = LOAD_ZSTD_TEXTURE(g_install_006);
     g_installTextures[6] = LOAD_ZSTD_TEXTURE(g_install_007);
     g_installTextures[7] = LOAD_ZSTD_TEXTURE(g_install_008);
-    g_arrowCircle = LOAD_ZSTD_TEXTURE(g_arrow_circle);
-    g_pulseInstall = LOAD_ZSTD_TEXTURE(g_pulse_install);
     g_upHedgeDev = LOAD_ZSTD_TEXTURE(g_hedgedev);
 
     for (int i = 0; i < g_credits.size(); i++)
@@ -1548,6 +1541,7 @@ void InstallerWizard::Draw()
 
     ResetCursorRects();
     DrawBackground();
+    DrawArrows();
     DrawLeftImage();
     DrawHUDTitle();
     DrawDescriptionContainer();
@@ -1602,9 +1596,6 @@ void InstallerWizard::Shutdown()
     Video::WaitForGPU();
 
     // Erase the textures.
-    g_arrowCircle.reset();
-    g_pulseInstall.reset();
-
     for (auto &texture : g_installTextures)
     {
         texture.reset();

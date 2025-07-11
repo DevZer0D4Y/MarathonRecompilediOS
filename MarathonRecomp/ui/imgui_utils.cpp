@@ -8,18 +8,21 @@
 #include <res/images/common/light.dds.h>
 #include <res/images/common/select.dds.h>
 #include <res/images/common/main_menu1.dds.h>
+#include <res/images/common/arrow.dds.h>
 
 std::unique_ptr<GuestTexture> g_texGeneralWindow;
 std::unique_ptr<GuestTexture> g_texLight;
 std::unique_ptr<GuestTexture> g_texSelect;
 std::unique_ptr<GuestTexture> g_texMainMenu1;
+std::unique_ptr<GuestTexture> g_texArrow;
 
 void InitImGuiUtils()
 {
     g_texGeneralWindow = LOAD_ZSTD_TEXTURE(g_general_window);
     g_texLight = LOAD_ZSTD_TEXTURE(g_light);
     g_texSelect = LOAD_ZSTD_TEXTURE(g_select);
-    g_texMainMenu1 = LOAD_ZSTD_TEXTURE(g_main_menu_1);
+    g_texMainMenu1 = LOAD_ZSTD_TEXTURE(g_main_menu1);
+    g_texArrow = LOAD_ZSTD_TEXTURE(arrow);
 }
 
 void SetGradient(const ImVec2& min, const ImVec2& max, ImU32 top, ImU32 bottom)
@@ -168,6 +171,35 @@ float Scale(float size)
     return size * g_aspectRatioScale;
 }
 
+static double ComputeLoopMotion(double time, double offset)
+{
+    const double fadeInDuration = 0.1;
+    const double fadeOutDuration = 10.0;
+
+    double elapsedTime = time - offset;
+
+    if (elapsedTime < 0.0) {
+        return 0.0;
+    }
+
+    double result;
+
+    if (elapsedTime < fadeInDuration) {
+        double progress = elapsedTime / fadeInDuration;
+        result = 1.0 - pow(1.0 - progress, 2.0);
+
+    } else if (elapsedTime < fadeInDuration + fadeOutDuration) {
+        double fadeOutTime = elapsedTime - fadeInDuration;
+        double progress = fadeOutTime / fadeOutDuration;
+        result = pow(1.0 - progress, 10.0);
+
+    } else {
+        result = 0.0;
+    }
+
+    return std::clamp(result, 0.0, 1.0);
+}
+
 double ComputeLinearMotion(double duration, double offset, double total)
 {
     return std::clamp((ImGui::GetTime() - duration - offset / 60.0) / total * 60.0, 0.0, 1.0);
@@ -176,6 +208,54 @@ double ComputeLinearMotion(double duration, double offset, double total)
 double ComputeMotion(double duration, double offset, double total)
 {
     return sqrt(ComputeLinearMotion(duration, offset, total));
+}
+
+void DrawArrows(ImVec2 min, ImVec2 max)
+{
+    auto drawList = ImGui::GetBackgroundDrawList();
+
+    const float maxOpacity = 0.2f;
+
+    auto leftArrowSize = Scale(450);
+    auto leftArrowOffset = Scale(230);
+    auto rightArrowSize = Scale(180);
+    auto rightArrowOffset = Scale(120);
+    auto xOffset = Scale(10);
+
+    auto arrowUV = PIXELS_TO_UV_COORDS(512, 512, 0, 0, 500, 434);
+
+    auto elapsedTime = ImGui::GetTime();
+    const double totalTime = 5.0;
+
+    double cycleTime = fmod(elapsedTime, totalTime);
+    auto totalAnimOffset = (float)(xOffset * totalTime);
+
+    const uint leftArrows = (uint)((max.x + Scale(200) + totalAnimOffset) / leftArrowOffset) + 1;
+    const uint rightArrows = (uint)((max.x + Scale(20) + totalAnimOffset) / rightArrowOffset) + 1;
+
+    auto leftBaseY = min.y - (leftArrowSize / 2);
+    auto leftEndY = min.y + (leftArrowSize / 2);
+
+    for (uint i = 0; i < leftArrows; i++)
+    {
+        auto baseX = min.x + (i * leftArrowOffset) - Scale(200) - totalAnimOffset;
+        auto endX = baseX + leftArrowSize;
+        auto opacity = (uint)((maxOpacity * ComputeLoopMotion(cycleTime, ((double)(leftArrows - i) / leftArrows))) * 255);
+
+        drawList->AddImage(g_texArrow.get(), { endX, leftBaseY }, { baseX, leftEndY }, GET_UV_COORDS(arrowUV), IM_COL32(255, 255, 255, opacity));
+    }
+
+    auto rightBaseY = min.y - (rightArrowSize / 2);
+    auto rightEndY = min.y + (rightArrowSize / 2);
+
+    for (uint i = 0; i < rightArrows; i++)
+    {
+        auto baseX = max.x - (i * rightArrowOffset) - rightArrowSize + Scale(20) + totalAnimOffset;
+        auto endX = baseX + rightArrowSize;
+        auto opacity = (uint)((maxOpacity * ComputeLoopMotion(cycleTime, 1.0 + ((double)(rightArrows - i) / rightArrows))) * 255);
+
+        drawList->AddImage(g_texArrow.get(), { baseX, rightBaseY }, { endX, rightEndY }, GET_UV_COORDS(arrowUV), IM_COL32(255, 255, 255, opacity));
+    }
 }
 
 void DrawHUD(ImVec2 min, ImVec2 max, const ImFont* font, const char* text)
