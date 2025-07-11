@@ -7,21 +7,29 @@
 #include <res/images/common/general_window.dds.h>
 #include <res/images/common/light.dds.h>
 #include <res/images/common/select.dds.h>
+#include <res/images/common/main_menu1.dds.h>
 
 std::unique_ptr<GuestTexture> g_texGeneralWindow;
 std::unique_ptr<GuestTexture> g_texLight;
 std::unique_ptr<GuestTexture> g_texSelect;
+std::unique_ptr<GuestTexture> g_texMainMenu1;
 
 void InitImGuiUtils()
 {
     g_texGeneralWindow = LOAD_ZSTD_TEXTURE(g_general_window);
     g_texLight = LOAD_ZSTD_TEXTURE(g_light);
     g_texSelect = LOAD_ZSTD_TEXTURE(g_select);
+    g_texMainMenu1 = LOAD_ZSTD_TEXTURE(g_main_menu_1);
 }
 
 void SetGradient(const ImVec2& min, const ImVec2& max, ImU32 top, ImU32 bottom)
 {
     SetGradient(min, max, top, top, bottom, bottom);
+}
+
+void SetHorizontalGradient(const ImVec2& min, const ImVec2& max, ImU32 left, ImU32 right)
+{
+    SetGradient(min, max, left, right, right, left);
 }
 
 void SetGradient(const ImVec2& min, const ImVec2& max, ImU32 topLeft, ImU32 topRight, ImU32 bottomRight, ImU32 bottomLeft)
@@ -168,6 +176,83 @@ double ComputeLinearMotion(double duration, double offset, double total)
 double ComputeMotion(double duration, double offset, double total)
 {
     return sqrt(ComputeLinearMotion(duration, offset, total));
+}
+
+void DrawHUD(ImVec2 min, ImVec2 max, const ImFont* font, const char* text)
+{
+    auto drawList = ImGui::GetBackgroundDrawList();
+
+    auto leftWidth = Scale(200);
+    auto stripeHeight = Scale(50);
+    auto offset = Scale(81);
+
+    auto leftStripe = PIXELS_TO_UV_COORDS(1024, 1024, 0, 300, 200, 50);
+    auto centerStripe = PIXELS_TO_UV_COORDS(1024, 1024, 200, 300, 824, 50);
+
+    auto stripeColor = IM_COL32(168, 15, 15, 255);
+
+    drawList->AddImage(g_texMainMenu1.get(), { min.x, min.y + offset }, { min.x + leftWidth, min.y + offset + stripeHeight }, GET_UV_COORDS(leftStripe), stripeColor);
+    drawList->AddImage(g_texMainMenu1.get(), { min.x + leftWidth , min.y + offset }, { max.x, min.y + offset + stripeHeight }, GET_UV_COORDS(centerStripe), stripeColor);
+
+    auto stripOffset = Scale(78);
+    auto stripUV = PIXELS_TO_UV_COORDS(1024, 1024, 201, 501, 264, 50);
+
+    auto strip1LeftOffset = leftWidth + Scale(180);
+
+    auto tlStrip1Color = IM_COL32(255, 172, 0, 0);
+    auto brStrip1Color = IM_COL32(255, 172, 0, 67);
+
+    ImVec2 strip1Min = { min.x + strip1LeftOffset, min.y + stripOffset };
+    ImVec2 strip1Max = { min.x + strip1LeftOffset + Scale(270), min.y + stripOffset + stripeHeight };
+
+    SetHorizontalGradient(strip1Min, strip1Max, tlStrip1Color, brStrip1Color);
+
+    drawList->AddImage(g_texMainMenu1.get(), strip1Min, strip1Max, GET_UV_COORDS(stripUV), IM_COL32_WHITE);
+
+    ResetGradient();
+
+    auto strip2LeftOffset = leftWidth + Scale(40);
+
+    auto tlStrip2Color = IM_COL32(255, 116, 0, 0);
+    auto brStrip2Color = IM_COL32(255, 116, 0, 17);
+
+    ImVec2 strip2Min = { min.x + strip2LeftOffset, min.y + stripOffset };
+    ImVec2 strip2Max = { min.x + strip2LeftOffset + Scale(270), min.y + stripOffset + stripeHeight };
+
+    SetHorizontalGradient(strip2Min, strip2Max, tlStrip2Color, brStrip2Color);
+
+    drawList->AddImage(g_texMainMenu1.get(), strip2Min, strip2Max, GET_UV_COORDS(stripUV), IM_COL32_WHITE);
+
+    ResetGradient();
+
+    auto backBarHeight = Scale(150);
+    auto backBarColor = IM_COL32(0, 23, 57, 255);
+
+    drawList->AddRectFilled({ min.x, max.y - backBarHeight }, { max.x, max.y }, backBarColor);
+
+    auto leftSilver = PIXELS_TO_UV_COORDS(1024, 1024, 0, 154, 200, 116);
+    auto centerSilver = PIXELS_TO_UV_COORDS(1024, 1024, 200, 154, 824, 116);
+
+    auto silverHeight = Scale(116);
+
+    drawList->AddImage(g_texMainMenu1.get(), { min.x - Scale(1), min.y }, { min.x - Scale(1) + leftWidth, min.y + silverHeight }, GET_UV_COORDS(leftSilver), IM_COL32_WHITE);
+    drawList->AddImage(g_texMainMenu1.get(), { min.x - Scale(1) + leftWidth, min.y }, { max.x, min.y + silverHeight }, GET_UV_COORDS(centerSilver), IM_COL32_WHITE);
+
+    auto centerBottomBar = PIXELS_TO_UV_COORDS(1024, 1024, 180, 60, 844, 55);
+
+    auto bottomBarHeight = Scale(55);
+    auto bottomTabWidth = Scale(180);
+
+    drawList->AddImage(g_texMainMenu1.get(), { min.x + bottomTabWidth, max.y - bottomBarHeight }, { max.x - bottomTabWidth, max.y }, GET_UV_COORDS(centerBottomBar), IM_COL32_WHITE);
+
+    auto bottomTab = PIXELS_TO_UV_COORDS(1024, 1024, 0, 0, 180, 115);
+
+    auto bottomTabHeight = Scale(115);
+
+    drawList->AddImage(g_texMainMenu1.get(), { min.x, max.y - bottomTabHeight }, { min.x + bottomTabWidth, max.y }, GET_UV_COORDS(bottomTab), IM_COL32_WHITE);
+    drawList->AddImage(g_texMainMenu1.get(), { max.x, max.y - bottomTabHeight }, { max.x - bottomTabWidth, max.y }, GET_UV_COORDS(bottomTab), IM_COL32_WHITE);
+
+    drawList->AddText(font, Scale(32), { min.x + leftWidth + Scale(2), min.y + offset + Scale(5) }, IM_COL32_WHITE, text);
 }
 
 void DrawPauseContainer(ImVec2 min, ImVec2 max, float alpha)

@@ -39,9 +39,8 @@ static double g_appearTime;
 
 static std::vector<std::tuple<Achievement, time_t>> g_achievements;
 
-static ImFont* g_fntSeurat;
-static ImFont* g_fntNewRodinDB;
-static ImFont* g_fntNewRodinUB;
+static ImFont* g_rodinFont;
+static ImFont* g_newRodinFont;
 
 static std::unique_ptr<GuestTexture> g_upTrophyIcon;
 
@@ -77,7 +76,7 @@ static void DrawHeaderContainer(const char* text)
     auto drawList = ImGui::GetBackgroundDrawList();
     auto fontSize = Scale(24);
     auto minTextSize = Scale(294.575989);
-    auto textSize = g_fntNewRodinUB->CalcTextSizeA(fontSize, FLT_MAX, 0, text);
+    auto textSize = g_newRodinFont->CalcTextSizeA(fontSize, FLT_MAX, 0, text);
     auto cornerRadius = 23;
     auto textMarginX = Scale(16) + (Scale(cornerRadius) / 2);
 
@@ -108,7 +107,7 @@ static void DrawHeaderContainer(const char* text)
 
     DrawTextWithOutline
     (
-        g_fntNewRodinUB,
+        g_newRodinFont,
         fontSize,
         { /* X */ min.x + textMarginX, /* Y */ CENTRE_TEXT_VERT(min, max, textSize) - Scale(5) },
         IM_COL32(255, 255, 255, 255 * alpha),
@@ -145,7 +144,7 @@ static void DrawAchievement(int rowIndex, float yOffset, Achievement& achievemen
 
     auto desc = isUnlocked ? achievement.UnlockedDesc.c_str() : achievement.LockedDesc.c_str();
     auto fontSize = Scale(24);
-    auto textSize = g_fntSeurat->CalcTextSizeA(fontSize, FLT_MAX, 0, desc);
+    auto textSize = g_rodinFont->CalcTextSizeA(fontSize, FLT_MAX, 0, desc);
     auto textX = min.x + imageMarginX + imageSize + itemMarginX * 2;
     auto textMarqueeX = min.x + imageMarginX + imageSize;
     auto titleTextY = Scale(20);
@@ -182,7 +181,7 @@ static void DrawAchievement(int rowIndex, float yOffset, Achievement& achievemen
     // Draw achievement name.
     DrawTextWithShadow
     (
-        g_fntSeurat,
+        g_rodinFont,
         fontSize,
         { textX, min.y + titleTextY },
         isUnlocked ? IM_COL32(252, 243, 5, 255) : colLockedText,
@@ -202,7 +201,7 @@ static void DrawAchievement(int rowIndex, float yOffset, Achievement& achievemen
         // Draw achievement description with marquee.
         DrawTextWithMarqueeShadow
         (
-            g_fntSeurat,
+            g_rodinFont,
             fontSize,
             { textX, min.y + descTextY },
             marqueeMin,
@@ -222,7 +221,7 @@ static void DrawAchievement(int rowIndex, float yOffset, Achievement& achievemen
         // Draw achievement description.
         DrawTextWithShadow
         (
-            g_fntSeurat,
+            g_rodinFont,
             fontSize,
             { textX, min.y + descTextY },
             isUnlocked ? IM_COL32_WHITE : colLockedText,
@@ -256,7 +255,7 @@ static void DrawAchievement(int rowIndex, float yOffset, Achievement& achievemen
     strftime(buffer, sizeof(buffer), "%Y/%m/%d %H:%M", timePtr);
 
     fontSize = Scale(12);
-    textSize = g_fntNewRodinDB->CalcTextSizeA(fontSize, FLT_MAX, 0, buffer);
+    textSize = g_newRodinFont->CalcTextSizeA(fontSize, FLT_MAX, 0, buffer);
 
     auto containerMarginX = Scale(10);
     auto textMarginX = Scale(8);
@@ -323,7 +322,7 @@ static void DrawAchievement(int rowIndex, float yOffset, Achievement& achievemen
     // Draw timestamp text.
     DrawTextWithOutline
     (
-        g_fntNewRodinDB,
+        g_newRodinFont,
         fontSize,
         { /* X */ CENTRE_TEXT_HORZ(timestampMin, timestampMax, textSize), /* Y */ CENTRE_TEXT_VERT(timestampMin, timestampMax, textSize) },
         IM_COL32(255, 255, 255, 255),
@@ -493,11 +492,11 @@ static void DrawAchievementTotal(ImVec2 min, ImVec2 max)
 
     auto str = fmt::format("{} / {}", records, ACH_RECORDS);
     auto fontSize = Scale(20);
-    auto textSize = g_fntNewRodinDB->CalcTextSizeA(fontSize, FLT_MAX, 0, str.c_str());
+    auto textSize = g_newRodinFont->CalcTextSizeA(fontSize, FLT_MAX, 0, str.c_str());
 
     DrawTextWithOutline
     (
-        g_fntNewRodinDB,
+        g_newRodinFont,
         fontSize,
         { /* X */ imageMin.x - textSize.x - Scale(6), /* Y */ CENTRE_TEXT_VERT(imageMin, imageMax, textSize) },
         IM_COL32(255, 255, 255, 255 * alpha),
@@ -726,9 +725,8 @@ void AchievementMenu::Init()
 {
     auto& io = ImGui::GetIO();
 
-    g_fntSeurat = ImFontAtlasSnapshot::GetFont("FOT-SeuratPro-M.otf");
-    g_fntNewRodinDB = ImFontAtlasSnapshot::GetFont("FOT-NewRodinPro-DB.otf");
-    g_fntNewRodinUB = ImFontAtlasSnapshot::GetFont("FOT-NewRodinPro-UB.otf");
+    g_rodinFont = ImFontAtlasSnapshot::GetFont("FOT-RodinPro-DB.otf");
+    g_newRodinFont = ImFontAtlasSnapshot::GetFont("FOT-NewRodinPro-UB.otf");
 
     g_upTrophyIcon = LOAD_ZSTD_TEXTURE(g_trophy);
 }

@@ -2279,7 +2279,7 @@ static void DrawProfiler()
     if (!g_profilerVisible)
         return;
 
-    ImFont* font = ImFontAtlasSnapshot::GetFont("FOT-SeuratPro-M.otf");
+    ImFont* font = ImFontAtlasSnapshot::GetFont("FOT-RodinPro-DB.otf");
     float defaultScale = font->Scale;
     font->Scale = ImGui::GetDefaultFont()->FontSize / font->FontSize;
     ImGui::PushFont(font);
@@ -2418,7 +2418,7 @@ static void DrawFPS()
     auto drawList = ImGui::GetBackgroundDrawList();
 
     auto fmt = fmt::format("FPS: {:.2f}", fps);
-    auto font = ImFontAtlasSnapshot::GetFont("FOT-SeuratPro-M.otf");
+    auto font = ImFontAtlasSnapshot::GetFont("FOT-RodinPro-DB.otf");
     auto fontSize = Scale(10);
     auto textSize = font->CalcTextSizeA(fontSize, FLT_MAX, 0, fmt.c_str());
 

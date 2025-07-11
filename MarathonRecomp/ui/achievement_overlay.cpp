@@ -27,7 +27,7 @@ static double g_appearTime = 0;
 
 static Achievement g_achievement;
 
-static ImFont* g_fntSeurat;
+static ImFont* g_rodinFont;
 
 static bool DrawContainer(ImVec2 min, ImVec2 max, float cornerRadius = 25)
 {
@@ -78,7 +78,7 @@ void AchievementOverlay::Init()
 {
     auto& io = ImGui::GetIO();
 
-    g_fntSeurat = ImFontAtlasSnapshot::GetFont("FOT-SeuratPro-M.otf");
+    g_rodinFont = ImFontAtlasSnapshot::GetFont("FOT-RodinPro-DB.otf");
 }
 
 // Dequeue achievements only when we can actually play sounds.
@@ -150,8 +150,8 @@ void AchievementOverlay::Draw()
 
     // Calculate text sizes.
     auto fontSize = Scale(24);
-    auto headerSize = g_fntSeurat->CalcTextSizeA(fontSize, FLT_MAX, 0, strAchievementUnlocked);
-    auto bodySize = g_fntSeurat->CalcTextSizeA(fontSize, FLT_MAX, 0, strAchievementName);
+    auto headerSize = g_rodinFont->CalcTextSizeA(fontSize, FLT_MAX, 0, strAchievementUnlocked);
+    auto bodySize = g_rodinFont->CalcTextSizeA(fontSize, FLT_MAX, 0, strAchievementName);
     auto maxSize = std::max(headerSize.x, bodySize.x) + Scale(5);
 
     // Calculate image margins.
@@ -189,7 +189,7 @@ void AchievementOverlay::Draw()
             // Draw header text.
             DrawTextWithShadow
             (
-                g_fntSeurat,                                                                                 // font
+                g_rodinFont,                                                                                 // font
                 fontSize,                                                                                    // fontSize
                 { /* X */ min.x + textMarginX + (maxSize - headerSize.x) / 2, /* Y */ min.y + textMarginY }, // pos
                 IM_COL32(252, 243, 5, 255),                                                                  // colour
@@ -202,7 +202,7 @@ void AchievementOverlay::Draw()
             // Draw achievement name.
             DrawTextWithShadow
             (
-                g_fntSeurat,                                                                                                       // font
+                g_rodinFont,                                                                                                       // font
                 fontSize,                                                                                                          // fontSize
                 { /* X */ min.x + textMarginX + (maxSize - bodySize.x) / 2, /* Y */ min.y + textMarginY + bodySize.y + Scale(6) }, // pos
                 IM_COL32(255, 255, 255, 255),                                                                                      // colour

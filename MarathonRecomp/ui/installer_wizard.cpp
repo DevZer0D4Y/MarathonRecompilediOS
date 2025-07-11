@@ -26,7 +26,6 @@
 #include <res/images/installer/install_006.dds.h>
 #include <res/images/installer/install_007.dds.h>
 #include <res/images/installer/install_008.dds.h>
-#include <res/images/installer/miles_electric_icon.dds.h>
 #include <res/images/installer/arrow_circle.dds.h>
 #include <res/images/installer/pulse_install.dds.h>
 #include <res/credits.h>
@@ -35,10 +34,7 @@
 static constexpr double SCANLINES_ANIMATION_TIME = 0.0;
 static constexpr double SCANLINES_ANIMATION_DURATION = 15.0;
 
-static constexpr double MILES_ICON_ANIMATION_TIME = SCANLINES_ANIMATION_TIME + 10.0;
-static constexpr double MILES_ICON_ANIMATION_DURATION = 15.0;
-
-static constexpr double IMAGE_ANIMATION_TIME = MILES_ICON_ANIMATION_TIME + MILES_ICON_ANIMATION_DURATION;
+static constexpr double IMAGE_ANIMATION_TIME = SCANLINES_ANIMATION_TIME + SCANLINES_ANIMATION_DURATION;
 static constexpr double IMAGE_ANIMATION_DURATION = 15.0;
 
 static constexpr double TITLE_ANIMATION_TIME = SCANLINES_ANIMATION_DURATION;
@@ -47,31 +43,18 @@ static constexpr double TITLE_ANIMATION_DURATION = 30.0;
 static constexpr double CONTAINER_LINE_ANIMATION_TIME = SCANLINES_ANIMATION_DURATION;
 static constexpr double CONTAINER_LINE_ANIMATION_DURATION = 23.0;
 
-static constexpr double CONTAINER_OUTER_TIME = SCANLINES_ANIMATION_DURATION + CONTAINER_LINE_ANIMATION_DURATION;
-static constexpr double CONTAINER_OUTER_DURATION = 23.0;
-
 static constexpr double CONTAINER_INNER_TIME = SCANLINES_ANIMATION_DURATION + CONTAINER_LINE_ANIMATION_DURATION + 8.0;
 static constexpr double CONTAINER_INNER_DURATION = 15.0;
 
 static constexpr double ALL_ANIMATIONS_FULL_DURATION = CONTAINER_INNER_TIME + CONTAINER_INNER_DURATION;
 static constexpr double QUITTING_EXTRA_DURATION = 60.0;
 
-static constexpr double INSTALL_ICONS_FADE_IN_ANIMATION_TIME = 0.0;
-static constexpr double INSTALL_ICONS_FADE_IN_ANIMATION_DURATION = 15.0;
+constexpr float IMAGE_X = 200.5f;
+constexpr float IMAGE_Y = 180.5f;
+constexpr float IMAGE_WIDTH = 350.0f;
+constexpr float IMAGE_HEIGHT = 350.0f;
 
-// Loop Animations Constants - their time range is [0.0, 1.0 + DELAY]
-static constexpr double ARROW_CIRCLE_LOOP_SPEED = 1;
-
-static constexpr double PULSE_ANIMATION_LOOP_SPEED = 1.5;
-static constexpr double PULSE_ANIMATION_LOOP_DELAY = 0.5;
-static constexpr double PULSE_ANIMATION_LOOP_FADE_HIGH_POINT = 0.5;
-
-constexpr float IMAGE_X = 161.5f;
-constexpr float IMAGE_Y = 103.5f;
-constexpr float IMAGE_WIDTH = 512.0f;
-constexpr float IMAGE_HEIGHT = 512.0f;
-
-constexpr float CONTAINER_X = 513.0f;
+constexpr float CONTAINER_X = 550.0f;
 constexpr float CONTAINER_Y = 226.0f;
 constexpr float CONTAINER_WIDTH = 526.5f;
 constexpr float CONTAINER_HEIGHT = 246.0f;
@@ -86,15 +69,11 @@ constexpr float BUTTON_TEXT_GAP = 28.0f;
 
 constexpr float BORDER_SIZE = 1.0f;
 constexpr float BORDER_OVERSHOOT = 36.0f;
-constexpr float FAKE_PROGRESS_RATIO = 0.25f;
 
 static constexpr size_t GRID_SIZE = 9;
 
-static ImFont *g_seuratFont;
-static ImFont *g_dfsogeistdFont;
+static ImFont *g_rodinFont;
 static ImFont *g_newRodinFont;
-
-static double g_arrowCircleCurrentRotation = 0.0;
 
 static double g_appearTime = 0.0;
 static double g_disappearTime = DBL_MAX;
@@ -106,7 +85,6 @@ static std::filesystem::path g_gameSourcePath;
 static std::array<std::filesystem::path, int(DLC::Count)> g_dlcSourcePaths;
 static std::array<bool, int(DLC::Count)> g_dlcInstalled = {};
 static std::array<std::unique_ptr<GuestTexture>, 8> g_installTextures;
-static std::unique_ptr<GuestTexture> g_milesElectricIcon;
 static std::unique_ptr<GuestTexture> g_arrowCircle;
 static std::unique_ptr<GuestTexture> g_pulseInstall;
 static std::unique_ptr<GuestTexture> g_upHedgeDev;
@@ -493,192 +471,15 @@ static void DrawLeftImage()
     drawList->AddImage(guestTexture, min, max, ImVec2(0, 0), ImVec2(1, 1), IM_COL32(255, 255, 255, a));
 }
 
-static void DrawHeaderIconsForInstallPhase(double iconsPosX, double iconsPosY, double iconsScale)
+static void DrawHUDTitle()
 {
-    auto drawList = ImGui::GetBackgroundDrawList();
-
-    // Arrow Circle Icon
-    ImVec2 arrowCircleMin = { g_aspectRatioOffsetX + Scale(iconsPosX - iconsScale / 2), Scale(iconsPosY - iconsScale / 2) };
-    ImVec2 arrowCircleMax = { g_aspectRatioOffsetX + Scale(iconsPosX + iconsScale / 2), Scale(iconsPosY + iconsScale / 2) };
-    ImVec2 center = { g_aspectRatioOffsetX + Scale(iconsPosX) + 0.5f, Scale(iconsPosY) - 0.5f };
-
-    float arrowCircleFadeMotion = ComputeMotionInstaller(g_installerStartTime, g_installerEndTime, INSTALL_ICONS_FADE_IN_ANIMATION_TIME, INSTALL_ICONS_FADE_IN_ANIMATION_DURATION);
-    float rotationMotion = ComputeMotionInstallerLoop(g_installerStartTime, ARROW_CIRCLE_LOOP_SPEED, 0);
-    float rotation = -2 * M_PI * rotationMotion;
-
-    // Calculate rotated corners
-    float cosCurrentAngle = cosf(rotation);
-    float sinCurrentAngle = sinf(rotation);
-    ImVec2 corners[4] = 
-    {
-        ImRotate(ImVec2(arrowCircleMin.x - center.x, arrowCircleMin.y - center.y), cosCurrentAngle, sinCurrentAngle),
-        ImRotate(ImVec2(arrowCircleMax.x - center.x, arrowCircleMin.y - center.y), cosCurrentAngle, sinCurrentAngle),
-        ImRotate(ImVec2(arrowCircleMax.x - center.x, arrowCircleMax.y - center.y), cosCurrentAngle, sinCurrentAngle),
-        ImRotate(ImVec2(arrowCircleMin.x - center.x, arrowCircleMax.y - center.y), cosCurrentAngle, sinCurrentAngle),
-    };
-
-    for (int i = 0; i < IM_ARRAYSIZE(corners); ++i)
-    {
-        corners[i].x += center.x;
-        corners[i].y += center.y;
-    }
-
-    drawList->AddImageQuad(g_arrowCircle.get(), corners[0], corners[1], corners[2], corners[3], ImVec2(0, 0), ImVec2(1, 0), ImVec2(1, 1), ImVec2(0, 1), IM_COL32(255, 255, 255, 96 * arrowCircleFadeMotion));
-
-
-    // Pulse
-    float pulseFadeMotion = ComputeMotionInstaller(g_installerStartTime, g_installerEndTime, INSTALL_ICONS_FADE_IN_ANIMATION_TIME, INSTALL_ICONS_FADE_IN_ANIMATION_DURATION);
-    float pulseMotion = ComputeMotionInstallerLoop(g_installerStartTime, PULSE_ANIMATION_LOOP_SPEED, PULSE_ANIMATION_LOOP_DELAY);
-    float pulseHermiteMotion = ComputeHermiteMotionInstallerLoop(g_installerStartTime, PULSE_ANIMATION_LOOP_SPEED, PULSE_ANIMATION_LOOP_DELAY);
-
-    float pulseFade = pulseMotion / PULSE_ANIMATION_LOOP_FADE_HIGH_POINT;
-
-    if (pulseMotion >= PULSE_ANIMATION_LOOP_FADE_HIGH_POINT) {
-        // Calculate linear fade-out from high point time - ({PULSE_ANIMATION_LOOP_FADE_HIGH_POINT}, 1) - to loop end - (1, 0) -.
-        float m = -1 / (1 - PULSE_ANIMATION_LOOP_FADE_HIGH_POINT);
-        float b = m * (-PULSE_ANIMATION_LOOP_FADE_HIGH_POINT) + 1;
-        
-        pulseFade = m * pulseMotion + b;
-    }
-
-    float pulseScale = iconsScale * pulseHermiteMotion * 1.5;
-
-    ImVec2 pulseMin = { g_aspectRatioOffsetX + Scale(iconsPosX - pulseScale / 2), Scale(iconsPosY - pulseScale / 2) };
-    ImVec2 pulseMax = { g_aspectRatioOffsetX + Scale(iconsPosX + pulseScale / 2), Scale(iconsPosY + pulseScale / 2) };
-    drawList->AddImage(g_pulseInstall.get(), pulseMin, pulseMax, ImVec2(0, 0), ImVec2(1, 1), IM_COL32(255, 255, 255, 255 * pulseFade * pulseFadeMotion));
-}
-
-static void DrawHeaderIcons()
-{
-    auto drawList = ImGui::GetBackgroundDrawList();
-
-    float iconsPosX = 256.0f;
-    float iconsPosY = 80.0f;
-    float iconsScale = 62.0f;
-
-    // Miles Electric Icon
-    float milesIconMotion = ComputeMotionInstaller(g_appearTime, g_disappearTime, MILES_ICON_ANIMATION_TIME, MILES_ICON_ANIMATION_DURATION);
-    float milesIconScale = iconsScale * (2 - milesIconMotion);
-
-    ImVec2 milesElectricMin = { g_aspectRatioOffsetX + Scale(iconsPosX - milesIconScale / 2), Scale(iconsPosY - milesIconScale / 2) };
-    ImVec2 milesElectricMax = { g_aspectRatioOffsetX + Scale(iconsPosX + milesIconScale / 2), Scale(iconsPosY + milesIconScale / 2) };
-    drawList->AddImage(g_milesElectricIcon.get(), milesElectricMin, milesElectricMax, ImVec2(0, 0), ImVec2(1, 1), IM_COL32(255, 255, 255, 255 * milesIconMotion));
-
-    if (int(g_currentPage) >= int(WizardPage::Installing))
-    {
-        DrawHeaderIconsForInstallPhase(iconsPosX, iconsPosY, iconsScale);
-    }
-}
-
-static void DrawScanlineBars()
-{
-    double scanlinesAlpha = ComputeMotionInstaller(g_appearTime, g_disappearTime, 0.0, SCANLINES_ANIMATION_DURATION);
-
-    const uint32_t COLOR0 = IM_COL32(203, 255, 0, 0);
-    const uint32_t COLOR1 = IM_COL32(203, 255, 0, 55 * scanlinesAlpha);
-    const uint32_t FADE_COLOR0 = IM_COL32(0, 0, 0, 255 * scanlinesAlpha);
-    const uint32_t FADE_COLOR1 = IM_COL32(0, 0, 0, 0);
-
-    float height = Scale(105.0f) * ComputeMotionInstaller(g_appearTime, g_disappearTime, 0.0, SCANLINES_ANIMATION_DURATION);
-    if (height < 1e-6f)
-    {
-        return;
-    }
-
-    auto &res = ImGui::GetIO().DisplaySize;
-    auto drawList = ImGui::GetBackgroundDrawList();
-
-    SetShaderModifier(IMGUI_SHADER_MODIFIER_SCANLINE);
-
-    // Top bar
-    drawList->AddRectFilledMultiColor
-    (
-        { 0.0f, 0.0f },
-        { res.x, height },
-        COLOR0,
-        COLOR0,
-        COLOR1,
-        COLOR1
-    );
-
-    // Bottom bar
-    ImVec2 max{ 0.0f, res.y - height };
-    SetProceduralOrigin(max);
-
-    drawList->AddRectFilledMultiColor
-    (
-        { res.x, res.y },
-        max,
-        COLOR0,
-        COLOR0,
-        COLOR1,
-        COLOR1
-    );
-
-    ResetProceduralOrigin();
-
-    SetShaderModifier(IMGUI_SHADER_MODIFIER_NONE);
-
     // Installer text
     auto& headerText = Localise(g_currentPage == WizardPage::Installing ? "Installer_Header_Installing" : "Installer_Header_Installer");
     auto alphaMotion = ComputeMotionInstaller(g_appearTime, g_disappearTime, TITLE_ANIMATION_TIME, TITLE_ANIMATION_DURATION);
-    auto breatheMotion = 1.0f;
 
-    if (g_currentPage == WizardPage::Installing)
-    {
-        // Breathing animation
-        static auto breatheStart = ImGui::GetTime();
-        breatheMotion = BREATHE_MOTION(1.0f, 0.55f, breatheStart, 1.5f);
-    }
+    DrawHUD({0, 0}, ImGui::GetIO().DisplaySize, g_newRodinFont, headerText.c_str());
 
-    DrawTextWithOutline
-    (
-        g_dfsogeistdFont,
-        Scale(48.0f),
-        { g_aspectRatioOffsetX + Scale(288.0f), Scale(54.5f) },
-        IM_COL32(255, 195, 0, 255 * alphaMotion * breatheMotion),
-        headerText.c_str(), 4,
-        IM_COL32(0, 0, 0, 255 * alphaMotion * breatheMotion),
-        IMGUI_SHADER_MODIFIER_TITLE_BEVEL
-    );
-
-    auto drawLine = [&](bool top)
-    {
-        float y = top ? height : (res.y - height);
-
-        const uint32_t TOP_COLOR0 = IM_COL32(222, 255, 189, 7 * scanlinesAlpha);
-        const uint32_t TOP_COLOR1 = IM_COL32(222, 255, 189, 65 * scanlinesAlpha);
-        const uint32_t BOTTOM_COLOR0 = IM_COL32(173, 255, 156, 65 * scanlinesAlpha);
-        const uint32_t BOTTOM_COLOR1 = IM_COL32(173, 255, 156, 7 * scanlinesAlpha);
-
-        drawList->AddRectFilledMultiColor(
-            { 0.0f, y - Scale(2.0f) },
-            { res.x, y },
-            top ? TOP_COLOR0 : BOTTOM_COLOR1,
-            top ? TOP_COLOR0 : BOTTOM_COLOR1,
-            top ? TOP_COLOR1 : BOTTOM_COLOR0,
-            top ? TOP_COLOR1 : BOTTOM_COLOR0);
-
-        drawList->AddRectFilledMultiColor(
-            { 0.0f, y + Scale(1.0f) },
-            { res.x, y + Scale(3.0f) },
-            top ? BOTTOM_COLOR0 : TOP_COLOR1,
-            top ? BOTTOM_COLOR0 : TOP_COLOR1,
-            top ? BOTTOM_COLOR1 : TOP_COLOR0,
-            top ? BOTTOM_COLOR1 : TOP_COLOR0);
-
-        const uint32_t CENTER_COLOR = IM_COL32(115, 178, 104, 255 * scanlinesAlpha);
-        drawList->AddRectFilled({ 0.0f, y }, { res.x, y + Scale(1.0f) }, CENTER_COLOR);
-    };
-
-    // Top bar line
-    drawLine(true);
-
-    // Bottom bar line
-    drawLine(false);
-
-    DrawHeaderIcons();
-    DrawVersionString(g_newRodinFont, IM_COL32(255, 255, 255, 70 * alphaMotion));
+    DrawVersionString(g_newRodinFont, IM_COL32(0, 0, 0, 70 * alphaMotion));
 }
 
 static void DrawContainer(ImVec2 min, ImVec2 max, bool isTextArea)
@@ -686,22 +487,11 @@ static void DrawContainer(ImVec2 min, ImVec2 max, bool isTextArea)
     auto &res = ImGui::GetIO().DisplaySize;
     auto drawList = ImGui::GetBackgroundDrawList();
 
-    double gridAlpha = ComputeMotionInstaller(g_appearTime, g_disappearTime, 
-        isTextArea ? CONTAINER_INNER_TIME : CONTAINER_OUTER_TIME,
-        isTextArea ? CONTAINER_INNER_DURATION : CONTAINER_OUTER_DURATION
-    );
     double gridOverlayAlpha = ComputeMotionInstaller(g_appearTime, g_disappearTime, CONTAINER_INNER_TIME, CONTAINER_INNER_DURATION);
 
-    const uint32_t gridColor = IM_COL32(0, 33, 0, (isTextArea ? 223 : 255) * gridAlpha);
     const uint32_t gridOverlayColor = IM_COL32(0, 32, 0, 128 * gridOverlayAlpha);
 
     float gridSize = Scale(GRID_SIZE);
-
-    SetShaderModifier(IMGUI_SHADER_MODIFIER_CHECKERBOARD);
-    SetAdditive(true);
-    drawList->AddRectFilled(min, max, gridColor);
-    SetAdditive(false);
-    SetShaderModifier(IMGUI_SHADER_MODIFIER_NONE);
 
     if (isTextArea) 
     {
@@ -789,7 +579,7 @@ static void DrawDescriptionContainer()
 
     DrawRubyAnnotatedText
     (
-        g_seuratFont,
+        g_rodinFont,
         fontSize,
         lineWidth,
         { textX, textY },
@@ -797,11 +587,11 @@ static void DrawDescriptionContainer()
         descriptionText,
         [=](const char* str, ImVec2 pos)
         {
-            DrawTextBasic(g_seuratFont, fontSize, pos, IM_COL32(255, 255, 255, 255 * textAlpha), str);
+            DrawTextBasic(g_rodinFont, fontSize, pos, IM_COL32(255, 255, 255, 255 * textAlpha), str);
         },
         [=](const char* str, float size, ImVec2 pos)
         {
-            DrawTextBasic(g_seuratFont, size, pos, IM_COL32(255, 255, 255, 255 * textAlpha), str);
+            DrawTextBasic(g_rodinFont, size, pos, IM_COL32(255, 255, 255, 255 * textAlpha), str);
         },
         false,
         Config::Language == ELanguage::Japanese
@@ -812,10 +602,10 @@ static void DrawDescriptionContainer()
 
     if (g_currentPage == WizardPage::InstallSucceeded)
     {
-        auto descTextSize = MeasureCentredParagraph(g_seuratFont, fontSize, lineWidth, lineMargin, descriptionText);
+        auto descTextSize = MeasureCentredParagraph(g_rodinFont, fontSize, lineWidth, lineMargin, descriptionText);
 
         auto hedgeDevStr = "hedge-dev";
-        auto hedgeDevTextSize = g_seuratFont->CalcTextSizeA(fontSize, FLT_MAX, 0, hedgeDevStr);
+        auto hedgeDevTextSize = g_rodinFont->CalcTextSizeA(fontSize, FLT_MAX, 0, hedgeDevStr);
         auto hedgeDevTextMarginX = Scale(15);
 
         auto colWhite = IM_COL32(255, 255, 255, 255 * textAlpha);
@@ -825,7 +615,7 @@ static void DrawDescriptionContainer()
         auto containerRight = containerLeft + Scale(CONTAINER_WIDTH);
         auto containerBottom = containerTop + Scale(CONTAINER_HEIGHT);
 
-        auto marqueeTextSize = g_seuratFont->CalcTextSizeA(fontSize, FLT_MAX, 0, g_creditsStr.c_str());
+        auto marqueeTextSize = g_rodinFont->CalcTextSizeA(fontSize, FLT_MAX, 0, g_creditsStr.c_str());
         auto marqueeTextMarginX = Scale(5);
         auto marqueeTextMarginY = Scale(15);
 
@@ -851,7 +641,7 @@ static void DrawDescriptionContainer()
 
         drawList->AddText
         (
-            g_seuratFont,
+            g_rodinFont,
             fontSize,
             { /* X */ imageMax.x + hedgeDevTextMarginX, /* Y */ imageMin.y + (imageScale / 2) - (hedgeDevTextSize.y / 2) },
             colWhite,
@@ -859,7 +649,7 @@ static void DrawDescriptionContainer()
         );
 
         SetHorizontalMarqueeFade(marqueeTextMin, marqueeTextMax, Scale(32));
-        DrawTextWithMarquee(g_seuratFont, fontSize, marqueeTextPos, marqueeTextMin, marqueeTextMax, colWhite, g_creditsStr.c_str(), g_installerEndTime, 0.9, Scale(200));
+        DrawTextWithMarquee(g_rodinFont, fontSize, marqueeTextPos, marqueeTextMin, marqueeTextMax, colWhite, g_creditsStr.c_str(), g_installerEndTime, 0.9, Scale(200));
         ResetMarqueeFade();
     }
 
@@ -922,11 +712,10 @@ static void DrawButtonContainer(ImVec2 min, ImVec2 max, int baser, int baseg, fl
 {
     auto &res = ImGui::GetIO().DisplaySize;
     auto drawList = ImGui::GetBackgroundDrawList();
-    SetShaderModifier(IMGUI_SHADER_MODIFIER_SCANLINE_BUTTON);
+
     drawList->AddRectFilledMultiColor(min, max, IM_COL32(baser, baseg + 130, 0, 223 * alpha), IM_COL32(baser, baseg + 130, 0, 178 * alpha), IM_COL32(baser, baseg + 130, 0, 223 * alpha), IM_COL32(baser, baseg + 130, 0, 178 * alpha));
     drawList->AddRectFilledMultiColor(min, max, IM_COL32(baser, baseg, 0, 13 * alpha), IM_COL32(baser, baseg, 0, 0), IM_COL32(baser, baseg, 0, 55 * alpha), IM_COL32(baser, baseg, 0, 6 * alpha));
     drawList->AddRectFilledMultiColor(min, max, IM_COL32(baser, baseg + 130, 0, 13 * alpha), IM_COL32(baser, baseg + 130, 0, 111 * alpha), IM_COL32(baser, baseg + 130, 0, 0), IM_COL32(baser, baseg + 130, 0, 55 * alpha));
-    SetShaderModifier(IMGUI_SHADER_MODIFIER_NONE);
 }
 
 static ImVec2 ComputeTextSize(ImFont *font, const char *text, float size, float &squashRatio, float maxTextWidth = FLT_MAX)
@@ -970,7 +759,7 @@ static void DrawButton(ImVec2 min, ImVec2 max, const char *buttonText, bool sour
 
     DrawButtonContainer(min, max, baser, baseg, alpha);
 
-    ImFont *font = sourceButton ? g_newRodinFont : g_dfsogeistdFont;
+    ImFont *font = sourceButton ? g_rodinFont : g_newRodinFont;
     float size = Scale(sourceButton ? 16.5f : 20.0f);
     float squashRatio;
     ImVec2 textSize = ComputeTextSize(font, buttonText, size, squashRatio, Scale(maxTextWidth));
@@ -985,26 +774,16 @@ static void DrawButton(ImVec2 min, ImVec2 max, const char *buttonText, bool sour
 
     SetOrigin({ min.x + textSize.x / 2.0f, min.y });
     SetScale({ squashRatio, 1.0f });
-    SetGradient
-    (
-        min,
-        { min.x + textSize.x, min.y + textSize.y },
-        IM_COL32(baser + 192, 255, 0, 255),
-        IM_COL32(baser + 128, baseg + 170, 0, 255)
-    );
 
-    DrawTextWithOutline
+    DrawTextBasic
     (
         font,
         size,
         min,
         IM_COL32(255, 255, 255, 255 * alpha),
-        buttonText,
-        4,
-        IM_COL32(baser, baseg, 0, 255 * alpha)
+        buttonText
     );
 
-    ResetGradient();
     SetScale({ 1.0f, 1.0f });
     SetOrigin({ 0.0f, 0.0f });
 }
@@ -1274,7 +1053,7 @@ static void DrawSourcePickers()
         constexpr float ADD_BUTTON_MAX_TEXT_WIDTH = 168.0f;
         const std::string &addFilesText = Localise("Installer_Button_AddFiles");
         float squashRatio;
-        ImVec2 textSize = ComputeTextSize(g_dfsogeistdFont, addFilesText.c_str(), 20.0f, squashRatio, ADD_BUTTON_MAX_TEXT_WIDTH);
+        ImVec2 textSize = ComputeTextSize(g_rodinFont, addFilesText.c_str(), 20.0f, squashRatio, ADD_BUTTON_MAX_TEXT_WIDTH);
         ImVec2 min = { g_aspectRatioOffsetX + Scale(CONTAINER_X + BOTTOM_X_GAP), g_aspectRatioOffsetY + Scale(CONTAINER_Y + CONTAINER_HEIGHT + BOTTOM_Y_GAP) };
         ImVec2 max = { g_aspectRatioOffsetX + Scale(CONTAINER_X + BOTTOM_X_GAP + textSize.x * squashRatio + BUTTON_TEXT_GAP), g_aspectRatioOffsetY + Scale(CONTAINER_Y + CONTAINER_HEIGHT + BOTTOM_Y_GAP + BUTTON_HEIGHT) };
         DrawButton(min, max, addFilesText.c_str(), false, true, buttonPressed, ADD_BUTTON_MAX_TEXT_WIDTH);
@@ -1286,7 +1065,7 @@ static void DrawSourcePickers()
         min.x += Scale(BOTTOM_X_GAP + textSize.x * squashRatio + BUTTON_TEXT_GAP);
 
         const std::string &addFolderText = Localise("Installer_Button_AddFolder");
-        textSize = ComputeTextSize(g_dfsogeistdFont, addFolderText.c_str(), 20.0f, squashRatio, ADD_BUTTON_MAX_TEXT_WIDTH);
+        textSize = ComputeTextSize(g_rodinFont, addFolderText.c_str(), 20.0f, squashRatio, ADD_BUTTON_MAX_TEXT_WIDTH);
         max.x = min.x + Scale(textSize.x * squashRatio + BUTTON_TEXT_GAP);
         DrawButton(min, max, addFolderText.c_str(), false, true, buttonPressed, ADD_BUTTON_MAX_TEXT_WIDTH);
         if (buttonPressed)
@@ -1307,7 +1086,7 @@ static void DrawSources()
     {
         for (int i = 0; i < 7; i++)
         {
-            DrawSourceButton((i == 3) ? ButtonColumnMiddle : (i < 3) ? ButtonColumnLeft : ButtonColumnRight, 4 - float(i % 4), DLC_SOURCE_TEXT[i], !g_dlcSourcePaths[i].empty() || g_dlcInstalled[i]);
+            DrawSourceButton((i == 3) ? ButtonColumnMiddle : (i < 3) ? ButtonColumnLeft : ButtonColumnRight, 3 - float(i % 4), DLC_SOURCE_TEXT[i], !g_dlcSourcePaths[i].empty() || g_dlcInstalled[i]);
         }
     }
 }
@@ -1739,9 +1518,8 @@ void InstallerWizard::Init()
 {
     auto &io = ImGui::GetIO();
 
-    g_seuratFont = ImFontAtlasSnapshot::GetFont("FOT-SeuratPro-M.otf");
-    g_dfsogeistdFont = ImFontAtlasSnapshot::GetFont("DFSoGeiStd-W7.otf");
-    g_newRodinFont = ImFontAtlasSnapshot::GetFont("FOT-NewRodinPro-DB.otf");
+    g_rodinFont = ImFontAtlasSnapshot::GetFont("FOT-RodinPro-DB.otf");
+    g_newRodinFont = ImFontAtlasSnapshot::GetFont("FOT-NewRodinPro-UB.otf");
     g_installTextures[0] = LOAD_ZSTD_TEXTURE(g_install_001);
     g_installTextures[1] = LOAD_ZSTD_TEXTURE(g_install_002);
     g_installTextures[2] = LOAD_ZSTD_TEXTURE(g_install_003);
@@ -1750,7 +1528,6 @@ void InstallerWizard::Init()
     g_installTextures[5] = LOAD_ZSTD_TEXTURE(g_install_006);
     g_installTextures[6] = LOAD_ZSTD_TEXTURE(g_install_007);
     g_installTextures[7] = LOAD_ZSTD_TEXTURE(g_install_008);
-    g_milesElectricIcon = LOAD_ZSTD_TEXTURE(g_miles_electric_icon);
     g_arrowCircle = LOAD_ZSTD_TEXTURE(g_arrow_circle);
     g_pulseInstall = LOAD_ZSTD_TEXTURE(g_pulse_install);
     g_upHedgeDev = LOAD_ZSTD_TEXTURE(g_hedgedev);
@@ -1772,7 +1549,7 @@ void InstallerWizard::Draw()
     ResetCursorRects();
     DrawBackground();
     DrawLeftImage();
-    DrawScanlineBars();
+    DrawHUDTitle();
     DrawDescriptionContainer();
     DrawLanguagePicker();
     DrawSourcePickers();
@@ -1825,7 +1602,6 @@ void InstallerWizard::Shutdown()
     Video::WaitForGPU();
 
     // Erase the textures.
-    g_milesElectricIcon.reset();
     g_arrowCircle.reset();
     g_pulseInstall.reset();
 

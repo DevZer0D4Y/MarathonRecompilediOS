@@ -37,7 +37,7 @@ static bool g_isDeclined;
 static double g_appearTime;
 static double g_controlsAppearTime;
 
-static ImFont* g_fntSeurat;
+static ImFont* g_rodinFont;
 
 std::string g_text;
 int g_result;
@@ -221,15 +221,15 @@ void DrawButton(int rowIndex, float yOffset, float width, float height, std::str
     }
 
     auto fontSize = Scale(28);
-    auto textSize = g_fntSeurat->CalcTextSizeA(fontSize, FLT_MAX, 0, text.c_str());
+    auto textSize = g_rodinFont->CalcTextSizeA(fontSize, FLT_MAX, 0, text.c_str());
 
     // Show low quality text in-game.
     if (App::s_isInit)
         SetShaderModifier(IMGUI_SHADER_MODIFIER_LOW_QUALITY_TEXT);
 
-    DrawTextWithShadow
+    DrawTextBasic
     (
-        g_fntSeurat,
+        g_rodinFont,
         fontSize,
         { /* X */ min.x + ((max.x - min.x) - textSize.x) / 2, /* Y */ min.y + ((max.y - min.y) - textSize.y) / 2 },
         isSelected ? IM_COL32(255, 128, 0, 255) : IM_COL32(255, 255, 255, 255),
@@ -280,7 +280,7 @@ void MessageWindow::Init()
 {
     auto& io = ImGui::GetIO();
 
-    g_fntSeurat = ImFontAtlasSnapshot::GetFont("FOT-SeuratPro-M.otf");
+    g_rodinFont = ImFontAtlasSnapshot::GetFont("FOT-RodinPro-DB.otf");
 }
 
 void MessageWindow::Draw()
@@ -297,7 +297,7 @@ void MessageWindow::Draw()
     auto fontSize = Scale(28);
 
     const auto input = RemoveRubyAnnotations(g_text.c_str());
-    auto lines = Split(input.first.c_str(), g_fntSeurat, fontSize, maxWidth);
+    auto lines = Split(input.first.c_str(), g_rodinFont, fontSize, maxWidth);
     
     for (auto& line : lines)
     {
@@ -305,7 +305,7 @@ void MessageWindow::Draw()
     }
 
     auto lineMargin = Config::Language != ELanguage::Japanese ? 5.0f : 5.5f;
-    auto textSize = MeasureCentredParagraph(g_fntSeurat, fontSize, lineMargin, lines);
+    auto textSize = MeasureCentredParagraph(g_rodinFont, fontSize, lineMargin, lines);
     auto textMarginX = Scale(37);
     auto textMarginY = Scale(45);
 
@@ -357,7 +357,7 @@ void MessageWindow::Draw()
 
         DrawRubyAnnotatedText
         (
-            g_fntSeurat,
+            g_rodinFont,
             fontSize,
             maxWidth,
             { textX, textY },
@@ -366,11 +366,11 @@ void MessageWindow::Draw()
 
             [=](const char* str, ImVec2 pos)
             {
-                DrawTextWithShadow(g_fntSeurat, fontSize, pos, IM_COL32(255, 255, 255, 255), str);
+                DrawTextBasic(g_rodinFont, fontSize, pos, IM_COL32(255, 255, 255, 255), str);
             },
             [=](const char* str, float size, ImVec2 pos)
             {
-                DrawTextWithShadow(g_fntSeurat, size, pos, IM_COL32(255, 255, 255, 255), str, 1.5f, 1.5f);
+                DrawTextBasic(g_rodinFont, size, pos, IM_COL32(255, 255, 255, 255), str);
             },
 
             true
@@ -384,7 +384,7 @@ void MessageWindow::Draw()
 
         if (g_buttons.size())
         {
-            auto itemWidth = std::max(Scale(162), Scale(CalcWidestTextSize(g_fntSeurat, fontSize, g_buttons)));
+            auto itemWidth = std::max(Scale(162), Scale(CalcWidestTextSize(g_rodinFont, fontSize, g_buttons)));
             auto itemHeight = Scale(57);
             auto windowMarginX = Scale(23);
             auto windowMarginY = Scale(30);

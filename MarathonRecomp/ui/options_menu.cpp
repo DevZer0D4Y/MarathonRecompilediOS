@@ -83,8 +83,7 @@ static double g_lastIncrementSoundTime;
 
 static constexpr size_t GRID_SIZE = 9;
 
-static ImFont* g_seuratFont;
-static ImFont* g_dfsogeistdFont;
+static ImFont* g_rodinFont;
 static ImFont* g_newRodinFont;
 
 static const IConfigDef* g_selectedItem;
@@ -162,7 +161,7 @@ static void DrawTitle()
     {
         DrawTextWithOutline
         (
-            g_dfsogeistdFont,
+            g_newRodinFont,
             Scale(48),
             optionsMin,
             IM_COL32(255, 190, 33, 255 * alpha),
@@ -285,8 +284,6 @@ static void DrawScanlineBars()
         );
     }
 
-    SetShaderModifier(IMGUI_SHADER_MODIFIER_SCANLINE);
-
     // Top bar
     drawList->AddRectFilledMultiColor
     (
@@ -313,8 +310,6 @@ static void DrawScanlineBars()
     );
 
     ResetProceduralOrigin();
-
-    SetShaderModifier(IMGUI_SHADER_MODIFIER_NONE);
 
     DrawTitle();
 
@@ -384,17 +379,6 @@ static void DrawContainer(ImVec2 min, ImVec2 max, bool drawRightOutline)
     float gridSize = Scale(GRID_SIZE);
 
     drawList->AddRectFilled(min, max, backgroundColor); // Background
-
-    SetShaderModifier(IMGUI_SHADER_MODIFIER_CHECKERBOARD);
-
-    drawList->AddRectFilled({ min.x, min.y + gridSize }, { min.x + gridSize, max.y - gridSize }, outerColor); // Container outline left
-    drawList->AddRectFilled({ max.x - gridSize, min.y + gridSize }, { max.x, max.y - gridSize }, drawRightOutline ? outerColor : innerColor); // Container outline right
-    drawList->AddRectFilled(min, { max.x, min.y + gridSize }, outerColor); // Container outline top
-    drawList->AddRectFilled({ min.x, max.y - gridSize }, max, outerColor); // Container outline bottom
-
-    drawList->AddRectFilled({ min.x + gridSize, min.y + gridSize }, { max.x - gridSize, max.y - gridSize }, innerColor); // Inner container
-
-    SetShaderModifier(IMGUI_SHADER_MODIFIER_NONE);
 
     float lineSize = Scale(2);
 
@@ -484,7 +468,7 @@ static bool DrawCategories()
     float textWidthSum = 0.0f;
     for (size_t i = 0; i < g_categoryCount; i++)
     {
-        textSizes[i] = g_dfsogeistdFont->CalcTextSizeA(size, FLT_MAX, 0.0f, GetCategory(i).c_str());
+        textSizes[i] = g_newRodinFont->CalcTextSizeA(size, FLT_MAX, 0.0f, GetCategory(i).c_str());
         textWidthSum += textSizes[i].x;
     }
 
@@ -540,8 +524,6 @@ static bool DrawCategories()
                 g_categoryAnimMax = { animatedCenter.x + widthHalfExtent, animatedCenter.y + heightHalfExtent };
             }
 
-            SetShaderModifier(IMGUI_SHADER_MODIFIER_SCANLINE_BUTTON);
-
             drawList->AddRectFilledMultiColor
             (
                 g_categoryAnimMin,
@@ -571,8 +553,6 @@ static bool DrawCategories()
                 IM_COL32(0, 130, 0, 0), 
                 IM_COL32(0, 130, 0, 55 * motion)
             );
-
-            SetShaderModifier(IMGUI_SHADER_MODIFIER_NONE);
         }
 
         // Store to draw again later, otherwise the tab background gets drawn on top of text during the animation.
@@ -598,7 +578,7 @@ static bool DrawCategories()
 
         DrawTextWithOutline
         (
-            g_dfsogeistdFont,
+            g_newRodinFont,
             size,
             pos,
             IM_COL32_WHITE,
@@ -776,7 +756,7 @@ static void DrawConfigOption(int32_t rowIndex, float yOffset, ConfigDef<T>* conf
 
     auto configName = config->GetNameLocalised(Config::Language);
     auto size = Scale(26.0f);
-    auto textSize = g_seuratFont->CalcTextSizeA(size, FLT_MAX, 0.0f, configName.c_str());
+    auto textSize = g_rodinFont->CalcTextSizeA(size, FLT_MAX, 0.0f, configName.c_str());
 
     ImVec2 textPos = { min.x + gridSize, min.y + (optionHeight - textSize.y) / 2.0f };
     ImVec4 textClipRect = { min.x, min.y, max.x, max.y };
@@ -902,7 +882,7 @@ static void DrawConfigOption(int32_t rowIndex, float yOffset, ConfigDef<T>* conf
 
         drawList->AddRectFilledMultiColor({ min.x, min.y + prevItemOffset }, { max.x, max.y + prevItemOffset }, c0, c0, c1, c1);
 
-        DrawTextWithMarquee(g_seuratFont, size, textPos, min, max, textColour, configName.c_str(), g_rowSelectionTime, 0.9, Scale(250.0));
+        DrawTextWithMarquee(g_rodinFont, size, textPos, min, max, textColour, configName.c_str(), g_rowSelectionTime, 0.9, Scale(250.0));
 
         // large
         g_canReset = g_isControlsVisible &&
@@ -917,7 +897,7 @@ static void DrawConfigOption(int32_t rowIndex, float yOffset, ConfigDef<T>* conf
 
         DrawRubyAnnotatedText
         (
-            g_seuratFont,
+            g_rodinFont,
             size,
             FLT_MAX,
             textPos,
@@ -925,11 +905,11 @@ static void DrawConfigOption(int32_t rowIndex, float yOffset, ConfigDef<T>* conf
             configName.c_str(),
             [=](const char* str, ImVec2 pos)
             {
-                DrawTextBasic(g_seuratFont, size, pos, textColour, str);
+                DrawTextBasic(g_rodinFont, size, pos, textColour, str);
             },
             [=](const char* str, float annotationSize, ImVec2 pos)
             {
-                DrawTextBasic(g_seuratFont, annotationSize, pos, textColour, str);
+                DrawTextBasic(g_rodinFont, annotationSize, pos, textColour, str);
             }
         );
 
@@ -939,8 +919,6 @@ static void DrawConfigOption(int32_t rowIndex, float yOffset, ConfigDef<T>* conf
     // Right side
     min = { max.x + (clipRectMax.x - max.x - valueWidth) / 2.0f, min.y + (optionHeight - valueHeight) / 2.0f };
     max = { min.x + valueWidth, min.y + valueHeight };
-
-    SetShaderModifier(IMGUI_SHADER_MODIFIER_SCANLINE_BUTTON);
 
     drawList->AddRectFilledMultiColor(min, max, IM_COL32(0, 130, 0, 223 * alpha), IM_COL32(0, 130, 0, 178 * alpha), IM_COL32(0, 130, 0, 223 * alpha), IM_COL32(0, 130, 0, 178 * alpha));
     drawList->AddRectFilledMultiColor(min, max, IM_COL32(0, 0, 0, 13 * alpha), IM_COL32(0, 0, 0, 0), IM_COL32(0, 0, 0, 55 * alpha), IM_COL32(0, 0, 0, 6 * alpha));
@@ -995,8 +973,6 @@ static void DrawConfigOption(int32_t rowIndex, float yOffset, ConfigDef<T>* conf
             drawList->AddRectFilledMultiColor(sliderMin, sliderMax, sliderColor0, sliderColor0, sliderColor1, sliderColor1);
         }
     }
-
-    SetShaderModifier(IMGUI_SHADER_MODIFIER_NONE);
 
     if constexpr (std::is_same_v<T, bool>)
         DrawToggleLight({ min.x + Scale(14), min.y + ((max.y - min.y) - Scale(14)) / 2 + Scale(1) }, config->Value, alpha);
@@ -1536,7 +1512,7 @@ static void DrawInfoPanel(ImVec2 infoMin, ImVec2 infoMax)
             lineWidth -= annotationFontSize;
         }
 
-        auto textSize = MeasureCentredParagraph(g_seuratFont, fontSize, lineWidth, 5.0f, desc.c_str());
+        auto textSize = MeasureCentredParagraph(g_rodinFont, fontSize, lineWidth, 5.0f, desc.c_str());
 
         drawList->PushClipRect(clipRectMin, clipRectMax, false);
 
@@ -1610,7 +1586,7 @@ static void DrawInfoPanel(ImVec2 infoMin, ImVec2 infoMax)
 
         DrawRubyAnnotatedText
         (
-            g_seuratFont,
+            g_rodinFont,
             fontSize,
             lineWidth,
             { textX, textY - scrollOffset },
@@ -1618,11 +1594,11 @@ static void DrawInfoPanel(ImVec2 infoMin, ImVec2 infoMax)
             desc.c_str(),
             [=](const char* str, ImVec2 pos)
             {
-                DrawTextBasic(g_seuratFont, fontSize, pos, IM_COL32_WHITE, str);
+                DrawTextBasic(g_rodinFont, fontSize, pos, IM_COL32_WHITE, str);
             },
             [=](const char* str, float size, ImVec2 pos)
             {
-                DrawTextBasic(g_seuratFont, size, pos, IM_COL32_WHITE, str);
+                DrawTextBasic(g_rodinFont, size, pos, IM_COL32_WHITE, str);
             }
         );
 
@@ -1725,9 +1701,8 @@ void OptionsMenu::Init()
 {
     auto& io = ImGui::GetIO();
 
-    g_seuratFont = ImFontAtlasSnapshot::GetFont("FOT-SeuratPro-M.otf");
-    g_dfsogeistdFont = ImFontAtlasSnapshot::GetFont("DFSoGeiStd-W7.otf");
-    g_newRodinFont = ImFontAtlasSnapshot::GetFont("FOT-NewRodinPro-DB.otf");
+    g_rodinFont = ImFontAtlasSnapshot::GetFont("FOT-RodinPro-DB.otf");
+    g_newRodinFont = ImFontAtlasSnapshot::GetFont("FOT-NewRodinPro-UB.otf");
 
     LoadThumbnails();
 

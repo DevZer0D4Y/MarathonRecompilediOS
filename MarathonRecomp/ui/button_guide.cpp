@@ -13,7 +13,7 @@
 
 constexpr float DEFAULT_SIDE_MARGINS = 379;
 
-ImFont* g_fntNewRodin;
+ImFont* g_rodinFont;
 
 std::unique_ptr<GuestTexture> g_upControllerIcons;
 std::unique_ptr<GuestTexture> g_upKBMIcons;
@@ -200,12 +200,12 @@ static void DrawGuide(float* offset, ImVec2 regionMin, ImVec2 regionMax, EButton
     if (fontQuality == EFontQuality::Low)
         SetShaderModifier(IMGUI_SHADER_MODIFIER_LOW_QUALITY_TEXT);
 
-    DrawTextWithOutline(g_fntNewRodin, fontSize, textPos, IM_COL32_WHITE, text, 4, IM_COL32_BLACK);
+    DrawTextBasic(g_rodinFont, fontSize, textPos, IM_COL32_WHITE, text);
 
     if (fontQuality == EFontQuality::Low)
     {
         // Add extra luminance to low quality text.
-        drawList->AddText(g_fntNewRodin, fontSize, textPos, IM_COL32(255, 255, 255, 127), text);
+        drawList->AddText(g_rodinFont, fontSize, textPos, IM_COL32(255, 255, 255, 127), text);
         SetShaderModifier(IMGUI_SHADER_MODIFIER_NONE);
     }
 
@@ -217,7 +217,7 @@ void ButtonGuide::Init()
 {
     auto& io = ImGui::GetIO();
 
-    g_fntNewRodin = ImFontAtlasSnapshot::GetFont("FOT-NewRodinPro-M.otf");
+    g_rodinFont = ImFontAtlasSnapshot::GetFont("FOT-RodinPro-DB.otf");
     g_upControllerIcons = LOAD_ZSTD_TEXTURE(g_controller);
     g_upKBMIcons = LOAD_ZSTD_TEXTURE(g_kbm);
 }
@@ -254,7 +254,7 @@ void ButtonGuide::Draw()
         auto str = Localise(btn.Name).c_str();
         auto iconWidth = Scale(g_iconWidths[btn.Icon]);
         auto iconHeight = Scale(g_iconHeights[btn.Icon]);
-        auto textWidth = g_fntNewRodin->CalcTextSizeA(fontSize, FLT_MAX, 0, str).x;
+        auto textWidth = g_rodinFont->CalcTextSizeA(fontSize, FLT_MAX, 0, str).x;
         auto maxWidth = btn.MaxWidth == FLT_MAX ? textWidth : Scale(btn.MaxWidth);
         auto textScale = std::min(1.0f, maxWidth / textWidth);
 
@@ -281,7 +281,7 @@ void ButtonGuide::Draw()
         auto str = Localise(btn.Name).c_str();
         auto iconWidth = Scale(g_iconWidths[btn.Icon]);
         auto iconHeight = Scale(g_iconHeights[btn.Icon]);
-        auto textWidth = g_fntNewRodin->CalcTextSizeA(fontSize, FLT_MAX, 0, str).x;
+        auto textWidth = g_rodinFont->CalcTextSizeA(fontSize, FLT_MAX, 0, str).x;
         auto maxWidth = btn.MaxWidth == FLT_MAX ? textWidth : Scale(btn.MaxWidth);
         auto textScale = std::min(1.0f, maxWidth / textWidth);
 

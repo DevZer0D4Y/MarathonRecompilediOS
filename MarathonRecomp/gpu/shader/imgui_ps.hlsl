@@ -7,52 +7,19 @@ float4 DecodeColor(uint color)
 
 float4 SamplePoint(int2 position)
 {
-    switch (g_PushConstants.ShaderModifier)
-    {
-        case IMGUI_SHADER_MODIFIER_SCANLINE:
-            {
-                if (int(position.y) % 2 == 0)
-                    return float4(1.0, 1.0, 1.0, 0.0);
-            
-                break;
-            }
-        case IMGUI_SHADER_MODIFIER_CHECKERBOARD:
-            {
-                int remnantX = int(position.x) % 9;
-                int remnantY = int(position.y) % 9;
-            
-                float4 color = 1.0;
-            
-                if (remnantX == 0 || remnantY == 0)
-                    color.a = 0.0;
-            
-                if ((remnantY % 2) == 0)
-                    color.rgb = 0.5;
-            
-                return color;
-            }
-        case IMGUI_SHADER_MODIFIER_SCANLINE_BUTTON:
-            {
-                if (int(position.y) % 2 == 0)
-                    return float4(1.0, 1.0, 1.0, 0.5);
-            
-                break;
-            }
-    }
-    
     return 1.0;
 }
 
 float4 SampleLinear(float2 uvTexspace)
-{    
+{
     int2 integerPart = floor(uvTexspace);
     float2 fracPart = frac(uvTexspace);
-    
+
     float4 topLeft = SamplePoint(integerPart + float2(0, 0));
     float4 topRight = SamplePoint(integerPart + float2(1, 0));
     float4 bottomLeft = SamplePoint(integerPart + float2(0, 1));
     float4 bottomRight = SamplePoint(integerPart + float2(1, 1));
-    
+
     float4 top = lerp(topLeft, topRight, fracPart.x);
     float4 bottom = lerp(bottomLeft, bottomRight, fracPart.x);
 

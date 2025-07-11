@@ -34,6 +34,7 @@ struct Paragraph {
 void InitImGuiUtils();
 
 void SetGradient(const ImVec2& min, const ImVec2& max, ImU32 top, ImU32 bottom);
+void SetHorizontalGradient(const ImVec2& min, const ImVec2& max, ImU32 left, ImU32 right);
 void SetGradient(const ImVec2& min, const ImVec2& max, ImU32 topLeft, ImU32 topRight, ImU32 bottomRight, ImU32 bottomLeft);
 void ResetGradient();
 void SetShaderModifier(uint32_t shaderModifier);
@@ -55,6 +56,7 @@ void ResetAdditive();
 float Scale(float size);
 double ComputeLinearMotion(double duration, double offset, double total);
 double ComputeMotion(double duration, double offset, double total);
+void DrawHUD(ImVec2 min, ImVec2 max, const ImFont* font, const char* text);
 void DrawPauseContainer(ImVec2 min, ImVec2 max, float alpha = 1);
 void DrawTextBasic(const ImFont* font, float fontSize, const ImVec2& pos, ImU32 colour, const char* text);
 void DrawPauseHeaderContainer(ImVec2 min, ImVec2 max, float alpha = 1);
