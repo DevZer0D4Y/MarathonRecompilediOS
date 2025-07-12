@@ -303,12 +303,12 @@ std::unordered_map<std::string_view, std::unordered_map<ELanguage, std::string>>
         // Japanese Notes: This localization should include furigana.
         "Installer_Page_Introduction",
         {
-            { ELanguage::English,  "Welcome to\nMarathon Recompiled!\n\nYou'll need an Xbox 360 copy\nof Sonic the Hedgehog (2006) in order to proceed with the installation." },
+            { ELanguage::English,  "Welcome to Marathon Recompiled!\n\nYou'll need an Xbox 360 copy\nof Sonic the Hedgehog (2006) in order to proceed with the installation." },
             { ELanguage::Japanese, "Marathon Recompiledへようこそ！\nインストールにはXbox 360[版:ばん]の\n「ソニック・ザ・ヘッジホッグ (2006)」\nが必要です" },
-            { ELanguage::German,   "Willkommen zu\nMarathon Recompiled!\nEs wird eine Xbox 360 Kopie von Sonic the Hedgehog (2006) benötigt um mit der Installation fortfahren zu können." },
-            { ELanguage::French,   "Bienvenue sur\nMarathon Recompiled !\n\nVous aurez besoin d'une copie de Sonic the Hedgehog (2006) pour Xbox\n360 pour procéder à l'installation." },
-            { ELanguage::Spanish,  "¡Bienvenido a\nMarathon Recompiled!\n\nNecesitas una copia de\nSonic the Hedgehog (2006) de Xbox 360\npara continuar con la instalación." },
-            { ELanguage::Italian,  "Benvenuto a\nMarathon Recompiled!\n\nDovrai avere una copia di\nSonic the Hedgehog (2006) per la Xbox 360\nper proseguire con l'installazione." }
+            { ELanguage::German,   "Willkommen zu Marathon Recompiled!\n\nEs wird eine Xbox 360 Kopie von\nSonic the Hedgehog (2006) benötigt um mit der Installation fortfahren zu können." },
+            { ELanguage::French,   "Bienvenue sur Marathon Recompiled !\n\nVous aurez besoin d'une copie de\nSonic the Hedgehog (2006) pour\nXbox 360 pour procéder à l'installation." },
+            { ELanguage::Spanish,  "¡Bienvenido a Marathon Recompiled!\n\nNecesitas una copia de\nSonic the Hedgehog (2006) de\nXbox 360 para continuar con la instalación." },
+            { ELanguage::Italian,  "Benvenuto a Marathon Recompiled!\n\nDovrai avere una copia di\nSonic the Hedgehog (2006) per la\nXbox 360 per proseguire con l'installazione." }
         }
     },
     {
@@ -316,7 +316,7 @@ std::unordered_map<std::string_view, std::unordered_map<ELanguage, std::string>>
         "Installer_Page_SelectGame",
         {
             { ELanguage::English,  "Add the sources for the game." },
-            { ELanguage::Japanese, "ゲームのソース\nを[追加:ついか]" },
+            { ELanguage::Japanese, "ゲームのソースを[追加:ついか]" },
             { ELanguage::German,   "Füge die Quellen für das Spiel." },
             { ELanguage::French,   "Ajouter les fichiers du jeu." },
             { ELanguage::Spanish,  "Añade las fuentes para el juego." },

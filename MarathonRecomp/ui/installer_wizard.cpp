@@ -501,7 +501,7 @@ static void DrawDescriptionContainer()
 {
     auto &res = ImGui::GetIO().DisplaySize;
     auto drawList = ImGui::GetBackgroundDrawList();
-    auto fontSize = Scale(28.0f);
+    auto fontSize = Scale(25.0f);
     auto annotationFontSize = fontSize * ANNOTATION_FONT_SIZE_MODIFIER;
 
     ImVec2 descriptionMin = { round(g_aspectRatioOffsetX + Scale(CONTAINER_X + 0.5f)), round(g_aspectRatioOffsetY + Scale(CONTAINER_Y + 0.5f)) };
