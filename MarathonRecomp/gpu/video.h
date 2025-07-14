@@ -215,6 +215,13 @@ struct GuestSurfaceDesc
     be<uint32_t> height;
 };
 
+struct GuestSurfaceCreateParams
+{
+    be<uint32_t> base;
+    be<uint32_t> hzBase;
+    be<int32_t> colorExpBias;
+};
+
 // RenderTarget/DepthStencil
 struct GuestSurface : GuestBaseTexture
 {
@@ -222,6 +229,7 @@ struct GuestSurface : GuestBaseTexture
     ankerl::unordered_dense::map<const RenderTexture*, std::unique_ptr<RenderFramebuffer>> framebuffers;
     RenderSampleCounts sampleCount = RenderSampleCount::COUNT_1;
     ankerl::unordered_dense::set<GuestTexture*> destinationTextures;
+    bool wasCached = false;
 };
 
 enum GuestDeclType

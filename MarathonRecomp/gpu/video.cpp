@@ -2056,6 +2056,14 @@ static uint32_t CreateDevice(uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4,
 
 static void DestructResource(GuestResource* resource) 
 {
+    // Needed for hack in CreateSurface (remove if fix it)
+    if (resource->type == ResourceType::RenderTarget || resource->type == ResourceType::DepthStencil)
+    {
+        const auto surface = reinterpret_cast<GuestSurface*>(resource);
+        if (surface->wasCached) {
+            return;
+        }
+    }
     RenderCommand cmd;
     cmd.type = RenderCommandType::DestructResource;
     cmd.destructResource.resource = resource;
@@ -3107,47 +3115,72 @@ static GuestBuffer* CreateIndexBuffer(uint32_t length, uint32_t, uint32_t format
     return buffer;
 }
 
-static GuestSurface* CreateSurface(uint32_t width, uint32_t height, uint32_t format, uint32_t multiSample) 
+static std::vector<std::pair<GuestSurface*, uint32_t>> g_surfaceCache;
+
+// TODO: singleplayer (possibly) uses the same memory location in edram for hdr and fb0 surfaces, so we just remember who was created first and use that instead of creating a new one
+static GuestSurface* CreateSurface(uint32_t width, uint32_t height, uint32_t format, uint32_t multiSample, GuestSurfaceCreateParams* params) 
 {
-    // printf("CreateSurface: w: %d, h: %d, f: %d, ms: %d\n", width, height, format, multiSample);
-    RenderTextureDesc desc;
-    desc.dimension = RenderTextureDimension::TEXTURE_2D;
-    desc.width = width;
-    desc.height = height;
-    desc.depth = 1;
-    desc.mipLevels = 1;
-    desc.arraySize = 1;
-    // desc.multisampling.sampleCount = multiSample != 0 && Config::AntiAliasing != EAntiAliasing::None ? int32_t(Config::AntiAliasing.Value) : RenderSampleCount::COUNT_1;
-    if (multiSample == 0) {
-        desc.multisampling.sampleCount = RenderSampleCount::COUNT_1;
-    } else {
-        desc.multisampling.sampleCount = multiSample == 1 ? RenderSampleCount::COUNT_2 : RenderSampleCount::COUNT_4;
+    GuestSurface* surface = nullptr;
+    uint32_t baseValue = params ? params->base.get() : -1;
+    if (params) {
+        for (auto& entry : g_surfaceCache) {
+            GuestSurface* cachedSurface = entry.first;
+            uint32_t cachedBase = entry.second;
+            if (cachedSurface &&
+                cachedSurface->width == width &&
+                cachedSurface->height == height &&
+                cachedSurface->guestFormat == format &&
+                cachedBase == baseValue) {
+                surface = cachedSurface;
+                break;
+            }
+        }
     }
-    desc.format = ConvertFormat(format);
-    desc.flags = desc.format == RenderFormat::D32_FLOAT ? RenderTextureFlag::DEPTH_TARGET : RenderTextureFlag::RENDER_TARGET;
+    if (!surface) {
+        // printf("CreateSurface: w: %d, h: %d, f: %d, ms: %d\n", width, height, format, multiSample);
+        RenderTextureDesc desc;
+        desc.dimension = RenderTextureDimension::TEXTURE_2D;
+        desc.width = width;
+        desc.height = height;
+        desc.depth = 1;
+        desc.mipLevels = 1;
+        desc.arraySize = 1;
+        // desc.multisampling.sampleCount = multiSample != 0 && Config::AntiAliasing != EAntiAliasing::None ? int32_t(Config::AntiAliasing.Value) : RenderSampleCount::COUNT_1;
+        if (multiSample == 0) {
+            desc.multisampling.sampleCount = RenderSampleCount::COUNT_1;
+        } else {
+            desc.multisampling.sampleCount = multiSample == 1 ? RenderSampleCount::COUNT_2 : RenderSampleCount::COUNT_4;
+        }
+        desc.format = ConvertFormat(format);
+        desc.flags = desc.format == RenderFormat::D32_FLOAT ? RenderTextureFlag::DEPTH_TARGET : RenderTextureFlag::RENDER_TARGET;
 
-    auto surface = g_userHeap.AllocPhysical<GuestSurface>(desc.format == RenderFormat::D32_FLOAT ? 
-        ResourceType::DepthStencil : ResourceType::RenderTarget);
+        surface = g_userHeap.AllocPhysical<GuestSurface>(desc.format == RenderFormat::D32_FLOAT ? 
+            ResourceType::DepthStencil : ResourceType::RenderTarget);
 
-    surface->textureHolder = g_device->createTexture(desc);
-    surface->texture = surface->textureHolder.get();
-    surface->width = width;
-    surface->height = height;
-    surface->format = desc.format;
-    surface->guestFormat = format;
-    surface->sampleCount = desc.multisampling.sampleCount;
+        surface->textureHolder = g_device->createTexture(desc);
+        surface->texture = surface->textureHolder.get();
+        surface->width = width;
+        surface->height = height;
+        surface->format = desc.format;
+        surface->guestFormat = format;
+        surface->sampleCount = desc.multisampling.sampleCount;
 
-    RenderTextureViewDesc viewDesc;
-    viewDesc.dimension = RenderTextureViewDimension::TEXTURE_2D;
-    viewDesc.format = desc.format;
-    viewDesc.mipLevels = 1;
-    surface->textureView = surface->textureHolder->createTextureView(viewDesc);
-    surface->descriptorIndex = g_textureDescriptorAllocator.allocate();
-    g_textureDescriptorSet->setTexture(surface->descriptorIndex, surface->textureHolder.get(), RenderTextureLayout::SHADER_READ, surface->textureView.get());
+        RenderTextureViewDesc viewDesc;
+        viewDesc.dimension = RenderTextureViewDimension::TEXTURE_2D;
+        viewDesc.format = desc.format;
+        viewDesc.mipLevels = 1;
+        surface->textureView = surface->textureHolder->createTextureView(viewDesc);
+        surface->descriptorIndex = g_textureDescriptorAllocator.allocate();
+        g_textureDescriptorSet->setTexture(surface->descriptorIndex, surface->textureHolder.get(), RenderTextureLayout::SHADER_READ, surface->textureView.get());
 
-#ifdef _DEBUG 
-    surface->texture->setName(fmt::format("{} {:X}", desc.flags & RenderTextureFlag::RENDER_TARGET ? "Render Target" : "Depth Stencil", g_memory.MapVirtual(surface)));
-#endif
+    #ifdef _DEBUG 
+        surface->texture->setName(fmt::format("{} {:X}", desc.flags & RenderTextureFlag::RENDER_TARGET ? "Render Target" : "Depth Stencil", g_memory.MapVirtual(surface)));
+    #endif
+        if (params) {
+            surface->wasCached = true;
+            g_surfaceCache.emplace_back(surface, baseValue);
+        }
+    }
 
     return surface;
 }
