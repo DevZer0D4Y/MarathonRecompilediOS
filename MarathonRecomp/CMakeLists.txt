@@ -436,7 +436,6 @@ target_link_libraries(MarathonRecomp PRIVATE
 if (NOT WIN32)
     target_link_libraries(MarathonRecomp PRIVATE
         ffmpeg::avcodec
-        ffmpeg::swresample
         ffmpeg::avutil
     )
 endif()
