@@ -8012,8 +8012,6 @@ GUEST_FUNCTION_STUB(sub_8254D9D0); // BeginConditional
 GUEST_FUNCTION_STUB(sub_8254DB90); // BeginConditional
 GUEST_FUNCTION_STUB(sub_8254DD40); // SetScreenExtentQueryMode
 
-GUEST_FUNCTION_STUB(sub_8238D8A8); // sound, need to fix and remove this stub
-
 // HACK: need to use it via dirtyFlags, but I don't know how to do it, so call directly
 PPC_FUNC_IMPL(__imp__sub_82542DD0);
 PPC_FUNC(sub_82542DD0)

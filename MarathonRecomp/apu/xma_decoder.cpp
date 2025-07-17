@@ -350,22 +350,20 @@ void Decode(XmaPlayback *playback) {
   uint32_t o = 0;
   if (playback->av_frame_->nb_samples != 0) {
       for (uint32_t i = 0; i < kSamplesPerFrame; i++) {
-          for (uint32_t j = 0; j <= uint32_t(true); j++) {
+          for (uint32_t j = 0; j < playback->av_frame_->ch_layout.nb_channels; j++) {
               // Select the appropriate array based on the current channel.
               auto in = reinterpret_cast<const float *>(samples[j]);
 
-              if (in != nullptr) {
-                  // Raw samples sometimes aren't within [-1, 1]
-                  float scaled_sample = clamp_float(in[i], -1.0f, 1.0f) * scale;
+              // Raw samples sometimes aren't within [-1, 1]
+              float scaled_sample = clamp_float(in[i], -1.0f, 1.0f) * scale;
 
-                  // Convert the sample and output it in big endian.
-                  auto sample = static_cast<int16_t>(scaled_sample);
-                  out[o++] = ByteSwap(sample);
-              }
+              // Convert the sample and output it in big endian.
+              auto sample = static_cast<int16_t>(scaled_sample);
+              out[o++] = ByteSwap(sample);
           }
       }
   }
-  playback->current_frame_remaining_subframes_ = 4 << 1;
+  playback->current_frame_remaining_subframes_ = 4 * playback->channelCount;
 
   if (!packet_info.isLastFrameInPacket()) {
     const uint32_t next_frame_offset =
@@ -427,7 +425,7 @@ void Consume(XmaPlayback *playback) {
                (int8_t)playback->subframes);
 
   const int8_t raw_frame_read_offset =
-      ((kBytesPerFrameChannel / kOutputBytesPerBlock) << 1) - // is stereo
+      ((kBytesPerFrameChannel / kOutputBytesPerBlock) * playback->channelCount)
       playback->current_frame_remaining_subframes_;
   // + data->subframe_skip_count;
 
@@ -472,7 +470,7 @@ void DecoderThreadFunc(XmaPlayback *playback) {
 
     uint8_t *current_input_buffer = playback->GetCurrentInputBuffer();
 
-    const int32_t minimum_subframe_decode_count = (playback->subframes * 2) - 1;
+    const int32_t minimum_subframe_decode_count = (playback->subframes * playback->channelCount) - 1;
 
     size_t output_capacity =
         playback->output_buffer_block_count * kOutputBytesPerBlock;
@@ -673,7 +671,7 @@ uint32_t XMAPlaybackQueryAvailableData(XmaPlayback *playback, uint32_t stream) {
     available_blocks = offset_write - write_buffer_offset_read;
   }
   uint32_t total_bytes = (available_blocks << 8) + available_bytes;
-  uint32_t bytes_per_sample = 1 + 1; // TODO: find all channels and refactor
+  uint32_t bytes_per_sample = playback->channelCount;
   debug_printf("samples accessed: %d\n", total_bytes >> bytes_per_sample);
   return total_bytes >> bytes_per_sample;
 }
@@ -715,7 +713,7 @@ uint32_t XMAPlaybackAccessDecodedData(XmaPlayback *playback, uint32_t stream,
     available_blocks = offset_write - write_buffer_offset_read;
   }
   uint32_t total_bytes = (available_blocks << 8) + available_bytes;
-  uint32_t bytes_per_sample = 1 + 1; // TODO: find all channels and refactor
+  uint32_t bytes_per_sample = playback->channelCount;
   debug_printf("samples accessed: %d\n", total_bytes >> bytes_per_sample);
   return total_bytes >> bytes_per_sample;
 }
@@ -735,7 +733,7 @@ uint32_t XMAPlaybackConsumeDecodedData(XmaPlayback *playback, uint32_t stream,
       partial_bytes_read);
   ;
   *data = (uint32_t *)__builtin_bswap32(addr);
-  uint32_t bytes_per_sample = 1 + 1;
+  uint32_t bytes_per_sample = playback->channelCount;
   uint32_t bytes_desired = maxSamples << bytes_per_sample;
   if (partial_bytes_read) {
     if (bytes_desired < 256 - partial_bytes_read) {
