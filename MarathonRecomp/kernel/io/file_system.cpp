@@ -113,6 +113,20 @@ FileHandle* XCreateFileA
     {
 #ifdef _WIN32
         GuestThread::SetLastError(GetLastError());
+#else
+        switch (errno)
+        {
+        case EACCES:
+            GuestThread::SetLastError(ERROR_ACCESS_DENIED);
+            break;
+        case EEXIST:
+            GuestThread::SetLastError(ERROR_FILE_EXISTS);
+            break;
+        case ENOENT:
+        default: // Use ERROR_PATH_NOT_FOUND as a catch-all for other errors.
+            GuestThread::SetLastError(ERROR_PATH_NOT_FOUND);
+            break;
+        }
 #endif
         return GetInvalidKernelObject<FileHandle>();
     }
