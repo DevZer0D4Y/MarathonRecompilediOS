@@ -4320,8 +4320,8 @@ static void FlushRenderStateForMainThread(GuestDevice* device, LocalRenderComman
     dirtyFlags = device->dirtyFlags[1].get();
     if (dirtyFlags != 0)
     {
-        int startRegister = std::countl_zero(dirtyFlags);
-        int endRegister = std::min(56, 64 - std::countr_zero(dirtyFlags));
+        int startRegister = std::min(56, std::countr_zero(dirtyFlags));
+        int endRegister = std::min(56, 64 - std::countl_zero(dirtyFlags));
 
         uint32_t index = startRegister * 16;
         uint32_t size = (endRegister - startRegister) * 64;
