@@ -4841,6 +4841,8 @@ static GuestVertexDeclaration* CreateVertexDeclarationWithoutAddRef(GuestVertexE
             { D3DDECLUSAGE_TANGENT, 0, 2 },
             { D3DDECLUSAGE_POSITION, 2, 14 },
             { D3DDECLUSAGE_BINORMAL, 0, 3 },
+            { D3DDECLUSAGE_BINORMAL, 1, 10 },
+            { D3DDECLUSAGE_BINORMAL, 2, 11 },
             { D3DDECLUSAGE_POSITION, 3, 16 },
             { D3DDECLUSAGE_TEXCOORD, 0, 4 },
             { D3DDECLUSAGE_TEXCOORD, 1, 5 },
