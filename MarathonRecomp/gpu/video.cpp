@@ -170,8 +170,6 @@ struct SharedConstants
     uint32_t swappedBinormals{};
     uint32_t swappedTangents{};
     uint32_t swappedBlendWeights{};
-    float halfPixelOffsetX{};
-    float halfPixelOffsetY{};
     float alphaThreshold{};
 };
 
@@ -3626,12 +3624,6 @@ static void SetFramebuffer(GuestSurface* renderTarget, GuestSurface* depthStenci
         {
             commandList->setFramebuffer(nullptr);
             g_framebuffer = nullptr;
-        }
-
-        if (g_framebuffer != nullptr)
-        {
-            SetDirtyValue(g_dirtyStates.sharedConstants, g_sharedConstants.halfPixelOffsetX, 1.0f / float(g_framebuffer->getWidth()));
-            SetDirtyValue(g_dirtyStates.sharedConstants, g_sharedConstants.halfPixelOffsetY, -1.0f / float(g_framebuffer->getHeight()));
         }
 
         g_dirtyStates.renderTargetAndDepthStencil = settingForClear;
