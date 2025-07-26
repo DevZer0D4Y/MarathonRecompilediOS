@@ -10,10 +10,6 @@
 #include <res/sounds/move.ogg.h>
 #include <res/sounds/main_deside.ogg.h>
 
-// The raw sound files are kind of loud
-// so reduce their volume slightly in player
-const float EFFECTS_VOLUME = 0.5f;
-
 enum class EmbeddedSound
 {
     WindowOpen,
@@ -85,7 +81,7 @@ static void PlayEmbeddedSound(EmbeddedSound s)
         data.chunk = Mix_LoadWAV_RW(SDL_RWFromConstMem(soundData, soundDataSize), 1);
     }
     
-    Mix_VolumeChunk(data.chunk, (Config::MasterVolume * Config::EffectsVolume * EFFECTS_VOLUME) * MIX_MAX_VOLUME);
+    Mix_VolumeChunk(data.chunk, (Config::MasterVolume * Config::EffectsVolume * EmbeddedPlayer::EFFECTS_VOLUME) * MIX_MAX_VOLUME);
     Mix_PlayChannel(g_channelIndex % MIX_CHANNELS, data.chunk, 0);
     ++g_channelIndex;
 }

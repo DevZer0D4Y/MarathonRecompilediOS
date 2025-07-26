@@ -4,6 +4,7 @@ struct EmbeddedPlayer
 {
     // Arbitrarily picked volume to match the mixing in the original game.
     static constexpr float MUSIC_VOLUME = 0.25f;
+    static constexpr float EFFECTS_VOLUME = 0.2f;
 
     static inline bool s_isActive = false;
 
