@@ -1311,16 +1311,16 @@ static const double OBJ_GET_ITEM_TANGENT = tan(M_PI / 8.0);
 // Coordinates are in [-1, 1] range. Automatically fit and centered.
 // The tangent is calculated incorrectly in game, causing distortion.
 // The hook makes them move to the correct position regardless of FOV.
-static float ComputeObjGetItemTangent(float fieldOfView, float aspectRatio)
-{
-    return tan(AdjustFieldOfView(fieldOfView, aspectRatio) / 2.0) / OBJ_GET_ITEM_TANGENT;
-}
-
-void ObjGetItemFieldOfViewMidAsmHook(PPCRegister& r1, PPCRegister& f1)
-{
-    if (Config::AspectRatio != EAspectRatio::OriginalNarrow)
-        *reinterpret_cast<be<float>*>(g_memory.base + r1.u32 + 0x58) = ComputeObjGetItemTangent(f1.f64, g_aspectRatio);
-}
+//static float ComputeObjGetItemTangent(float fieldOfView, float aspectRatio)
+//{
+//    return tan(AdjustFieldOfView(fieldOfView, aspectRatio) / 2.0) / OBJ_GET_ITEM_TANGENT;
+//}
+//
+//void ObjGetItemFieldOfViewMidAsmHook(PPCRegister& r1, PPCRegister& f1)
+//{
+//    if (Config::AspectRatio != EAspectRatio::OriginalNarrow)
+//        *reinterpret_cast<be<float>*>(g_memory.base + r1.u32 + 0x58) = ComputeObjGetItemTangent(f1.f64, g_aspectRatio);
+//}
 
 static double ComputeObjGetItemX(uint32_t type)
 {
@@ -1418,11 +1418,11 @@ void WorldMapProjectionMidAsmHook(PPCVRegister& v63, PPCVRegister& v62)
 }
 
 // CViewRing has the same exact incorrect math as CObjGetItem.
-void ViewRingFieldOfViewMidAsmHook(PPCRegister& r1, PPCRegister& f1)
-{
-    if (Config::AspectRatio != EAspectRatio::OriginalNarrow)
-        *reinterpret_cast<be<float>*>(g_memory.base + r1.u32 + 0x54) = ComputeObjGetItemTangent(f1.f64, g_aspectRatio);
-}
+//void ViewRingFieldOfViewMidAsmHook(PPCRegister& r1, PPCRegister& f1)
+//{
+//    if (Config::AspectRatio != EAspectRatio::OriginalNarrow)
+//        *reinterpret_cast<be<float>*>(g_memory.base + r1.u32 + 0x54) = ComputeObjGetItemTangent(f1.f64, g_aspectRatio);
+//}
 
 void ViewRingYMidAsmHook(PPCRegister& f1)
 {
