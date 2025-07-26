@@ -112,7 +112,7 @@ FileHandle* XCreateFileA
     fileStream.open(filePath, fileOpenMode);
 
     if (!fileStream.is_open()) {
-        std::filesystem::path cachedPath = FindInPathCache(filePath);
+        std::filesystem::path cachedPath = FindInPathCache(filePath.string());
         if (!cachedPath.empty()) {
             fileStream.open(cachedPath, fileOpenMode);
         }
