@@ -174,7 +174,7 @@ struct UploadAllocation
 struct SharedConstants
 {
     uint32_t texture2DIndices[16]{};
-    uint32_t texture3DIndices[16]{};
+    uint32_t texture2DArrayIndices[16]{};
     uint32_t textureCubeIndices[16]{};
     uint32_t samplerIndices[16]{};
     uint32_t booleans{};
@@ -357,7 +357,7 @@ struct std::unique_ptr<RenderDescriptorSet> g_samplerDescriptorSet;
 enum
 {
     TEXTURE_DESCRIPTOR_NULL_TEXTURE_2D,
-    TEXTURE_DESCRIPTOR_NULL_TEXTURE_3D,
+    TEXTURE_DESCRIPTOR_NULL_TEXTURE_2D_ARRAY,
     TEXTURE_DESCRIPTOR_NULL_TEXTURE_CUBE,
     TEXTURE_DESCRIPTOR_NULL_COUNT
 };
@@ -1719,7 +1719,7 @@ static void BeginCommandList()
     for (size_t i = 0; i < 16; i++)
     {
         g_sharedConstants.texture2DIndices[i] = TEXTURE_DESCRIPTOR_NULL_TEXTURE_2D;
-        g_sharedConstants.texture3DIndices[i] = TEXTURE_DESCRIPTOR_NULL_TEXTURE_3D;
+        g_sharedConstants.texture2DArrayIndices[i] = TEXTURE_DESCRIPTOR_NULL_TEXTURE_2D_ARRAY;
         g_sharedConstants.textureCubeIndices[i] = TEXTURE_DESCRIPTOR_NULL_TEXTURE_CUBE;
     }
 
@@ -1944,10 +1944,10 @@ bool Video::CreateHostDevice(const char *sdlVideoDriver)
             viewDesc.dimension = RenderTextureViewDimension::TEXTURE_2D;
             break;
 
-        case TEXTURE_DESCRIPTOR_NULL_TEXTURE_3D:
-            desc.dimension = RenderTextureDimension::TEXTURE_3D;
+        case TEXTURE_DESCRIPTOR_NULL_TEXTURE_2D_ARRAY:
+            desc.dimension = RenderTextureDimension::TEXTURE_2D;
             desc.arraySize = 1;
-            viewDesc.dimension = RenderTextureViewDimension::TEXTURE_3D;
+            viewDesc.dimension = RenderTextureViewDimension::TEXTURE_2D;
             break;
 
         case TEXTURE_DESCRIPTOR_NULL_TEXTURE_CUBE:
@@ -3878,8 +3878,8 @@ static void SetTextureInRenderThread(uint32_t index, GuestTexture* texture)
     SetDirtyValue(g_dirtyStates.sharedConstants, g_sharedConstants.texture2DIndices[index],
         viewDimension == RenderTextureViewDimension::TEXTURE_2D ? texture->descriptorIndex : TEXTURE_DESCRIPTOR_NULL_TEXTURE_2D);
 
-    SetDirtyValue(g_dirtyStates.sharedConstants, g_sharedConstants.texture3DIndices[index], texture != nullptr &&
-        viewDimension == RenderTextureViewDimension::TEXTURE_3D ? texture->descriptorIndex : TEXTURE_DESCRIPTOR_NULL_TEXTURE_3D);
+    SetDirtyValue(g_dirtyStates.sharedConstants, g_sharedConstants.texture2DArrayIndices[index], texture != nullptr &&
+        viewDimension == RenderTextureViewDimension::TEXTURE_2D ? texture->descriptorIndex : TEXTURE_DESCRIPTOR_NULL_TEXTURE_2D_ARRAY);
 
     SetDirtyValue(g_dirtyStates.sharedConstants, g_sharedConstants.textureCubeIndices[index], texture != nullptr &&
         viewDimension == RenderTextureViewDimension::TEXTURE_CUBE ? texture->descriptorIndex : TEXTURE_DESCRIPTOR_NULL_TEXTURE_CUBE);
@@ -3890,7 +3890,7 @@ static void SetSurface(uint32_t index, GuestSurface* surface)
     AddBarrier(surface, RenderTextureLayout::SHADER_READ);
 
     SetDirtyValue(g_dirtyStates.sharedConstants, g_sharedConstants.texture2DIndices[index], surface->descriptorIndex);
-    SetDirtyValue(g_dirtyStates.sharedConstants, g_sharedConstants.texture3DIndices[index], uint32_t(TEXTURE_DESCRIPTOR_NULL_TEXTURE_3D));
+    SetDirtyValue(g_dirtyStates.sharedConstants, g_sharedConstants.texture2DArrayIndices[index], uint32_t(TEXTURE_DESCRIPTOR_NULL_TEXTURE_2D_ARRAY));
     SetDirtyValue(g_dirtyStates.sharedConstants, g_sharedConstants.textureCubeIndices[index], uint32_t(TEXTURE_DESCRIPTOR_NULL_TEXTURE_CUBE));
 }
 
