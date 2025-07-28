@@ -374,7 +374,7 @@ if (MARATHON_RECOMP_METAL)
     target_compile_definitions(MarathonRecomp PRIVATE MARATHON_RECOMP_METAL)
 endif()
 
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+if (SDL_VULKAN_ENABLED)
     target_compile_definitions(MarathonRecomp PRIVATE SDL_VULKAN_ENABLED)
 endif()
 
@@ -470,14 +470,14 @@ function(compile_shader FILE_PATH TARGET_NAME)
     if (MARATHON_RECOMP_D3D12)
         add_custom_command(
             OUTPUT ${HLSL_FILE_PATH}.dxil.h
-            COMMAND ${DIRECTX_DXC_TOOL} -T ${TARGET_NAME} -HV 2021 -all-resources-bound -Wno-ignored-attributes -Fh ${HLSL_FILE_PATH}.dxil.h ${HLSL_FILE_PATH} -Vn g_${HLSL_NAME}_dxil
+            COMMAND ${DIRECTX_DXC_TOOL} -T ${TARGET_NAME} -HV 2021 -all-resources-bound -Wno-ignored-attributes -E shaderMain -Fh ${HLSL_FILE_PATH}.dxil.h ${HLSL_FILE_PATH} -Vn g_${HLSL_NAME}_dxil
             DEPENDS ${HLSL_FILE_PATH}
         )
         target_sources(MarathonRecomp PRIVATE ${HLSL_FILE_PATH}.dxil.h)
     endif()
     add_custom_command(
         OUTPUT ${HLSL_FILE_PATH}.spirv.h
-        COMMAND ${DIRECTX_DXC_TOOL} -T ${TARGET_NAME} -HV 2021 -all-resources-bound -spirv -fvk-use-dx-layout ${ARGN} -Fh ${HLSL_FILE_PATH}.spirv.h ${HLSL_FILE_PATH} -Vn g_${HLSL_NAME}_spirv
+        COMMAND ${DIRECTX_DXC_TOOL} -T ${TARGET_NAME} -HV 2021 -all-resources-bound -spirv -fvk-use-dx-layout ${ARGN} -E shaderMain -Fh ${HLSL_FILE_PATH}.spirv.h ${HLSL_FILE_PATH} -Vn g_${HLSL_NAME}_spirv
         DEPENDS ${HLSL_FILE_PATH}
     )
     target_sources(MarathonRecomp PRIVATE ${HLSL_FILE_PATH}.spirv.h)
