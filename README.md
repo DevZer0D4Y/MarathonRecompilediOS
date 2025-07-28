@@ -172,6 +172,8 @@ This project does not plan to support any more platforms other than Windows, Lin
 
 - [Hotline Sehwani](https://www.youtube.com/watch?v=8mfOSTcTQNs): Artist behind installer music.
 
+- [Syko](https://x.com/UltraSyko): Helped in identified fonts used in original SonicNext logo. 
+
 ### Unleashed Recompiled
 - [Skyth](https://github.com/blueskythlikesclouds)
 - [Sajid](https://github.com/Sajidur78)
