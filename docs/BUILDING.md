@@ -2,9 +2,9 @@
 
 ## 1. Clone the Repository
 
-Clone **UnleashedRecomp** with submodules using [Git](https://git-scm.com/).
+Clone **MarathonRecomp** with submodules using [Git](https://git-scm.com/).
 ```
-git clone --recurse-submodules https://github.com/hedge-dev/UnleashedRecomp.git
+git clone --recurse-submodules https://github.com/ga2mer/MarathonRecomp.git
 ```
 
 ### Windows
@@ -12,19 +12,19 @@ If you skipped the `--recurse-submodules` argument during cloning, you can run `
 
 ## 2. Add the Required Game Files
 
-Copy the following files from the game and place them inside `./UnleashedRecompLib/private/`:
+Copy the following files from the game and place them inside `./MarathonRecompLib/private/`:
 - `default.xex`
-- `default.xexp`
-- `shader.ar`
+- `shader.arc`
+- `shader_lt.arc`
 
-These files are located in the game's root directory, apart from `default.xexp`, which must be obtained via the title update package.
+`default.xex` is located in the game's root directory, while the others are located in `/xenon/archives`.
 
-> [!TIP]
-> It is recommended that you install the game using [an existing Unleashed Recompiled release](https://github.com/hedge-dev/UnleashedRecomp/releases/latest) to acquire these files, otherwise you'll need to rely on third-party tools to extract them.
->
-> Using the Unleashed Recompiled installation wizard will also ensure that these files are compatible with each other so that they can be used with the build environment.
->
-> When sourcing these files from an Unleashed Recompiled installation, they will be stored under `game` and `update` subdirectories.
+[//]: # (> [!TIP])
+[//]: # (> It is recommended that you install the game using [an existing Marathon Recompiled release]&#40;https://github.com/ga2mer/MarathonRecomp/releases/latest&#41; to acquire these files, otherwise you'll need to rely on third-party tools to extract them.)
+[//]: # (>)
+[//]: # (> Using the Marathon Recompiled installation wizard will also ensure that these files are compatible with each other so that they can be used with the build environment.)
+[//]: # (>)
+[//]: # (> When sourcing these files from an Marathon Recompiled installation, they will be stored under `game` and `update` subdirectories.)
 
 ## 3. Install Dependencies
 
@@ -74,9 +74,9 @@ sudo port install cmake ninja pkg-config
 > If you need a Release-performant build and want to iterate on development without debugging, **it is highly recommended** that you use the `RelWithDebInfo` configuration for faster compile times.
 
 2. Under **Solution Explorer**, right-click and choose **Switch to CMake Targets View**.
-3. Right-click the **UnleashedRecomp** project and choose **Set as Startup Item**, then choose **Add Debug Configuration**.
-4. Add a `currentDir` property to the first element under `configurations` in the generated JSON and set its value to the path to your game directory (where root is the directory containing `dlc`, `game`, `update`, etc).
-5. Start **UnleashedRecomp**. The initial compilation may take a while to complete due to code and shader recompilation.
+3. Right-click the **MarathonRecomp** project and choose **Set as Startup Item**, then choose **Add Debug Configuration**.
+4. Add a `currentDir` property to the first element under `configurations` in the generated JSON and set its value to the path to your game directory (where root is the directory containing `dlc`, `game`, etc).
+5. Start **MarathonRecomp**. The initial compilation may take a while to complete due to code and shader recompilation.
 
 ### Linux
 1. Configure the project using CMake by navigating to the repository and running the following command.
@@ -89,12 +89,12 @@ cmake . --preset linux-release
 
 2. Build the project using the selected configuration.
 ```bash
-cmake --build ./out/build/linux-release --target UnleashedRecomp
+cmake --build ./out/build/linux-release --target MarathonRecomp
 ```
 
 3. Navigate to the directory that was specified as the output in the previous step and run the game.
 ```bash
-./UnleashedRecomp
+./MarathonRecomp
 ```
 
 ### macOS
@@ -108,10 +108,10 @@ cmake . --preset macos-release
 
 2. Build the project using the selected configuration.
 ```bash
-cmake --build ./out/build/macos-release --target UnleashedRecomp
+cmake --build ./out/build/macos-release --target MarathonRecomp
 ```
 
 3. Navigate to the directory that was specified as the output in the previous step and run the game.
 ```bash
-open -a UnleashedRecomp.app
+open -a MarathonRecomp.app
 ```
