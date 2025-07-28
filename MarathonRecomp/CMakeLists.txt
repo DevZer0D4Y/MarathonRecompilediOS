@@ -1,7 +1,11 @@
 project("MarathonRecomp")
 
 if (WIN32)
-    option(MARATHON_RECOMP_D3D12 "Add D3D12 support for rendering" OFF)
+    option(MARATHON_RECOMP_D3D12 "Add D3D12 support for rendering" ON)
+endif()
+
+if (APPLE)
+    option(MARATHON_RECOMP_METAL "Add Metal support for rendering" ON)
 endif()
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -116,14 +120,7 @@ set(MARATHON_RECOMP_GPU_CXX_SOURCES
     "gpu/imgui/imgui_common.cpp"
     "gpu/imgui/imgui_font_builder.cpp"
     "gpu/imgui/imgui_snapshot.cpp"
-    "gpu/rhi/plume_vulkan.cpp"
 )
-
-if (MARATHON_RECOMP_D3D12)
-    list(APPEND MARATHON_RECOMP_GPU_CXX_SOURCES
-        "gpu/rhi/plume_d3d12.cpp"
-    )
-endif()
 
 set(MARATHON_RECOMP_APU_CXX_SOURCES
     "apu/audio.cpp"
@@ -225,17 +222,9 @@ set(MARATHON_RECOMP_THIRDPARTY_INCLUDES
     "${MARATHON_RECOMP_THIRDPARTY_ROOT}/magic_enum/include"
     "${MARATHON_RECOMP_THIRDPARTY_ROOT}/stb"
     "${MARATHON_RECOMP_THIRDPARTY_ROOT}/unordered_dense/include"
-    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/volk"
-    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/Vulkan-Headers/include"
-    "${MARATHON_RECOMP_THIRDPARTY_ROOT}/VulkanMemoryAllocator/include"
     "${MARATHON_RECOMP_TOOLS_ROOT}/bc_diff"
     "${MARATHON_RECOMP_TOOLS_ROOT}/XenosRecomp/thirdparty/smol-v/source"
 )
-
-if (MARATHON_RECOMP_D3D12)
-    list(APPEND MARATHON_RECOMP_THIRDPARTY_INCLUDES "${MARATHON_RECOMP_THIRDPARTY_ROOT}/D3D12MemoryAllocator/include")
-    list(APPEND MARATHON_RECOMP_THIRDPARTY_SOURCES "${MARATHON_RECOMP_THIRDPARTY_ROOT}/D3D12MemoryAllocator/src/D3D12MemAlloc.cpp")
-endif()
 
 set_source_files_properties(${MARATHON_RECOMP_THIRDPARTY_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 
@@ -272,6 +261,10 @@ set(VERSION_TXT "${PROJECT_SOURCE_DIR}/res/version.txt")
 set(SHOW_GIT_INFO_AND_BUILD_TYPE 0)
 if (NOT ${CMAKE_BUILD_TYPE} MATCHES "Release")
     set(SHOW_GIT_INFO_AND_BUILD_TYPE 1)
+endif()
+
+if (MARATHON_RECOMP_METAL)
+    set(XCRUN_TOOL "/usr/bin/xcrun")
 endif()
 
 GenerateVersionSources(
@@ -377,35 +370,35 @@ if (MARATHON_RECOMP_D3D12)
     target_compile_definitions(MarathonRecomp PRIVATE MARATHON_RECOMP_D3D12)
 endif()
 
+if (MARATHON_RECOMP_METAL)
+    target_compile_definitions(MarathonRecomp PRIVATE MARATHON_RECOMP_METAL)
+endif()
+
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     target_compile_definitions(MarathonRecomp PRIVATE SDL_VULKAN_ENABLED)
 endif()
 
-#find_package(directx-dxc REQUIRED)
 find_package(CURL REQUIRED)
 
-#if (MARATHON_RECOMP_D3D12)
-#    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/D3D12)
-#    add_custom_command(TARGET MarathonRecomp POST_BUILD
-#        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:Microsoft::DirectX12-Core,IMPORTED_LOCATION_RELEASE> ${CMAKE_CURRENT_BINARY_DIR}/D3D12
-#        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:Microsoft::DirectX12-Layers,IMPORTED_LOCATION_DEBUG> ${CMAKE_CURRENT_BINARY_DIR}/D3D12
-#       COMMAND_EXPAND_LISTS
-#    )
-#    
-#    find_file(DIRECTX_DXIL_LIBRARY "dxil.dll")
-#    file(COPY ${DIRECTX_DXIL_LIBRARY} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-#
-#    target_link_libraries(MarathonRecomp PRIVATE
-#        Microsoft::DirectX-Headers 
-#        Microsoft::DirectX-Guids 
-#        Microsoft::DirectX12-Agility
-#        Microsoft::DirectXShaderCompiler
-#        Microsoft::DXIL
-#        dxgi
-#    )
-#endif()
+if (MARATHON_RECOMP_D3D12)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/D3D12)
+    add_custom_command(TARGET MarathonRecomp POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:Microsoft::DirectX12-Core,IMPORTED_LOCATION_RELEASE> $<TARGET_FILE_DIR:MarathonRecomp>/D3D12
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:Microsoft::DirectX12-Layers,IMPORTED_LOCATION_DEBUG> $<TARGET_FILE_DIR:MarathonRecomp>/D3D12
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:Microsoft::DirectXShaderCompiler,IMPORTED_LOCATION> $<TARGET_FILE_DIR:MarathonRecomp>
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:Microsoft::DXIL,IMPORTED_LOCATION> $<TARGET_FILE_DIR:MarathonRecomp>
+            COMMAND_EXPAND_LISTS
+    )
 
-#file(CHMOD ${DIRECTX_DXC_TOOL} PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+    target_link_libraries(MarathonRecomp PRIVATE
+            Microsoft::DirectX-Headers
+            Microsoft::DirectX-Guids
+            Microsoft::DirectX12-Agility
+            Microsoft::DirectXShaderCompiler
+            Microsoft::DXIL
+            dxgi
+    )
+endif()
 
 if (WIN32)
     target_link_libraries(MarathonRecomp PRIVATE
@@ -432,6 +425,7 @@ target_link_libraries(MarathonRecomp PRIVATE
     MarathonRecompLib
     xxHash::xxhash
     CURL::libcurl
+    plume
 )
 
 if (NOT WIN32)
@@ -456,22 +450,37 @@ endif()
 target_precompile_headers(MarathonRecomp PUBLIC ${MARATHON_RECOMP_PRECOMPILED_HEADERS})
 
 function(compile_shader FILE_PATH TARGET_NAME)
-    set(FILE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/gpu/shader/${FILE_PATH}.hlsl)
-    cmake_path(GET FILE_PATH STEM VARIABLE_NAME)
+    set(HLSL_FILE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/gpu/shader/hlsl/${FILE_PATH}.hlsl)
+    set(MSL_FILE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/gpu/shader/msl/${FILE_PATH}.metal)
+    cmake_path(GET HLSL_FILE_PATH STEM HLSL_NAME)
+    cmake_path(GET MSL_FILE_PATH STEM MSL_NAME)
+    if (MARATHON_RECOMP_METAL)
+        add_custom_command(
+                OUTPUT ${MSL_FILE_PATH}.ir
+                COMMAND ${XCRUN_TOOL} -sdk macosx metal -o ${MSL_FILE_PATH}.ir -c ${MSL_FILE_PATH} -D__air__ -frecord-sources -gline-tables-only
+                DEPENDS ${MSL_FILE_PATH}
+        )
+        add_custom_command(
+                OUTPUT ${MSL_FILE_PATH}.metallib
+                COMMAND ${XCRUN_TOOL} -sdk macosx metallib -o ${MSL_FILE_PATH}.metallib ${MSL_FILE_PATH}.ir
+                DEPENDS ${MSL_FILE_PATH}.ir
+        )
+        BIN2C(TARGET_OBJ MarathonRecomp SOURCE_FILE "${MSL_FILE_PATH}.metallib" DEST_FILE "${MSL_FILE_PATH}.metallib" ARRAY_NAME "g_${MSL_NAME}_air")
+    endif()
     if (MARATHON_RECOMP_D3D12)
         add_custom_command(
-            OUTPUT ${FILE_PATH}.dxil.h
-            COMMAND ${DIRECTX_DXC_TOOL} -T ${TARGET_NAME} -HV 2021 -all-resources-bound -Wno-ignored-attributes -Fh ${FILE_PATH}.dxil.h ${FILE_PATH} -Vn g_${VARIABLE_NAME}_dxil
-            DEPENDS ${FILE_PATH}
+            OUTPUT ${HLSL_FILE_PATH}.dxil.h
+            COMMAND ${DIRECTX_DXC_TOOL} -T ${TARGET_NAME} -HV 2021 -all-resources-bound -Wno-ignored-attributes -Fh ${HLSL_FILE_PATH}.dxil.h ${HLSL_FILE_PATH} -Vn g_${HLSL_NAME}_dxil
+            DEPENDS ${HLSL_FILE_PATH}
         )
-        target_sources(MarathonRecomp PRIVATE ${FILE_PATH}.dxil.h)
+        target_sources(MarathonRecomp PRIVATE ${HLSL_FILE_PATH}.dxil.h)
     endif()
     add_custom_command(
-        OUTPUT ${FILE_PATH}.spirv.h
-        COMMAND ${DIRECTX_DXC_TOOL} -T ${TARGET_NAME} -HV 2021 -all-resources-bound -spirv -fvk-use-dx-layout ${ARGN} -Fh ${FILE_PATH}.spirv.h ${FILE_PATH} -Vn g_${VARIABLE_NAME}_spirv
-        DEPENDS ${FILE_PATH}
+        OUTPUT ${HLSL_FILE_PATH}.spirv.h
+        COMMAND ${DIRECTX_DXC_TOOL} -T ${TARGET_NAME} -HV 2021 -all-resources-bound -spirv -fvk-use-dx-layout ${ARGN} -Fh ${HLSL_FILE_PATH}.spirv.h ${HLSL_FILE_PATH} -Vn g_${HLSL_NAME}_spirv
+        DEPENDS ${HLSL_FILE_PATH}
     )
-    target_sources(MarathonRecomp PRIVATE ${FILE_PATH}.spirv.h)
+    target_sources(MarathonRecomp PRIVATE ${HLSL_FILE_PATH}.spirv.h)
 endfunction()
 
 function(compile_vertex_shader FILE_PATH)

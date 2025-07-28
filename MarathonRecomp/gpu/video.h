@@ -4,7 +4,7 @@
 /////////////////////////////////////////////////////////////////////#define PSO_CACHING
 //#define PSO_CACHING_CLEANUP
 
-#include "rhi/plume_render_interface.h"
+#include <plume_render_interface.h>
 #include <os/logger.h>
 #include <cstdint>
 
@@ -32,6 +32,12 @@ struct Video
     static void StartPipelinePrecompilation();
     static void WaitForGPU();
     static void ComputeViewportDimensions();
+};
+
+enum class Backend {
+    VULKAN,
+    D3D12,
+    METAL
 };
 
 struct GuestSamplerState
@@ -170,9 +176,11 @@ struct GuestBaseTexture : GuestResource
 struct GuestTexture : GuestBaseTexture
 {
     uint32_t depth = 0;
+    uint32_t mipLevels = 1;
     RenderTextureViewDimension viewDimension = RenderTextureViewDimension::UNKNOWN;
     void* mappedMemory = nullptr;
-    std::unique_ptr<RenderFramebuffer> framebuffer;
+    ankerl::unordered_dense::map<uint32_t, std::unique_ptr<RenderFramebuffer>> framebuffers;
+    std::vector<std::unique_ptr<RenderTextureView>> framebufferViews;
     std::unique_ptr<GuestTexture> patchedTexture;
     struct GuestSurface* sourceSurface = nullptr;
 };
@@ -229,7 +237,7 @@ struct GuestSurface : GuestBaseTexture
     uint32_t guestFormat = 0;
     ankerl::unordered_dense::map<const RenderTexture*, std::unique_ptr<RenderFramebuffer>> framebuffers;
     RenderSampleCounts sampleCount = RenderSampleCount::COUNT_1;
-    ankerl::unordered_dense::set<GuestTexture*> destinationTextures;
+    ankerl::unordered_dense::map<GuestTexture*, uint32_t> destinationTextures;
     bool wasCached = false;
 };
 
