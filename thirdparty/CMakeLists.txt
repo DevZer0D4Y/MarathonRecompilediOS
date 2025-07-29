@@ -15,11 +15,6 @@ set(SDL2MIXER_OPUS OFF)
 set(SDL2MIXER_VORBIS "VORBISFILE")
 set(SDL2MIXER_WAVPACK OFF)
 
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    message(STATUS "Thirdparty: SDL_VULKAN_ENABLED = ${SDL_VULKAN_ENABLED}")
-    set(SDL_VULKAN_ENABLED ON CACHE BOOL "Enable Vulkan support" FORCE)
-endif()
-
 add_subdirectory("${MARATHON_RECOMP_THIRDPARTY_ROOT}/msdf-atlas-gen")
 add_subdirectory("${MARATHON_RECOMP_THIRDPARTY_ROOT}/nativefiledialog-extended")
 add_subdirectory("${MARATHON_RECOMP_THIRDPARTY_ROOT}/o1heap")
