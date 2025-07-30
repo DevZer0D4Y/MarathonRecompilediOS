@@ -132,19 +132,19 @@ registers = ["r4"]
 [[midasm_hook]]
 name = "ContextualHUD_LIFE_BER_ANIME_1"
 address = 0x824D8044
-registers = ["r5","r31"]
+registers = ["r5", "r31"]
 
 [[midasm_hook]]
 name = "ContextualHUD_LIFE_BER_ANIME_1"
 address = 0x824D80A0
-registers = ["r5","r31"]
+registers = ["r5", "r31"]
 
 [[midasm_hook]]
 name = "ContextualHUD_LIFE_BER_ANIME_1"
 address = 0x824D8F2C
-registers = ["r5","r31"]
+registers = ["r5", "r31"]
 
 [[midasm_hook]]
 name = "ContextualHUD_RING_1"
 address = 0x824DEB38
-registers = ["r5","r31"]
+registers = ["r5", "r31"]

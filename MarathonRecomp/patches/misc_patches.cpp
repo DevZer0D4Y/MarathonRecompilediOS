@@ -19,9 +19,9 @@ void ContextualHUD_Init()
     PPC_STORE_U32(0x82036BE8, 0x3F800000); // Shadow
     PPC_STORE_U32(0x82036BFC, 0x3F800000); // E-123 Omega
     PPC_STORE_U32(0x82036C00, 0x3F800000); // Rouge
-    PPC_STORE_U32(0x82036BEC, 0x3F800000); // Silver
-    PPC_STORE_U32(0x82036BF4, 0x3F800000); // Amy
-    PPC_STORE_U32(0x82036C04, 0x3F800000); // Blaze
+    PPC_STORE_U32(0x82036BEC, 0x40000000); // Silver
+    PPC_STORE_U32(0x82036BF4, 0x40000000); // Amy
+    PPC_STORE_U32(0x82036C04, 0x40000000); // Blaze
 
     Contextual_init = true;
 }
@@ -46,7 +46,6 @@ void ContextualHUD_LIFE_BER_ANIME_1(PPCRegister& str, PPCRegister& hud)
         Omega,
         Rouge,
         Blaze
-
     };
 
     auto base = g_memory.base;
@@ -73,7 +72,6 @@ void ContextualHUD_LIFE_BER_ANIME_1(PPCRegister& str, PPCRegister& hud)
     }
 
     str.u32 = chr_in;
-    printf("chr_in:%x\n", chr_in);
 }
 
 void ContextualHUD_RING_1(PPCRegister& index, PPCRegister& hud)
