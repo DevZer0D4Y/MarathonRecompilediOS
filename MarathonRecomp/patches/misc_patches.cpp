@@ -84,3 +84,12 @@ void ContextualHUD_RING_1(PPCRegister& index, PPCRegister& hud)
     auto chr_index = PPC_LOAD_U32(hud.u32 + 0x78);
     index.u32 = chr_index;
 }
+
+void PostureDisableEdgeGrabLeftover(PPCRegister& posture) {
+    if (!Config::DisableEdgeGrabLeftover) {
+        return;
+    }
+
+    auto base = g_memory.base;
+    *(volatile uint8_t*)(base + (posture.u32 + 0x3C0)) = 1;
+}

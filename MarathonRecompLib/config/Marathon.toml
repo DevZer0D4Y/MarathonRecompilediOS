@@ -148,3 +148,8 @@ registers = ["r5", "r31"]
 name = "ContextualHUD_RING_1"
 address = 0x824DEB38
 registers = ["r5", "r31"]
+
+[[midasm_hook]]
+name = "PostureDisableEdgeGrabLeftover"
+address = 0x82200568
+registers = ["r31"]
