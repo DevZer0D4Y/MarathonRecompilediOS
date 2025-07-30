@@ -43,9 +43,6 @@
 [submodule "thirdparty/json"]
 	path = thirdparty/json
 	url = https://github.com/nlohmann/json
-[submodule "thirdparty/FFmpeg"]
-	path = thirdparty/FFmpeg
-	url = https://github.com/IsaacMarovitz/FFmpeg
 [submodule "MarathonRecompResources"]
 	path = MarathonRecompResources
 	url = https://github.com/IsaacMarovitz/MarathonRecompResources
@@ -58,3 +55,6 @@
 [submodule "thirdparty/plume"]
 	path = thirdparty/plume
 	url = https://github.com/renderbag/plume
+[submodule "thirdparty/ffmpeg-core"]
+	path = thirdparty/ffmpeg-core
+	url = https://github.com/IsaacMarovitz/ffmpeg-core

@@ -419,12 +419,7 @@ target_link_libraries(MarathonRecomp PRIVATE
     plume
 )
 
-if (NOT WIN32)
-    target_link_libraries(MarathonRecomp PRIVATE
-        ffmpeg::avcodec
-        ffmpeg::avutil
-    )
-endif()
+target_link_libraries(MarathonRecomp PRIVATE ffmpeg)
 
 target_include_directories(MarathonRecomp PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
