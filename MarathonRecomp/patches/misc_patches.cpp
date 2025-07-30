@@ -28,7 +28,7 @@ void ContextualHUD_Init()
 
 void ContextualHUD_LIFE_BER_ANIME_1(PPCRegister& str, PPCRegister& hud)
 {
-    if (!Config::RestoreHUDColors) {
+    if (!Config::RestoreContextualHUDColours) {
         return;
     }
 
@@ -76,7 +76,7 @@ void ContextualHUD_LIFE_BER_ANIME_1(PPCRegister& str, PPCRegister& hud)
 
 void ContextualHUD_RING_1(PPCRegister& index, PPCRegister& hud)
 {
-    if (!Config::RestoreHUDColors) {
+    if (!Config::RestoreContextualHUDColours) {
         return;
     }
 
