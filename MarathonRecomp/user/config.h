@@ -113,7 +113,7 @@ enum class EShadowResolution : int32_t
     x8192 = 8192
 };
 
-enum class EGITextureFiltering : uint32_t
+enum class ECSMTextureFiltering : uint32_t
 {
     Bilinear,
     Bicubic

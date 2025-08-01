@@ -346,10 +346,10 @@ CONFIG_DEFINE_ENUM_TEMPLATE(EShadowResolution)
     { "8192",     EShadowResolution::x8192 },
 };
 
-CONFIG_DEFINE_ENUM_TEMPLATE(EGITextureFiltering)
+CONFIG_DEFINE_ENUM_TEMPLATE(ECSMTextureFiltering)
 {
-    { "Bilinear", EGITextureFiltering::Bilinear },
-    { "Bicubic",  EGITextureFiltering::Bicubic }
+    { "Bilinear", ECSMTextureFiltering::Bilinear },
+    { "Bicubic",  ECSMTextureFiltering::Bicubic }
 };
 
 CONFIG_DEFINE_ENUM_TEMPLATE(ECutsceneAspectRatio)

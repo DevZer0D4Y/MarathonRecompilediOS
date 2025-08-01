@@ -708,9 +708,10 @@ CONFIG_DEFINE_ENUM_LOCALE(EShadowResolution)
 };
 
 // Japanese Notes: This localization should include furigana.
-CONFIG_DEFINE_LOCALE(GITextureFiltering)
+// TODO: Update locale
+CONFIG_DEFINE_LOCALE(CSMTextureFiltering)
 {
-    { ELanguage::English,  { "GI Texture Filtering", "Change the quality of the filtering used for global illumination textures." } },
+    { ELanguage::English,  { "Shadowmap Texture Filtering", "Change the quality of the filtering used for shadowmap textures." } },
     { ELanguage::Japanese, { "GIテクスチャフィルタリング", "GIテクスチャに\u200B[使用:しよう]する\u200Bフィルタリングの\u200B[品質:ひんしつ]を\u200B[変更:へんこう]できます" } },
     { ELanguage::German,   { "GI Texturfilterung", "Ändere die Qualität der Filterung für Global-Illumination-Texturen." } },
     { ELanguage::French,   { "Filtre des textures IG", "Modifie la qualité du filtre utilisé pour les textures d'illumination globale." } },
@@ -718,48 +719,48 @@ CONFIG_DEFINE_LOCALE(GITextureFiltering)
     { ELanguage::Italian,  { "Filtraggio delle texture GI", "Regola la qualità del sistema di filtraggio utilizzato per le texture dell'illuminazione." } }
 };
 
-CONFIG_DEFINE_ENUM_LOCALE(EGITextureFiltering)
+CONFIG_DEFINE_ENUM_LOCALE(ECSMTextureFiltering)
 {
     {
         ELanguage::English,
         {
-            { EGITextureFiltering::Bilinear, { "BILINEAR", "" } },
-            { EGITextureFiltering::Bicubic,  { "BICUBIC", "" } }
+            { ECSMTextureFiltering::Bilinear, { "BILINEAR", "" } },
+            { ECSMTextureFiltering::Bicubic,  { "BICUBIC",  "" } }
         }
     },
     {
         ELanguage::Japanese,
         {
-            { EGITextureFiltering::Bilinear, { "バイリニア", "" } },
-            { EGITextureFiltering::Bicubic,  { "バイキュービック", "" } },
+            { ECSMTextureFiltering::Bilinear, { "バイリニア",      "" } },
+            { ECSMTextureFiltering::Bicubic,  { "バイキュービック", "" } },
         }
     },
     {
         ELanguage::German,
         {
-            { EGITextureFiltering::Bilinear, { "BILINEAR", "" } },
-            { EGITextureFiltering::Bicubic,  { "BICUBIC", "" } }
+            { ECSMTextureFiltering::Bilinear, { "BILINEAR",   "" } },
+            { ECSMTextureFiltering::Bicubic,  { "BICUBIC",    "" } }
         }
     },
     {
         ELanguage::French,
         {
-            { EGITextureFiltering::Bilinear, { "BILINÉAIRE", "" } },
-            { EGITextureFiltering::Bicubic,  { "BICUBIQUE", "" } },
+            { ECSMTextureFiltering::Bilinear, { "BILINÉAIRE", "" } },
+            { ECSMTextureFiltering::Bicubic,  { "BICUBIQUE",  "" } },
         }
     },
     {
         ELanguage::Spanish,
         {
-            { EGITextureFiltering::Bilinear, { "BILINEAR", "" } },
-            { EGITextureFiltering::Bicubic,  { "BICÚBICO", "" } },
+            { ECSMTextureFiltering::Bilinear, { "BILINEAR",   "" } },
+            { ECSMTextureFiltering::Bicubic,  { "BICÚBICO",   "" } },
         }
     },
     {
         ELanguage::Italian,
         {
-            { EGITextureFiltering::Bilinear, { "BILINEARE", "" } },
-            { EGITextureFiltering::Bicubic,  { "BICUBICO", "" } }
+            { ECSMTextureFiltering::Bilinear, { "BILINEARE",  "" } },
+            { ECSMTextureFiltering::Bicubic,  { "BICUBICO",   "" } }
         }
     }
 };

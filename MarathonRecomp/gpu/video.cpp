@@ -1765,7 +1765,7 @@ static void BeginCommandList()
 
     memset(g_textures, 0, sizeof(g_textures));
 
-    if (Config::GITextureFiltering == EGITextureFiltering::Bicubic)
+    if (Config::CSMTextureFiltering == ECSMTextureFiltering::Bicubic)
         g_pipelineState.specConstants |= SPEC_CONSTANT_BICUBIC_GI_FILTER;
     else
         g_pipelineState.specConstants &= ~SPEC_CONSTANT_BICUBIC_GI_FILTER;
@@ -1804,7 +1804,7 @@ static void ApplyLowEndDefaults()
     ApplyLowEndDefault(Config::AntiAliasing, EAntiAliasing::MSAA2x, changed);
     ApplyLowEndDefault(Config::ShadowResolution, EShadowResolution::Original, changed);
     ApplyLowEndDefault(Config::TransparencyAntiAliasing, false, changed);
-    ApplyLowEndDefault(Config::GITextureFiltering, EGITextureFiltering::Bilinear, changed);
+    ApplyLowEndDefault(Config::CSMTextureFiltering, ECSMTextureFiltering::Bilinear, changed);
 
     if (changed) 
     {
@@ -7902,7 +7902,7 @@ void VideoConfigValueChangedCallback(IConfigDef* config)
     bool shouldRecompile =
         config == &Config::AntiAliasing ||
         config == &Config::TransparencyAntiAliasing ||
-        config == &Config::GITextureFiltering;
+        config == &Config::CSMTextureFiltering;
 
 //    if (shouldRecompile)
 //        EnqueuePipelineTask(PipelineTaskType::RecompilePipelines, {});
