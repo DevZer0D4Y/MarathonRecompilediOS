@@ -18,12 +18,6 @@ CONFIG_DEFINE_ENUM_TEMPLATE(ELanguage)
     { "Italian",  ELanguage::Italian }
 };
 
-CONFIG_DEFINE_ENUM_TEMPLATE(ETimeOfDayTransition)
-{
-    { "Xbox",        ETimeOfDayTransition::Xbox },
-    { "PlayStation", ETimeOfDayTransition::PlayStation }
-};
-
 CONFIG_DEFINE_ENUM_TEMPLATE(ECameraRotationMode)
 {
     { "Normal",  ECameraRotationMode::Normal },
@@ -356,22 +350,6 @@ CONFIG_DEFINE_ENUM_TEMPLATE(EGITextureFiltering)
 {
     { "Bilinear", EGITextureFiltering::Bilinear },
     { "Bicubic",  EGITextureFiltering::Bicubic }
-};
-
-CONFIG_DEFINE_ENUM_TEMPLATE(EDepthOfFieldQuality)
-{
-    { "Auto",   EDepthOfFieldQuality::Auto },
-    { "Low",    EDepthOfFieldQuality::Low },
-    { "Medium", EDepthOfFieldQuality::Medium },
-    { "High",   EDepthOfFieldQuality::High },
-    { "Ultra",  EDepthOfFieldQuality::Ultra }
-};
-
-CONFIG_DEFINE_ENUM_TEMPLATE(EMotionBlur)
-{
-    { "Off",      EMotionBlur::Off },
-    { "Original", EMotionBlur::Original },
-    { "Enhanced", EMotionBlur::Enhanced }
 };
 
 CONFIG_DEFINE_ENUM_TEMPLATE(ECutsceneAspectRatio)

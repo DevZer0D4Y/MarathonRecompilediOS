@@ -10,7 +10,6 @@
 #include <res/images/options_menu/thumbnails/antialiasing_4x.dds.h>
 #include <res/images/options_menu/thumbnails/antialiasing_8x.dds.h>
 #include <res/images/options_menu/thumbnails/aspect_ratio.dds.h>
-#include <res/images/options_menu/thumbnails/battle_theme.dds.h>
 #include <res/images/options_menu/thumbnails/brightness.dds.h>
 #include <res/images/options_menu/thumbnails/channel_stereo.dds.h>
 #include <res/images/options_menu/thumbnails/channel_surround.dds.h>
@@ -28,9 +27,6 @@
 #include <res/images/options_menu/thumbnails/language.dds.h>
 #include <res/images/options_menu/thumbnails/master_volume.dds.h>
 #include <res/images/options_menu/thumbnails/monitor.dds.h>
-#include <res/images/options_menu/thumbnails/motion_blur_off.dds.h>
-#include <res/images/options_menu/thumbnails/motion_blur_original.dds.h>
-#include <res/images/options_menu/thumbnails/motion_blur_enhanced.dds.h>
 #include <res/images/options_menu/thumbnails/movie_scale_fit.dds.h>
 #include <res/images/options_menu/thumbnails/movie_scale_fill.dds.h>
 #include <res/images/options_menu/thumbnails/music_attenuation.dds.h>
@@ -40,8 +36,6 @@
 #include <res/images/options_menu/thumbnails/shadow_resolution_x2048.dds.h>
 #include <res/images/options_menu/thumbnails/shadow_resolution_x4096.dds.h>
 #include <res/images/options_menu/thumbnails/shadow_resolution_x8192.dds.h>
-#include <res/images/options_menu/thumbnails/time_transition_ps.dds.h>
-#include <res/images/options_menu/thumbnails/time_transition_xb.dds.h>
 #include <res/images/options_menu/thumbnails/transparency_antialiasing_false.dds.h>
 #include <res/images/options_menu/thumbnails/transparency_antialiasing_true.dds.h>
 #include <res/images/options_menu/thumbnails/ui_alignment_centre.dds.h>
@@ -53,7 +47,6 @@
 #include <res/images/options_menu/thumbnails/vsync_on.dds.h>
 #include <res/images/options_menu/thumbnails/vsync_off.dds.h>
 #include <res/images/options_menu/thumbnails/window_size.dds.h>
-#include <res/images/options_menu/thumbnails/xbox_color_correction.dds.h>
 
 #define VALUE_THUMBNAIL_MAP(type) std::unordered_map<type, std::unique_ptr<GuestTexture>>
 
@@ -68,15 +61,12 @@ static std::unique_ptr<GuestTexture> g_backgroundInputPSThumbnail;
 
 static std::unordered_map<const IConfigDef*, std::unique_ptr<GuestTexture>> g_configThumbnails;
 
-static VALUE_THUMBNAIL_MAP(ETimeOfDayTransition) g_timeOfDayTransitionThumbnails;
 static VALUE_THUMBNAIL_MAP(EChannelConfiguration) g_channelConfigurationThumbnails;
 static VALUE_THUMBNAIL_MAP(EAntiAliasing) g_msaaAntiAliasingThumbnails;
 static VALUE_THUMBNAIL_MAP(bool) g_vsyncThumbnails;
 static VALUE_THUMBNAIL_MAP(bool) g_transparencyAntiAliasingThumbnails;
 static VALUE_THUMBNAIL_MAP(EShadowResolution) g_shadowResolutionThumbnails;
 static VALUE_THUMBNAIL_MAP(EGITextureFiltering) g_giTextureFilteringThumbnails;
-static VALUE_THUMBNAIL_MAP(EMotionBlur) g_motionBlurThumbnails;
-static VALUE_THUMBNAIL_MAP(bool) g_xboxColorCorrectionThumbnails;
 static VALUE_THUMBNAIL_MAP(ECutsceneAspectRatio) g_cutsceneAspectRatioThumbnails;
 static VALUE_THUMBNAIL_MAP(EUIAlignmentMode) g_uiAlignmentThumbnails;
 
@@ -95,9 +85,6 @@ void LoadThumbnails()
     g_configThumbnails[&Config::VoiceLanguage] = LOAD_ZSTD_TEXTURE(g_voice_language);
     g_configThumbnails[&Config::Hints] = LOAD_ZSTD_TEXTURE(g_hints);
     g_configThumbnails[&Config::AchievementNotifications] = LOAD_ZSTD_TEXTURE(g_achievement_notifications);
-
-    g_timeOfDayTransitionThumbnails[ETimeOfDayTransition::Xbox] = LOAD_ZSTD_TEXTURE(g_time_of_day_transition_xbox);
-    g_timeOfDayTransitionThumbnails[ETimeOfDayTransition::PlayStation] = LOAD_ZSTD_TEXTURE(g_time_of_day_transition_playstation);
 
     g_configThumbnails[&Config::HorizontalCamera] = LOAD_ZSTD_TEXTURE(g_horizontal_camera);
     g_configThumbnails[&Config::VerticalCamera] = LOAD_ZSTD_TEXTURE(g_vertical_camera);
@@ -137,10 +124,6 @@ void LoadThumbnails()
 
     g_giTextureFilteringThumbnails[EGITextureFiltering::Bilinear] = LOAD_ZSTD_TEXTURE(g_gi_texture_filtering_bilinear);
     g_giTextureFilteringThumbnails[EGITextureFiltering::Bicubic] = LOAD_ZSTD_TEXTURE(g_gi_texture_filtering_bicubic);
-
-    g_motionBlurThumbnails[EMotionBlur::Off] = LOAD_ZSTD_TEXTURE(g_motion_blur_off);
-    g_motionBlurThumbnails[EMotionBlur::Original] = LOAD_ZSTD_TEXTURE(g_motion_blur_original);
-    g_motionBlurThumbnails[EMotionBlur::Enhanced] = LOAD_ZSTD_TEXTURE(g_motion_blur_enhanced);
 
     g_cutsceneAspectRatioThumbnails[ECutsceneAspectRatio::Original] = LOAD_ZSTD_TEXTURE(g_movie_scale_fit);
     g_cutsceneAspectRatioThumbnails[ECutsceneAspectRatio::Unlocked] = LOAD_ZSTD_TEXTURE(g_movie_scale_fill);

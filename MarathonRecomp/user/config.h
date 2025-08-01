@@ -40,12 +40,6 @@ enum class EVoiceLanguage : uint32_t
     Japanese
 };
 
-enum class ETimeOfDayTransition : uint32_t
-{
-    Xbox,
-    PlayStation
-};
-
 enum class ECameraRotationMode : uint32_t
 {
     Normal,
@@ -123,22 +117,6 @@ enum class EGITextureFiltering : uint32_t
 {
     Bilinear,
     Bicubic
-};
-
-enum class EDepthOfFieldQuality : uint32_t
-{
-    Auto,
-    Low,
-    Medium,
-    High,
-    Ultra
-};
-
-enum class EMotionBlur : uint32_t
-{
-    Off,
-    Original,
-    Enhanced
 };
 
 enum class ECutsceneAspectRatio : uint32_t
