@@ -74,3 +74,28 @@ PPC_FUNC(sub_8220F330)
 
     __imp__sub_8220F330(ctx, base);
 }
+
+bool MidairMachSpeedControl1()
+{
+    return Config::MidairControlForMachSpeed;
+}
+
+bool MidairMachSpeedControl2()
+{
+    return Config::MidairControlForMachSpeed;
+}
+
+bool MidairSnowboardControl1()
+{
+    return Config::MidairControlForSnowboards;
+}
+
+bool MidairSnowboardControl2()
+{
+    return Config::MidairControlForSnowboards;
+}
+
+bool MidairSnowboardControl3()
+{
+    return Config::MidairControlForSnowboards;
+}
