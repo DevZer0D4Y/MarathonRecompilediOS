@@ -13,7 +13,6 @@
 #define D3DCLEAR_STENCIL 0x20
 
 // TODO: remove
-#define SPEC_CONSTANT_BICUBIC_GI_FILTER (1 << 2)
 #define SPEC_CONSTANT_ALPHA_TO_COVERAGE (1 << 3)
 #define SPEC_CONSTANT_REVERSE_Z         (1 << 4)
 

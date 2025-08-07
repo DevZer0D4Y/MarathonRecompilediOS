@@ -105,7 +105,6 @@ enum class EAntiAliasing : uint32_t
 
 enum class EShadowResolution : int32_t
 {
-    Original = -1,
     x512 = 512,
     x1024 = 1024,
     x2048 = 2048,
@@ -119,12 +118,6 @@ enum class EReflectionResolution : int32_t
     Quarter,
     Half,
     Full
-};
-
-enum class ECSMTextureFiltering : uint32_t
-{
-    Bilinear,
-    Bicubic
 };
 
 enum class ECutsceneAspectRatio : uint32_t

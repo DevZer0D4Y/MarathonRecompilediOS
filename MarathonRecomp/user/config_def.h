@@ -65,10 +65,9 @@ CONFIG_DEFINE_LOCALISED("Video", float, Brightness, 0.5f);
 CONFIG_DEFINE_ENUM_LOCALISED("Video", EAntiAliasing, AntiAliasing, EAntiAliasing::MSAA4x);
 CONFIG_DEFINE_LOCALISED("Video", bool, TransparencyAntiAliasing, true);
 CONFIG_DEFINE("Video", uint32_t, AnisotropicFiltering, 16);
-CONFIG_DEFINE_ENUM_LOCALISED("Video", EShadowResolution, ShadowResolution, EShadowResolution::x4096);
+CONFIG_DEFINE_ENUM("Video", EShadowResolution, ShadowResolution, EShadowResolution::x4096);
 // TODO: Localise this enum
-CONFIG_DEFINE_ENUM("Video", EReflectionResolution, ReflectionResolution, EReflectionResolution::Quarter);
-CONFIG_DEFINE_ENUM_LOCALISED("Video", ECSMTextureFiltering, CSMTextureFiltering, ECSMTextureFiltering::Bicubic);
+CONFIG_DEFINE_ENUM("Video", EReflectionResolution, ReflectionResolution, EReflectionResolution::Half);
 CONFIG_DEFINE_ENUM_LOCALISED("Video", ECutsceneAspectRatio, CutsceneAspectRatio, ECutsceneAspectRatio::Original);
 CONFIG_DEFINE_ENUM_LOCALISED("Video", EUIAlignmentMode, UIAlignmentMode, EUIAlignmentMode::Edge);
 
