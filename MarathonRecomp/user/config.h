@@ -113,6 +113,14 @@ enum class EShadowResolution : int32_t
     x8192 = 8192
 };
 
+enum class EReflectionResolution : int32_t
+{
+    Eighth,
+    Quarter,
+    Half,
+    Full
+};
+
 enum class ECSMTextureFiltering : uint32_t
 {
     Bilinear,

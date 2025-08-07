@@ -346,6 +346,14 @@ CONFIG_DEFINE_ENUM_TEMPLATE(EShadowResolution)
     { "8192",     EShadowResolution::x8192 },
 };
 
+CONFIG_DEFINE_ENUM_TEMPLATE(EReflectionResolution)
+{
+    { "Full",    EReflectionResolution::Full },
+    { "Half",    EReflectionResolution::Half },
+    { "Quarter", EReflectionResolution::Quarter },
+    { "Eighth",  EReflectionResolution::Eighth },
+};
+
 CONFIG_DEFINE_ENUM_TEMPLATE(ECSMTextureFiltering)
 {
     { "Bilinear", ECSMTextureFiltering::Bilinear },
