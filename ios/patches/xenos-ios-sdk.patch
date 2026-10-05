@@ -1,0 +1,67 @@
+diff --git a/XenosRecomp/air_compiler.cpp b/XenosRecomp/air_compiler.cpp
+index 6cd79e3..d353cf4 100644
+--- a/XenosRecomp/air_compiler.cpp
++++ b/XenosRecomp/air_compiler.cpp
+@@ -3,6 +3,10 @@
+ #include <fstream>
+ #include <iterator>
+ #include <spawn.h>
++#include <sys/wait.h>
++#include <cerrno>
++
++extern char** environ;
+ #include <unistd.h>
+ 
+ struct TemporaryPath
+@@ -17,10 +21,14 @@ struct TemporaryPath
+     }
+ };
+ 
++#ifndef XENOS_RECOMP_METAL_SDK
++#define XENOS_RECOMP_METAL_SDK "macosx"
++#endif
++
+ static int executeCommand(const char** argv)
+ {
+     pid_t pid;
+-    if (posix_spawn(&pid, argv[0], nullptr, nullptr, const_cast<char**>(argv), nullptr) != 0)
++    if (posix_spawn(&pid, argv[0], nullptr, nullptr, const_cast<char**>(argv), environ) != 0)
+         return -1;
+ 
+     int status;
+@@ -54,7 +62,10 @@ std::vector<uint8_t> AirCompiler::compile(const std::string& shaderSource)
+     }
+ 
+     const char* compileCommand[] = {
+-        "/usr/bin/xcrun", "-sdk", "macosx", "metal", "-o", irPath.path.c_str(), "-c", sourcePath.path.c_str(), "-Wno-unused-variable", "-frecord-sources", "-gline-tables-only", "-fmetal-math-mode=relaxed", "-D__air__",
++        "/usr/bin/xcrun", "-sdk", XENOS_RECOMP_METAL_SDK, "metal", "-o", irPath.path.c_str(), "-c", sourcePath.path.c_str(), "-Wno-unused-variable", "-frecord-sources", "-gline-tables-only", "-fmetal-math-mode=relaxed", "-D__air__",
++#ifdef XENOS_RECOMP_METAL_IOS
++        "-mios-version-min=17.0",
++#endif
+ #ifdef UNLEASHED_RECOMP
+         "-DUNLEASHED_RECOMP",
+ #endif
+@@ -70,7 +81,7 @@ std::vector<uint8_t> AirCompiler::compile(const std::string& shaderSource)
+         std::exit(1);
+     }
+ 
+-    const char* linkCommand[] = { "/usr/bin/xcrun", "-sdk", "macosx", "metallib", "-o", metalLibPath.path.c_str(), irPath.path.c_str(), nullptr };
++    const char* linkCommand[] = { "/usr/bin/xcrun", "-sdk", XENOS_RECOMP_METAL_SDK, "metallib", "-o", metalLibPath.path.c_str(), irPath.path.c_str(), nullptr };
+     if (const int linkStatus = executeCommand(linkCommand); linkStatus != 0)
+     {
+         fmt::println("Metal linker exited with status: {}", linkStatus);
+diff --git a/XenosRecomp/main.cpp b/XenosRecomp/main.cpp
+index a8b87a6..d9e8370 100644
+--- a/XenosRecomp/main.cpp
++++ b/XenosRecomp/main.cpp
+@@ -164,7 +164,9 @@ int main(int argc, char** argv)
+             shaderQueue.emplace_back(hash);
+         }
+ 
+-        const uint32_t numThreads = std::max(std::thread::hardware_concurrency(), 1u);
++        uint32_t numThreads = std::max(std::thread::hardware_concurrency(), 1u);
++        if (const char* threadsEnv = getenv("XENOS_RECOMP_THREADS"); threadsEnv != nullptr && atoi(threadsEnv) > 0)
++            numThreads = uint32_t(atoi(threadsEnv));
+         fmt::println("Recompiling shaders with {} threads", numThreads);
+ 
+         std::atomic<uint32_t> progress = 0;

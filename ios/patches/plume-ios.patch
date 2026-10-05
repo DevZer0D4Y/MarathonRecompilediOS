@@ -1,0 +1,450 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 0789c20..6e67912 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -52,10 +52,13 @@ message(STATUS "Plume - Building examples: ${PLUME_BUILD_EXAMPLES}")
+ 
+ # Basic source files that are always included
+ set(PLUME_SOURCES
+-    plume_vulkan.cpp
+-    plume_vulkan.h
++
+ )
+ 
++if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
++    list(APPEND PLUME_SOURCES plume_vulkan.cpp plume_vulkan.h)
++endif()
++
+ # Platform-specific files
+ if(APPLE)
+     list(APPEND PLUME_SOURCES
+diff --git a/plume_apple.mm b/plume_apple.mm
+index 1384fe9..4842909 100644
+--- a/plume_apple.mm
++++ b/plume_apple.mm
+@@ -7,6 +7,55 @@
+ 
+ #include "plume_apple.h"
+ 
++#include <TargetConditionals.h>
++#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
++#import <UIKit/UIKit.h>
++#import <Foundation/Foundation.h>
++
++namespace plume {
++    RenderDeviceVendor getRenderDeviceVendor(uint64_t) { return RenderDeviceVendor::APPLE; }
++
++    CocoaWindow::CocoaWindow(void* window) : windowHandle(window), cachedRefreshRate(60) {
++        cachedAttributes = {0, 0, 0, 0};
++        updateWindowAttributesInternal(true);
++        updateRefreshRateInternal(true);
++    }
++    CocoaWindow::~CocoaWindow() {}
++
++    void CocoaWindow::updateWindowAttributesInternal(bool forceSync) {
++        auto block = ^{
++            UIWindow* window = (__bridge UIWindow*)windowHandle;
++            CGRect bounds = window.bounds;
++            CGFloat scale = window.screen.nativeScale;
++            std::lock_guard<std::mutex> lock(attributesMutex);
++            cachedAttributes = {0, 0, int(round(bounds.size.width * scale)), int(round(bounds.size.height * scale))};
++        };
++        if ([NSThread isMainThread]) block();
++        else if (forceSync) dispatch_sync(dispatch_get_main_queue(), block);
++        else dispatch_async(dispatch_get_main_queue(), block);
++    }
++    void CocoaWindow::updateRefreshRateInternal(bool forceSync) {
++        auto block = ^{
++            UIWindow* window = (__bridge UIWindow*)windowHandle;
++            cachedRefreshRate.store(int(window.screen.maximumFramesPerSecond));
++        };
++        if ([NSThread isMainThread]) block();
++        else if (forceSync) dispatch_sync(dispatch_get_main_queue(), block);
++        else dispatch_async(dispatch_get_main_queue(), block);
++    }
++    void CocoaWindow::getWindowAttributes(CocoaWindowAttributes* attributes) const {
++        const_cast<CocoaWindow*>(this)->updateWindowAttributesInternal(false);
++        std::lock_guard<std::mutex> lock(attributesMutex);
++        *attributes = cachedAttributes;
++    }
++    int CocoaWindow::getRefreshRate() const {
++        const_cast<CocoaWindow*>(this)->updateRefreshRateInternal(false);
++        return cachedRefreshRate.load();
++    }
++    void CocoaWindow::toggleFullscreen() {}
++}
++
++#else
+ #import <AppKit/AppKit.h>
+ #import <Foundation/Foundation.h>
+ #import <IOKit/IOKitLib.h>
+@@ -176,3 +225,5 @@ namespace plume {
+         }
+     }
+ }
++
++#endif
+diff --git a/plume_metal.cpp b/plume_metal.cpp
+index 2abe67c..9c47ebe 100644
+--- a/plume_metal.cpp
++++ b/plume_metal.cpp
+@@ -16,8 +16,55 @@
+ 
+ #include <algorithm>
+ #include <mutex>
++#include <new>
++#include <stdexcept>
+ 
+ #include "plume_metal.h"
++#if PLUME_IOS
++#include "plume_bc_formats.h"
++
++namespace plume {
++    // Frame statistics for the iOS performance log: render passes begun, blit passes begun and draws issued.
++    std::atomic<uint32_t> g_metalRenderPassCount{ 0 };
++    std::atomic<uint32_t> g_metalBlitPassCount{ 0 };
++    std::atomic<uint32_t> g_metalDrawCount{ 0 };
++
++    // Why active render passes ended: framebuffer changes (to another or the same framebuffer), barriers,
++    // copies, clears and anything else (resolves, compute, timestamps, end of command list).
++    std::atomic<uint32_t> g_metalPassEndFramebuffer{ 0 };
++    std::atomic<uint32_t> g_metalPassEndSameFramebuffer{ 0 };
++    std::atomic<uint32_t> g_metalPassEndBarrier{ 0 };
++    std::atomic<uint32_t> g_metalPassEndCopy{ 0 };
++    std::atomic<uint32_t> g_metalPassEndClear{ 0 };
++    std::atomic<uint32_t> g_metalBarrierKeptPass{ 0 };
++
++    static bool IsFramebufferAttachment(const MetalAttachment &attachment, const RenderTexture *texture) {
++        if (attachment.format == RenderFormat::UNKNOWN) {
++            return false;
++        }
++
++        if (static_cast<const void *>(attachment.texture) == static_cast<const void *>(texture)) {
++            return true;
++        }
++
++        if (attachment.textureView != nullptr && static_cast<const void *>(attachment.textureView->parentTexture) == static_cast<const void *>(texture)) {
++            return true;
++        }
++
++        return attachment.getTexture() == static_cast<const ExtendedRenderTexture *>(texture)->getTexture();
++    }
++
++    static bool IsFramebufferAttachment(const MetalFramebuffer *framebuffer, const RenderTexture *texture) {
++        for (const MetalAttachment &attachment : framebuffer->colorAttachments) {
++            if (IsFramebufferAttachment(attachment, texture)) {
++                return true;
++            }
++        }
++
++        return IsFramebufferAttachment(framebuffer->depthAttachment, texture);
++    }
++}
++#endif
+ 
+ extern "C" {
+     void *objc_autoreleasePoolPush(void);
+@@ -292,6 +339,10 @@ namespace plume {
+         }
+ 
+     MTL::PixelFormat mapPixelFormat(RenderFormat format) {
++#if PLUME_IOS
++        if (IOSIsSRGBFormat(format)) return MTL::PixelFormatRGBA8Unorm_sRGB;
++        format = IOSFallbackFormat(format);
++#endif
+         switch (format) {
+             case RenderFormat::UNKNOWN:
+                 return MTL::PixelFormatInvalid;
+@@ -1937,6 +1988,10 @@ namespace plume {
+     MetalSwapChain::~MetalSwapChain() {
+     }
+ 
++    void MetalSwapChain::setMinimumPresentDuration(double seconds) {
++        minimumPresentDuration = seconds;
++    }
++
+     bool MetalSwapChain::present(const uint32_t textureIndex, RenderCommandSemaphore **waitSemaphores, const uint32_t waitSemaphoreCount) {
+         assert(layer != nullptr && "Cannot present without a valid layer.");
+ 
+@@ -1959,8 +2014,13 @@ namespace plume {
+         // According to Apple, presenting via scheduled handler is more performant than using the presentDrawable method.
+         // We grab the underlying drawable because we might've acquired a new one by now and the old one would have been released.
+         CA::MetalDrawable *drawableMtl = drawable.mtl->retain();
+-        presentBuffer->addScheduledHandler([drawableMtl](MTL::CommandBuffer* cmdBuffer) {
+-            drawableMtl->present();
++        const double minimumDuration = minimumPresentDuration.load();
++        presentBuffer->addScheduledHandler([drawableMtl, minimumDuration](MTL::CommandBuffer* cmdBuffer) {
++            if (minimumDuration > 0.0) {
++                drawableMtl->presentAfterMinimumDuration(minimumDuration);
++            } else {
++                drawableMtl->present();
++            }
+         });
+ 
+         presentBuffer->addCompletedHandler([drawableMtl, presentId, this](MTL::CommandBuffer* cmdBuffer) {
+@@ -2261,7 +2321,12 @@ namespace plume {
+ 
+         MetalAutoreleasePool releasePool;
+         startedEncoding = false;
++#if PLUME_IOS
++        // Keep decoded upload buffers alive until the GPU has consumed them.
++        mtl = queue->mtl->commandBuffer();
++#else
+         mtl = queue->mtl->commandBufferWithUnretainedReferences();
++#endif
+         mtl->retain();
+         mtl->setLabel(MTLSTR("RT64 Command List"));
+ 
+@@ -2422,7 +2487,31 @@ namespace plume {
+             // interfaceTexture->layout = textureBarrier.layout;
+         }
+ 
++#if PLUME_IOS
++        // Ending a render pass on a tile-based GPU writes its attachments out to memory, and the next pass has to load
++        // them back. A barrier only requires that when the running pass renders to one of the transitioned textures.
++        // For textures produced by earlier passes, keep this pass and make its work wait for those passes instead.
++        // Their fences were updated when they ended, before this pass began, so waiting on them here can't deadlock.
++        if (activeType == EncoderType::Render && activeRenderEncoder != nullptr && targetFramebuffer != nullptr &&
++            bufferBarriersCount == 0 && !pendingClears.active) {
++            bool usesAttachment = false;
++            for (uint32_t i = 0; i < textureBarriersCount && !usesAttachment; i++) {
++                usesAttachment = IsFramebufferAttachment(targetFramebuffer, textureBarriers[i].texture);
++            }
++
++            if (!usesAttachment) {
++                g_metalBarrierKeptPass.fetch_add(1, std::memory_order_relaxed);
++                setBarrier(srcStageMask, destStageMask);
++                barrierWait(MetalBarrierStage::GRAPHICS, activeRenderEncoder);
++                return;
++            }
++        }
++#endif
++
+         // End passes on all barriers to finish work and update the appropriate barrier fences.
++#if PLUME_IOS
++        if (activeRenderEncoder != nullptr) g_metalPassEndBarrier.fetch_add(1, std::memory_order_relaxed);
++#endif
+         endOtherEncoders(EncoderType::None);
+         handlePendingClears();
+ 
+@@ -2489,6 +2578,9 @@ namespace plume {
+     }
+ 
+     void MetalCommandList::drawInstanced(const uint32_t vertexCountPerInstance, const uint32_t instanceCount, const uint32_t startVertexLocation, const uint32_t startInstanceLocation) {
++#if PLUME_IOS
++        g_metalDrawCount.fetch_add(1, std::memory_order_relaxed);
++#endif
+         assert(activeGraphicsPipelineLayout != nullptr);
+ 
+         MetalAutoreleasePool releasePool;
+@@ -2499,6 +2591,9 @@ namespace plume {
+     }
+ 
+     void MetalCommandList::drawIndexedInstanced(const uint32_t indexCountPerInstance, const uint32_t instanceCount, const uint32_t startIndexLocation, const int32_t baseVertexLocation, const uint32_t startInstanceLocation) {
++#if PLUME_IOS
++        g_metalDrawCount.fetch_add(1, std::memory_order_relaxed);
++#endif
+         assert(activeGraphicsPipelineLayout != nullptr);
+ 
+         MetalAutoreleasePool releasePool;
+@@ -2726,6 +2821,12 @@ namespace plume {
+ 
+     void MetalCommandList::setFramebuffer(const RenderFramebuffer *framebuffer) {
+         MetalAutoreleasePool releasePool;
++#if PLUME_IOS
++        if (activeRenderEncoder != nullptr) {
++            if (framebuffer == targetFramebuffer) g_metalPassEndSameFramebuffer.fetch_add(1, std::memory_order_relaxed);
++            else g_metalPassEndFramebuffer.fetch_add(1, std::memory_order_relaxed);
++        }
++#endif
+         endOtherEncoders(EncoderType::Render);
+         endActiveRenderEncoder();
+         handlePendingClears();
+@@ -2996,6 +3097,36 @@ namespace plume {
+             assert(dstTexture != nullptr);
+             assert(srcBuffer != nullptr);
+ 
++#if PLUME_IOS
++            if (IOSFallbackFormat(dstTexture->desc.format) != dstTexture->desc.format) {
++                const auto& footprint = srcLocation.placedFootprint;
++                uint32_t sourceRowPitch = ((footprint.rowWidth + 3) / 4) * RenderFormatSize(dstTexture->desc.format);
++                uint32_t sourceImagePitch = sourceRowPitch * ((footprint.height + 3) / 4);
++                marathon::ios::BCImageLayout layout;
++                const auto format = IOSBCFormat(dstTexture->desc.format);
++                const auto* source = static_cast<const uint8_t*>(srcBuffer->mtl->contents());
++                if (!source || footprint.offset > srcBuffer->desc.size || !marathon::ios::GetBCImageLayout(
++                    format, footprint.width, footprint.height, footprint.depth, layout)) {
++                    throw std::runtime_error("Invalid or inaccessible compressed texture upload");
++                }
++                // Decode directly into Metal's shared upload buffer, avoiding a full-size
++                // CPU allocation and a second copy of every mip/slice during loading.
++                MTL::Buffer* upload = device->mtl->newBuffer(layout.byteSize, MTL::ResourceStorageModeShared);
++                if (!upload) throw std::bad_alloc();
++                if (!marathon::ios::DecodeBCImageInto(format, footprint.width, footprint.height, footprint.depth,
++                    source + footprint.offset, srcBuffer->desc.size - footprint.offset,
++                    sourceRowPitch, sourceImagePitch, static_cast<uint8_t*>(upload->contents()), layout.byteSize)) {
++                    upload->release();
++                    throw std::runtime_error("Invalid compressed texture upload");
++                }
++                activeBlitEncoder->copyFromBuffer(upload, 0, layout.rowPitch, layout.imagePitch,
++                    {footprint.width, footprint.height, footprint.depth}, dstTexture->mtl,
++                    dstLocation.subresource.arrayIndex, dstLocation.subresource.mipLevel, {dstX, dstY, dstZ});
++                upload->release();
++                return;
++            }
++#endif
++
+             // Calculate block size based on destination texture format
+             const uint32_t blockWidth = RenderFormatBlockWidth(dstTexture->desc.format);
+ 
+@@ -3252,6 +3383,9 @@ namespace plume {
+           // Do nothing.
+           break;
+         case EncoderType::Render:
++#if PLUME_IOS
++          if (type == EncoderType::Blit && activeRenderEncoder != nullptr) g_metalPassEndCopy.fetch_add(1, std::memory_order_relaxed);
++#endif
+           endActiveRenderEncoder();
+           break;
+         case EncoderType::Compute:
+@@ -3335,6 +3469,9 @@ namespace plume {
+         endOtherEncoders(EncoderType::Render);
+ 
+         if (pendingClears.active) {
++#if PLUME_IOS
++            if (activeRenderEncoder != nullptr) g_metalPassEndClear.fetch_add(1, std::memory_order_relaxed);
++#endif
+             endActiveRenderEncoder();
+         }
+ 
+@@ -3375,6 +3512,9 @@ namespace plume {
+ 
+             activeRenderEncoder = mtl->renderCommandEncoder(renderDescriptor);
+             activeRenderEncoder->setLabel(MTLSTR("Graphics Render Encoder"));
++#if PLUME_IOS
++            g_metalRenderPassCount.fetch_add(1, std::memory_order_relaxed);
++#endif
+ 
+             barrierWait(MetalBarrierStage::GRAPHICS, activeRenderEncoder);
+ 
+@@ -3540,6 +3680,9 @@ namespace plume {
+ 
+         if (activeBlitEncoder == nullptr) {
+             activeBlitEncoder = mtl->blitCommandEncoder(device->sharedBlitDescriptor);
++#if PLUME_IOS
++            g_metalBlitPassCount.fetch_add(1, std::memory_order_relaxed);
++#endif
+             activeBlitEncoder->retain();
+             activeBlitEncoder->setLabel(MTLSTR("Copy Blit Encoder"));
+ 
+@@ -3778,6 +3921,12 @@ namespace plume {
+         MetalAutoreleasePool releasePool;
+         this->renderInterface = renderInterface;
+ 
++#if PLUME_IOS
++        mtl = MTL::CreateSystemDefaultDevice();
++        if (!mtl) return;
++        g_iosNativeBC = mtl->supportsBCTextureCompression();
++        fprintf(stdout, "Metal device %s: native BC textures %s\n", mtl->name()->utf8String(), g_iosNativeBC ? "supported" : "unsupported, decoding on the CPU");
++#else
+         // Device Selection
+         NS::Array* devices = MTL::CopyAllDevices();
+         MTL::Device *preferredDevice = nullptr;
+@@ -3793,13 +3942,26 @@ namespace plume {
+         mtl = preferredDevice ? preferredDevice : MTL::CreateSystemDefaultDevice();
+         mtl->retain();
+         devices->release();
++#endif
+ 
+         const std::string deviceName(mtl->name()->utf8String());
+         description.name = deviceName;
++#if PLUME_IOS
++        description.type = RenderDeviceType::INTEGRATED;
++#else
+         description.type = mapDeviceType(mtl->location());
++#endif
+         description.driverVersion = 1; // Unavailable
++#if PLUME_IOS
++        description.vendor = RenderDeviceVendor::APPLE;
++#else
+         description.vendor = mtl->supportsFamily(MTL::GPUFamilyApple1) ? RenderDeviceVendor::APPLE : getRenderDeviceVendor(mtl->registryID());
++#endif
++#if PLUME_IOS
++        description.dedicatedVideoMemory = NS::ProcessInfo::processInfo()->physicalMemory();
++#else
+         description.dedicatedVideoMemory = mtl->recommendedMaxWorkingSetSize();
++#endif
+ 
+         timestampCounterSet = findTimestampCounterSet();
+         if (timestampCounterSet != nullptr) {
+@@ -3823,9 +3985,17 @@ namespace plume {
+         capabilities.resolveModes = false;
+         capabilities.scalarBlockLayout = true;
+         capabilities.presentWait = true;
++#if PLUME_IOS
++        capabilities.preferHDR = false;
++#else
+         capabilities.preferHDR = mtl->recommendedMaxWorkingSetSize() > (512 * 1024 * 1024);
++#endif
+         capabilities.dynamicDepthBias = true;
++#if PLUME_IOS
++        capabilities.uma = true;
++#else
+         capabilities.uma = mtl->hasUnifiedMemory();
++#endif
+         capabilities.gpuUploadHeap = capabilities.uma;
+         capabilities.queryPools = timestampCounterSet != nullptr;
+         capabilities.samplerMirrorClampToEdge = true;
+@@ -4191,11 +4361,17 @@ namespace plume {
+         capabilities.shaderFormat = RenderShaderFormat::METAL;
+ 
+         // Fill device names.
++#if PLUME_IOS
++        MTL::Device* device = MTL::CreateSystemDefaultDevice();
++        if (device) { deviceNames.push_back(device->name()->utf8String()); device->release(); }
++#else
+         const NS::Array* devices = MTL::CopyAllDevices();
+         for (NS::UInteger i = 0; i < devices->count(); i++) {
+             NS::String* deviceName = ((MTL::Device *)devices->object(i))->name();
+             deviceNames.push_back(std::string(deviceName->utf8String()));
+         }
++        devices->release();
++#endif
+     }
+ 
+     MetalInterface::~MetalInterface() {}
+diff --git a/plume_metal.h b/plume_metal.h
+index 59ae129..6e0ee6a 100644
+--- a/plume_metal.h
++++ b/plume_metal.h
+@@ -239,6 +239,7 @@ namespace plume {
+         std::vector<MetalDrawable> drawables;
+         uint32_t currentAvailableDrawableIndex = 0;
+         std::unique_ptr<CocoaWindow> windowWrapper;
++        std::atomic<double> minimumPresentDuration = 0.0;
+ 
+         // Present wait
+         uint64_t currentPresentId = 0;
+@@ -262,6 +263,7 @@ namespace plume {
+         RenderWindow getWindow() const override;
+         bool isEmpty() const override;
+         uint32_t getRefreshRate() const override;
++        void setMinimumPresentDuration(double seconds) override;
+         void getWindowSize(uint32_t &dstWidth, uint32_t &dstHeight) const;
+     };
+ 
+diff --git a/plume_render_interface.h b/plume_render_interface.h
+index 2048557..5fc788c 100644
+--- a/plume_render_interface.h
++++ b/plume_render_interface.h
+@@ -103,6 +103,10 @@ namespace plume {
+ 
+         // Only valid if displayTiming is enabled in capabilities.
+         virtual uint32_t getRefreshRate() const = 0;
++
++        // Shows each presented image for at least this long, for even pacing of a capped frame rate on
++        // variable refresh rate displays. Zero presents as soon as possible. Only implemented by Metal.
++        virtual void setMinimumPresentDuration(double seconds) { }
+     };
+ 
+     struct RenderFramebuffer {

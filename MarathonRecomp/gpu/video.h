@@ -31,6 +31,11 @@ struct Video
     static void StartPipelinePrecompilation();
     static void WaitForGPU();
     static void ComputeViewportDimensions();
+#ifdef MARATHON_RECOMP_IOS
+    static void HandleApplicationBackgroundState(bool isBackgrounded);
+    // Called while a loading screen is up, where pipelines compile in place rather than in the background.
+    static void NotifyLoadingScreen();
+#endif
 };
 
 enum class Backend {

@@ -1,0 +1,16 @@
+set(MARATHON_RECOMP_IOS_FFMPEG_ROOT "" CACHE PATH "Static FFmpeg build for arm64 iOS")
+if(NOT EXISTS "${MARATHON_RECOMP_IOS_FFMPEG_ROOT}/include/libavcodec/avcodec.h")
+    message(FATAL_ERROR "Missing iOS FFmpeg. Run ios/build-ffmpeg.sh and set MARATHON_RECOMP_IOS_FFMPEG_ROOT.")
+endif()
+add_library(ffmpeg INTERFACE)
+target_include_directories(ffmpeg INTERFACE "${MARATHON_RECOMP_IOS_FFMPEG_ROOT}/include")
+foreach(component avformat avcodec swscale avutil swresample)
+    set(archive "${MARATHON_RECOMP_IOS_FFMPEG_ROOT}/lib/lib${component}.a")
+    if(NOT EXISTS "${archive}")
+        message(FATAL_ERROR "Missing ${archive}; macOS archives cannot be used for iOS.")
+    endif()
+    target_link_libraries(ffmpeg INTERFACE "${archive}")
+endforeach()
+target_link_libraries(ffmpeg INTERFACE z bz2 iconv
+    "-framework AudioToolbox" "-framework CoreMedia"
+    "-framework VideoToolbox" "-framework CoreVideo" "-framework Security")

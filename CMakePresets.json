@@ -165,6 +165,54 @@
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_INTERPROCEDURAL_OPTIMIZATION": true
             }
+        },
+        {
+            "name": "ios-host-tools",
+            "displayName": "iOS native build tools (macOS)",
+            "inherits": "macos-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "MARATHON_RECOMP_HOST_TOOLS_ONLY": true,
+                "MARATHON_RECOMP_OPTIMIZE_TOOLS": false,
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/out/build/ios-host-tools/bin",
+                "MARATHON_RECOMP_METAL_SDK": "iphoneos",
+                "MARATHON_RECOMP_GENERATED_DIR": "${sourceDir}/out/generated/ios",
+                "CMAKE_TOOLCHAIN_FILE": null,
+                "CMAKE_POLICY_VERSION_MINIMUM": "3.5"
+            }
+        },
+        {
+            "name": "ios-device",
+            "displayName": "iOS arm64 device (Xcode)",
+            "generator": "Xcode",
+            "binaryDir": "${sourceDir}/out/build/ios-device",
+            "environment": {
+                "VCPKG_ROOT": "${sourceDir}/thirdparty/vcpkg"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            },
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_SYSTEM_NAME": "iOS",
+                "CMAKE_OSX_SYSROOT": "iphoneos",
+                "CMAKE_OSX_ARCHITECTURES": "arm64",
+                "CMAKE_OSX_DEPLOYMENT_TARGET": "17.0",
+                "CMAKE_BUILD_TYPE": "Release",
+                "VCPKG_TARGET_TRIPLET": "arm64-ios",
+                "MARATHON_RECOMP_METAL": "ON",
+                "MARATHON_RECOMP_HOST_TOOLS_DIR": "${sourceDir}/out/build/ios-host-tools/bin",
+                "MARATHON_RECOMP_GENERATED_DIR": "${sourceDir}/out/generated/ios",
+                "MARATHON_RECOMP_IOS_FFMPEG_ROOT": "${sourceDir}/out/ios-ffmpeg",
+                "SDL_SHARED": false,
+                "SDL_STATIC": true,
+                "SDL_TEST": false,
+                "ZSTD_BUILD_PROGRAMS": false,
+                "ZSTD_BUILD_TESTS": false,
+                "CMAKE_POLICY_VERSION_MINIMUM": "3.5"
+            }
         }
     ]
 }

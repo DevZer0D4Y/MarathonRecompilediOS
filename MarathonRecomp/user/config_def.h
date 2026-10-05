@@ -13,6 +13,10 @@ CONFIG_DEFINE("System", bool, ShowConsole, false, false);
 CONFIG_DEFINE_ENUM_LOCALISED("Input", ECameraRotationMode, HorizontalCamera, ECameraRotationMode::Reverse, false);
 CONFIG_DEFINE_ENUM_LOCALISED("Input", ECameraRotationMode, VerticalCamera, ECameraRotationMode::Normal, false);
 CONFIG_DEFINE_LOCALISED("Input", bool, AllowBackgroundInput, false, false);
+#ifdef MARATHON_RECOMP_IOS
+CONFIG_DEFINE("Input", bool, TouchControls, true, false);
+CONFIG_DEFINE("Input", float, TouchControlsOpacity, 1.0f, false);
+#endif
 CONFIG_DEFINE_ENUM_LOCALISED("Input", EControllerIcons, ControllerIcons, EControllerIcons::Auto, false);
 CONFIG_DEFINE_ENUM_LOCALISED("Input", ELightDash, LightDash, ELightDash::X, false);
 CONFIG_DEFINE_ENUM_LOCALISED("Input", ESlidingAttack, SlidingAttack, ESlidingAttack::X, false);
@@ -57,7 +61,12 @@ CONFIG_DEFINE("Video", int32_t, WindowHeight, 720, false);
 CONFIG_DEFINE_ENUM("Video", EWindowState, WindowState, EWindowState::Normal, false);
 CONFIG_DEFINE_LOCALISED("Video", int32_t, Monitor, 0, false);
 CONFIG_DEFINE_ENUM_LOCALISED("Video", EAspectRatio, AspectRatio, EAspectRatio::Auto, false);
+#ifdef MARATHON_RECOMP_IOS
+// Phone GPUs can't render the game at their screens' native resolution at full speed.
+CONFIG_DEFINE_LOCALISED("Video", float, ResolutionScale, 0.5f, false);
+#else
 CONFIG_DEFINE_LOCALISED("Video", float, ResolutionScale, 1.0f, false);
+#endif
 CONFIG_DEFINE_LOCALISED("Video", bool, Fullscreen, true, false);
 CONFIG_DEFINE_LOCALISED("Video", bool, VSync, true, false);
 CONFIG_DEFINE_ENUM("Video", ETripleBuffering, TripleBuffering, ETripleBuffering::Auto, false);
@@ -65,16 +74,29 @@ CONFIG_DEFINE_LOCALISED("Video", int32_t, FPS, 60, false);
 CONFIG_DEFINE("Video", bool, ShowFPS, false, false);
 CONFIG_DEFINE("Video", uint32_t, MaxFrameLatency, 2, false);
 CONFIG_DEFINE_LOCALISED("Video", float, Brightness, 0.5f, false);
+#ifdef MARATHON_RECOMP_IOS
+CONFIG_DEFINE_ENUM_LOCALISED("Video", EAntiAliasing, AntiAliasing, EAntiAliasing::Off, false);
+CONFIG_DEFINE_LOCALISED("Video", bool, TransparencyAntiAliasing, false, false);
+CONFIG_DEFINE("Video", uint32_t, AnisotropicFiltering, 4, false);
+CONFIG_DEFINE_ENUM_LOCALISED("Video", EShadowResolution, ShadowResolution, EShadowResolution::x1024, false);
+CONFIG_DEFINE_ENUM_LOCALISED("Video", EReflectionResolution, ReflectionResolution, EReflectionResolution::Quarter, false);
+#else
 CONFIG_DEFINE_ENUM_LOCALISED("Video", EAntiAliasing, AntiAliasing, EAntiAliasing::MSAA4x, false);
 CONFIG_DEFINE_LOCALISED("Video", bool, TransparencyAntiAliasing, true, false);
 CONFIG_DEFINE("Video", uint32_t, AnisotropicFiltering, 16, false);
 CONFIG_DEFINE_ENUM_LOCALISED("Video", EShadowResolution, ShadowResolution, EShadowResolution::x4096, false);
 CONFIG_DEFINE_ENUM_LOCALISED("Video", EReflectionResolution, ReflectionResolution, EReflectionResolution::Half, false);
+#endif
 CONFIG_DEFINE_ENUM_LOCALISED("Video", ERadialBlur, RadialBlur, ERadialBlur::Original, false);
 CONFIG_DEFINE_ENUM_LOCALISED("Video", ECutsceneAspectRatio, CutsceneAspectRatio, ECutsceneAspectRatio::Original, false);
 CONFIG_DEFINE_ENUM_LOCALISED("Video", EUIAlignmentMode, UIAlignmentMode, EUIAlignmentMode::Edge, false);
 
 CONFIG_DEFINE_HIDDEN("Codes", bool, AntigravityRetainsMomentum, false, false);
+#ifdef MARATHON_RECOMP_IOS
+CONFIG_DEFINE_HIDDEN("Codes", bool, Cap60FPS, true, false);
+#else
+CONFIG_DEFINE_HIDDEN("Codes", bool, Cap60FPS, false, false);
+#endif
 CONFIG_DEFINE_HIDDEN("Codes", bool, ControllableBoundAttack, false, false);
 CONFIG_DEFINE_HIDDEN("Codes", bool, ControllableSpinkick, false, false);
 CONFIG_DEFINE_HIDDEN("Codes", bool, ControllableTeleportDash, false, false);
@@ -85,6 +107,11 @@ CONFIG_DEFINE_HIDDEN("Codes", bool, DisableLowResolutionFontOnCustomUI, false, f
 CONFIG_DEFINE_HIDDEN("Codes", bool, DisablePushState, false, false);
 CONFIG_DEFINE_HIDDEN("Codes", bool, DisableTitleInputDelay, false, false);
 CONFIG_DEFINE_HIDDEN("Codes", bool, EnableDebugMode, false, false);
+#ifdef MARATHON_RECOMP_IOS
+CONFIG_DEFINE_HIDDEN("Codes", bool, FillScreen, true, false);
+#else
+CONFIG_DEFINE_HIDDEN("Codes", bool, FillScreen, false, false);
+#endif
 CONFIG_DEFINE_HIDDEN("Codes", bool, FixPowerUpJingleDuration, false, false);
 CONFIG_DEFINE_HIDDEN("Codes", bool, HUDToggleKey, false, false);
 CONFIG_DEFINE_HIDDEN("Codes", bool, InfiniteLives, false, false);

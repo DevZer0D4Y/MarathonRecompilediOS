@@ -1,3 +1,6 @@
+#ifdef MARATHON_RECOMP_IOS
+#include <os/ios/touch_controls.h>
+#endif
 #include <stdafx.h>
 #include <SDL.h>
 #include <user/config.h>
@@ -287,6 +290,9 @@ int HID_OnSDLEvent(void*, SDL_Event* event)
                 {
                     SDL_ShowCursor(SDL_DISABLE);
                     SetControllerInputDevice(controller);
+#ifdef MARATHON_RECOMP_IOS
+                    TouchControls::OnPhysicalControllerInput();
+#endif
                 }
 
                 controller->PollAxis();
@@ -295,7 +301,9 @@ int HID_OnSDLEvent(void*, SDL_Event* event)
             {
                 SDL_ShowCursor(SDL_DISABLE);
                 SetControllerInputDevice(controller);
-
+#ifdef MARATHON_RECOMP_IOS
+                TouchControls::OnPhysicalControllerInput();
+#endif
                 controller->Poll();
             }
 
@@ -354,8 +362,14 @@ void hid::Init()
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_PLAYER_LED, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_WII, "1");
+#ifdef MARATHON_RECOMP_IOS
+    // On iOS, SDL's Steam driver scans for Steam Controllers over Bluetooth LE, and iOS terminates apps that
+    // use Bluetooth without a usage description. Controllers connect through the GameController framework instead.
+    SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_STEAM, "0");
+#else
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_STEAM, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_STEAMDECK, "1");
+#endif
     SDL_SetHint(SDL_HINT_XINPUT_ENABLED, "1");
     
     SDL_SetHint(SDL_HINT_GAMECONTROLLER_USE_BUTTON_LABELS, "0"); // Uses Button Labels. This hint is disabled for Nintendo Controllers.
@@ -371,6 +385,28 @@ void hid::Init()
     }
 }
 
+#ifdef MARATHON_RECOMP_IOS
+// Test aid for unattended device runs, enabled by launching with the MARATHON_RECOMP_AUTOPLAY environment
+// variable (e.g. through devicectl). Taps A every two seconds and START every nine to get through the menus,
+// cutscenes and prompts into gameplay without touching the screen.
+static void ApplyAutoplay(XAMINPUT_GAMEPAD& pad)
+{
+    static const bool s_enabled = getenv("MARATHON_RECOMP_AUTOPLAY") != nullptr;
+
+    if (!s_enabled)
+        return;
+
+    static const auto s_start = std::chrono::steady_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - s_start).count();
+
+    if ((ms % 2000) < 150)
+        pad.wButtons |= XAMINPUT_GAMEPAD_A;
+
+    if ((ms % 9000) >= 1000 && (ms % 9000) < 1150)
+        pad.wButtons |= XAMINPUT_GAMEPAD_START;
+}
+#endif
+
 uint32_t hid::GetState(uint32_t dwUserIndex, XAMINPUT_STATE* pState)
 {
     static uint32_t packet;
@@ -382,10 +418,16 @@ uint32_t hid::GetState(uint32_t dwUserIndex, XAMINPUT_STATE* pState)
 
     pState->dwPacketNumber = packet++;
 
+#ifdef MARATHON_RECOMP_IOS
+    if (g_activeController) pState->Gamepad = g_activeController->state;
+    if (!g_activeController && !TouchControls::IsActive()) return ERROR_DEVICE_NOT_CONNECTED;
+    TouchControls::Apply(pState->Gamepad);
+    ApplyAutoplay(pState->Gamepad);
+#else
     if (!g_activeController)
         return ERROR_DEVICE_NOT_CONNECTED;
-
     pState->Gamepad = g_activeController->state;
+#endif
 
     return ERROR_SUCCESS;
 }
@@ -396,7 +438,13 @@ uint32_t hid::SetState(uint32_t dwUserIndex, XAMINPUT_VIBRATION* pVibration)
         return ERROR_BAD_ARGUMENTS;
 
     if (!g_activeController)
+    {
+#ifdef MARATHON_RECOMP_IOS
+        return dwUserIndex == 0 && TouchControls::IsActive() ? ERROR_SUCCESS : ERROR_DEVICE_NOT_CONNECTED;
+#else
         return ERROR_DEVICE_NOT_CONNECTED;
+#endif
+    }
 
     g_activeController->SetVibration(*pVibration);
 
@@ -409,7 +457,17 @@ uint32_t hid::GetCapabilities(uint32_t dwUserIndex, XAMINPUT_CAPABILITIES* pCaps
         return ERROR_BAD_ARGUMENTS;
 
     if (!g_activeController)
+    {
+#ifdef MARATHON_RECOMP_IOS
+        if (dwUserIndex != 0 || !TouchControls::IsActive()) return ERROR_DEVICE_NOT_CONNECTED;
+        memset(pCaps, 0, sizeof(*pCaps));
+        pCaps->Type = XAMINPUT_DEVTYPE_GAMEPAD;
+        pCaps->SubType = XAMINPUT_DEVSUBTYPE_GAMEPAD;
+        return ERROR_SUCCESS;
+#else
         return ERROR_DEVICE_NOT_CONNECTED;
+#endif
+    }
 
     memset(pCaps, 0, sizeof(*pCaps));
 

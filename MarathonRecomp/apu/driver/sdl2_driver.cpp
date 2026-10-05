@@ -1,4 +1,5 @@
 #include <apu/audio.h>
+#include <utils/audio_mix.h>
 #include <cpu/guest_thread.h>
 #include <kernel/heap.h>
 #include <os/logger.h>
@@ -57,11 +58,15 @@ void XAudioInitializeSystem()
 }
 
 static std::unique_ptr<std::thread> g_audioThread;
-static volatile bool g_audioThreadShouldExit;
+static std::atomic<bool> g_audioThreadShouldExit;
 
 static void AudioThread()
 {
     using namespace std::chrono_literals;
+
+#ifdef MARATHON_RECOMP_IOS
+    pthread_setname_np("Audio Thread");
+#endif
 
     GuestThreadContext ctx(0);
 
@@ -149,14 +154,7 @@ void XAudioSubmitFrame(void* samples)
     {
         std::array<float, XAUDIO_NUM_CHANNELS * XAUDIO_NUM_SAMPLES> audioFrames;
 
-        for (size_t i = 0; i < XAUDIO_NUM_SAMPLES; i++)
-        {
-            for (size_t j = 0; j < XAUDIO_NUM_CHANNELS; j++)
-            {
-                float samp = floatSamples[j * XAUDIO_NUM_SAMPLES + i] * volume;
-                audioFrames[i * 2 + j] = isnan(samp) ? 0.0f : samp;
-            }
-        }
+        InterleavePlanarAudio(floatSamples, audioFrames.data(), XAUDIO_NUM_SAMPLES, XAUDIO_NUM_CHANNELS, volume);
 
         SDL_QueueAudio(g_audioDevice, &audioFrames, sizeof(audioFrames));
     }
@@ -166,13 +164,14 @@ void XAudioConfigValueChangedCallback(IConfigDef* configDef)
 {
     if (configDef == &Config::ChannelConfiguration)
     {
-        if (g_audioThread->joinable())
+        const bool restartThread = bool(g_audioThread);
+        if (g_audioThread && g_audioThread->joinable())
         {
             g_audioThreadShouldExit = true;
             g_audioThread->join();
         }
 
         CreateAudioDevice();
-        CreateAudioThread();
+        if (restartThread) CreateAudioThread();
     }
 }

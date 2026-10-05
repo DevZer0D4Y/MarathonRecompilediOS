@@ -1,4 +1,10 @@
 #include "video.h"
+#ifdef MARATHON_RECOMP_IOS
+#include <os/ios/platform_ios.h>
+#include <os/ios/touch_controls.h>
+#include <mach/mach.h>
+#include <os/proc.h>
+#endif
 
 #include "imgui/imgui_common.h"
 #include "imgui/imgui_snapshot.h"
@@ -44,80 +50,80 @@
 #include "../../tools/XenosRecomp/XenosRecomp/shader_common.h"
 
 #ifdef MARATHON_RECOMP_D3D12
-#include "shader/hlsl/blend_color_alpha_ps.hlsl.dxil.h"
-#include "shader/hlsl/conditional_survey_ps.hlsl.dxil.h"
-#include "shader/hlsl/copy_vs.hlsl.dxil.h"
-#include "shader/hlsl/copy_color_ps.hlsl.dxil.h"
-#include "shader/hlsl/copy_depth_ps.hlsl.dxil.h"
-#include "shader/hlsl/csd_filter_ps.hlsl.dxil.h"
-#include "shader/hlsl/csd_no_tex_vs.hlsl.dxil.h"
-#include "shader/hlsl/csd_vs.hlsl.dxil.h"
-#include "shader/hlsl/enhanced_burnout_blur_vs.hlsl.dxil.h"
-#include "shader/hlsl/enhanced_burnout_blur_ps.hlsl.dxil.h"
-#include "shader/hlsl/gamma_correction_ps.hlsl.dxil.h"
-#include "shader/hlsl/gaussian_blur_3x3.hlsl.dxil.h"
-#include "shader/hlsl/gaussian_blur_5x5.hlsl.dxil.h"
-#include "shader/hlsl/gaussian_blur_7x7.hlsl.dxil.h"
-#include "shader/hlsl/gaussian_blur_9x9.hlsl.dxil.h"
-#include "shader/hlsl/imgui_ps.hlsl.dxil.h"
-#include "shader/hlsl/imgui_vs.hlsl.dxil.h"
-#include "shader/hlsl/resolve_msaa_color_2x.hlsl.dxil.h"
-#include "shader/hlsl/resolve_msaa_color_4x.hlsl.dxil.h"
-#include "shader/hlsl/resolve_msaa_color_8x.hlsl.dxil.h"
-#include "shader/hlsl/resolve_msaa_depth_2x.hlsl.dxil.h"
-#include "shader/hlsl/resolve_msaa_depth_4x.hlsl.dxil.h"
-#include "shader/hlsl/resolve_msaa_depth_8x.hlsl.dxil.h"
+#include <gpu/shader/hlsl/blend_color_alpha_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/conditional_survey_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/copy_vs.hlsl.dxil.h>
+#include <gpu/shader/hlsl/copy_color_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/copy_depth_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/csd_filter_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/csd_no_tex_vs.hlsl.dxil.h>
+#include <gpu/shader/hlsl/csd_vs.hlsl.dxil.h>
+#include <gpu/shader/hlsl/enhanced_burnout_blur_vs.hlsl.dxil.h>
+#include <gpu/shader/hlsl/enhanced_burnout_blur_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/gamma_correction_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/gaussian_blur_3x3.hlsl.dxil.h>
+#include <gpu/shader/hlsl/gaussian_blur_5x5.hlsl.dxil.h>
+#include <gpu/shader/hlsl/gaussian_blur_7x7.hlsl.dxil.h>
+#include <gpu/shader/hlsl/gaussian_blur_9x9.hlsl.dxil.h>
+#include <gpu/shader/hlsl/imgui_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/imgui_vs.hlsl.dxil.h>
+#include <gpu/shader/hlsl/resolve_msaa_color_2x.hlsl.dxil.h>
+#include <gpu/shader/hlsl/resolve_msaa_color_4x.hlsl.dxil.h>
+#include <gpu/shader/hlsl/resolve_msaa_color_8x.hlsl.dxil.h>
+#include <gpu/shader/hlsl/resolve_msaa_depth_2x.hlsl.dxil.h>
+#include <gpu/shader/hlsl/resolve_msaa_depth_4x.hlsl.dxil.h>
+#include <gpu/shader/hlsl/resolve_msaa_depth_8x.hlsl.dxil.h>
 #endif
 
 #ifdef MARATHON_RECOMP_METAL
-#include "shader/msl/blend_color_alpha_ps.metal.metallib.h"
-#include "shader/msl/conditional_survey_ps.metal.metallib.h"
-#include "shader/msl/copy_vs.metal.metallib.h"
-#include "shader/msl/copy_color_ps.metal.metallib.h"
-#include "shader/msl/copy_depth_ps.metal.metallib.h"
-#include "shader/msl/csd_filter_ps.metal.metallib.h"
-#include "shader/msl/csd_no_tex_vs.metal.metallib.h"
-#include "shader/msl/csd_vs.metal.metallib.h"
-#include "shader/msl/enhanced_burnout_blur_vs.metal.metallib.h"
-#include "shader/msl/enhanced_burnout_blur_ps.metal.metallib.h"
-#include "shader/msl/gamma_correction_ps.metal.metallib.h"
-#include "shader/msl/gaussian_blur_3x3.metal.metallib.h"
-#include "shader/msl/gaussian_blur_5x5.metal.metallib.h"
-#include "shader/msl/gaussian_blur_7x7.metal.metallib.h"
-#include "shader/msl/gaussian_blur_9x9.metal.metallib.h"
-#include "shader/msl/imgui_ps.metal.metallib.h"
-#include "shader/msl/imgui_vs.metal.metallib.h"
-#include "shader/msl/resolve_msaa_color_2x.metal.metallib.h"
-#include "shader/msl/resolve_msaa_color_4x.metal.metallib.h"
-#include "shader/msl/resolve_msaa_color_8x.metal.metallib.h"
-#include "shader/msl/resolve_msaa_depth_2x.metal.metallib.h"
-#include "shader/msl/resolve_msaa_depth_4x.metal.metallib.h"
-#include "shader/msl/resolve_msaa_depth_8x.metal.metallib.h"
+#include <gpu/shader/msl/blend_color_alpha_ps.metal.metallib.h>
+#include <gpu/shader/msl/conditional_survey_ps.metal.metallib.h>
+#include <gpu/shader/msl/copy_vs.metal.metallib.h>
+#include <gpu/shader/msl/copy_color_ps.metal.metallib.h>
+#include <gpu/shader/msl/copy_depth_ps.metal.metallib.h>
+#include <gpu/shader/msl/csd_filter_ps.metal.metallib.h>
+#include <gpu/shader/msl/csd_no_tex_vs.metal.metallib.h>
+#include <gpu/shader/msl/csd_vs.metal.metallib.h>
+#include <gpu/shader/msl/enhanced_burnout_blur_vs.metal.metallib.h>
+#include <gpu/shader/msl/enhanced_burnout_blur_ps.metal.metallib.h>
+#include <gpu/shader/msl/gamma_correction_ps.metal.metallib.h>
+#include <gpu/shader/msl/gaussian_blur_3x3.metal.metallib.h>
+#include <gpu/shader/msl/gaussian_blur_5x5.metal.metallib.h>
+#include <gpu/shader/msl/gaussian_blur_7x7.metal.metallib.h>
+#include <gpu/shader/msl/gaussian_blur_9x9.metal.metallib.h>
+#include <gpu/shader/msl/imgui_ps.metal.metallib.h>
+#include <gpu/shader/msl/imgui_vs.metal.metallib.h>
+#include <gpu/shader/msl/resolve_msaa_color_2x.metal.metallib.h>
+#include <gpu/shader/msl/resolve_msaa_color_4x.metal.metallib.h>
+#include <gpu/shader/msl/resolve_msaa_color_8x.metal.metallib.h>
+#include <gpu/shader/msl/resolve_msaa_depth_2x.metal.metallib.h>
+#include <gpu/shader/msl/resolve_msaa_depth_4x.metal.metallib.h>
+#include <gpu/shader/msl/resolve_msaa_depth_8x.metal.metallib.h>
 #endif
 
-#include "shader/hlsl/blend_color_alpha_ps.hlsl.spirv.h"
-#include "shader/hlsl/conditional_survey_ps.hlsl.spirv.h"
-#include "shader/hlsl/copy_vs.hlsl.spirv.h"
-#include "shader/hlsl/copy_color_ps.hlsl.spirv.h"
-#include "shader/hlsl/copy_depth_ps.hlsl.spirv.h"
-#include "shader/hlsl/csd_filter_ps.hlsl.spirv.h"
-#include "shader/hlsl/csd_no_tex_vs.hlsl.spirv.h"
-#include "shader/hlsl/csd_vs.hlsl.spirv.h"
-#include "shader/hlsl/enhanced_burnout_blur_vs.hlsl.spirv.h"
-#include "shader/hlsl/enhanced_burnout_blur_ps.hlsl.spirv.h"
-#include "shader/hlsl/gamma_correction_ps.hlsl.spirv.h"
-#include "shader/hlsl/gaussian_blur_3x3.hlsl.spirv.h"
-#include "shader/hlsl/gaussian_blur_5x5.hlsl.spirv.h"
-#include "shader/hlsl/gaussian_blur_7x7.hlsl.spirv.h"
-#include "shader/hlsl/gaussian_blur_9x9.hlsl.spirv.h"
-#include "shader/hlsl/imgui_ps.hlsl.spirv.h"
-#include "shader/hlsl/imgui_vs.hlsl.spirv.h"
-#include "shader/hlsl/resolve_msaa_color_2x.hlsl.spirv.h"
-#include "shader/hlsl/resolve_msaa_color_4x.hlsl.spirv.h"
-#include "shader/hlsl/resolve_msaa_color_8x.hlsl.spirv.h"
-#include "shader/hlsl/resolve_msaa_depth_2x.hlsl.spirv.h"
-#include "shader/hlsl/resolve_msaa_depth_4x.hlsl.spirv.h"
-#include "shader/hlsl/resolve_msaa_depth_8x.hlsl.spirv.h"
+#include <gpu/shader/hlsl/blend_color_alpha_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/conditional_survey_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/copy_vs.hlsl.spirv.h>
+#include <gpu/shader/hlsl/copy_color_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/copy_depth_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/csd_filter_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/csd_no_tex_vs.hlsl.spirv.h>
+#include <gpu/shader/hlsl/csd_vs.hlsl.spirv.h>
+#include <gpu/shader/hlsl/enhanced_burnout_blur_vs.hlsl.spirv.h>
+#include <gpu/shader/hlsl/enhanced_burnout_blur_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/gamma_correction_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/gaussian_blur_3x3.hlsl.spirv.h>
+#include <gpu/shader/hlsl/gaussian_blur_5x5.hlsl.spirv.h>
+#include <gpu/shader/hlsl/gaussian_blur_7x7.hlsl.spirv.h>
+#include <gpu/shader/hlsl/gaussian_blur_9x9.hlsl.spirv.h>
+#include <gpu/shader/hlsl/imgui_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/imgui_vs.hlsl.spirv.h>
+#include <gpu/shader/hlsl/resolve_msaa_color_2x.hlsl.spirv.h>
+#include <gpu/shader/hlsl/resolve_msaa_color_4x.hlsl.spirv.h>
+#include <gpu/shader/hlsl/resolve_msaa_color_8x.hlsl.spirv.h>
+#include <gpu/shader/hlsl/resolve_msaa_depth_2x.hlsl.spirv.h>
+#include <gpu/shader/hlsl/resolve_msaa_depth_4x.hlsl.spirv.h>
+#include <gpu/shader/hlsl/resolve_msaa_depth_8x.hlsl.spirv.h>
 
 #ifdef _WIN32
 extern "C"
@@ -142,10 +148,14 @@ extern std::unique_ptr<RenderInterface> CreateMetalInterface();
 #endif
 
     static std::unique_ptr<RenderInterface> CreateVulkanInterfaceWrapper() {
+#ifdef MARATHON_RECOMP_IOS
+        return nullptr;
+#else
 #ifdef PLUME_SDL_VULKAN_ENABLED
         return CreateVulkanInterface(GameWindow::s_renderWindow);
 #else
         return CreateVulkanInterface();
+#endif
 #endif
     }
 }
@@ -361,6 +371,12 @@ static std::unique_ptr<RenderCommandList> g_commandLists[NUM_FRAMES];
 static std::unique_ptr<RenderCommandFence> g_commandFences[NUM_FRAMES];
 static std::unique_ptr<RenderQueryPool> g_queryPools[NUM_FRAMES];
 static bool g_commandListStates[NUM_FRAMES];
+
+// WaitForGPU() can be called from the present thread while the render thread is recording
+// the frame's command list, so it must never reuse one of the per-frame command lists.
+static Mutex g_waitForGPUMutex;
+static std::unique_ptr<RenderCommandList> g_waitForGPUCommandList;
+static std::unique_ptr<RenderCommandFence> g_waitForGPUCommandFence;
 
 static Mutex g_copyMutex;
 static std::unique_ptr<RenderCommandQueue> g_copyQueue;
@@ -637,6 +653,9 @@ struct IntermediaryUploadAllocator
 static IntermediaryUploadAllocator g_intermediaryUploadAllocator;
 
 static std::vector<GuestResource*> g_tempResources[NUM_FRAMES];
+#ifdef MARATHON_RECOMP_IOS
+static void WaitForAsyncPipelines();
+#endif
 static std::vector<std::unique_ptr<RenderBuffer>> g_tempBuffers[NUM_FRAMES];
 
 template<GuestPrimitiveType PrimitiveType>
@@ -791,6 +810,18 @@ static void PurgeSurfaceVariantFramebuffers()
 
 static void DestructTempResources()
 {
+#ifdef MARATHON_RECOMP_IOS
+    for (auto resource : g_tempResources[g_frame])
+    {
+        if (resource->type == ResourceType::VertexShader || resource->type == ResourceType::PixelShader ||
+            resource->type == ResourceType::VertexDeclaration)
+        {
+            WaitForAsyncPipelines();
+            break;
+        }
+    }
+#endif
+
     for (auto resource : g_tempResources[g_frame])
     {
         switch (resource->type)
@@ -892,6 +923,34 @@ static void DestructTempResources()
 
 static std::thread::id g_presentThreadId = std::this_thread::get_id();
 static std::atomic<bool> g_readyForCommands;
+
+#ifdef MARATHON_RECOMP_IOS
+static std::atomic<bool> g_appSuspended;
+
+namespace plume
+{
+    extern std::atomic<uint32_t> g_metalRenderPassCount;
+    extern std::atomic<uint32_t> g_metalBlitPassCount;
+    extern std::atomic<uint32_t> g_metalDrawCount;
+    extern std::atomic<uint32_t> g_metalPassEndFramebuffer;
+    extern std::atomic<uint32_t> g_metalPassEndSameFramebuffer;
+    extern std::atomic<uint32_t> g_metalPassEndBarrier;
+    extern std::atomic<uint32_t> g_metalPassEndCopy;
+    extern std::atomic<uint32_t> g_metalPassEndClear;
+    extern std::atomic<uint32_t> g_metalBarrierKeptPass;
+}
+
+// Performance counters for LogPerformance().
+static std::atomic<uint32_t> g_perfAsyncPipelineCount;
+static std::atomic<uint32_t> g_perfSkippedDrawCount;
+static std::atomic<uint32_t> g_perfPipelineCount;
+static std::atomic<uint64_t> g_perfPipelineMicroseconds;
+static double g_perfGuestMs;
+static double g_perfRenderWaitMs;
+
+// Static initialization runs on the main thread, which is also where SDL events get pumped.
+static const std::thread::id g_eventThreadId = std::this_thread::get_id();
+#endif
 
 // PPC_FUNC_IMPL(__imp__sub_824ECA00);
 // PPC_FUNC(sub_824ECA00)
@@ -1688,6 +1747,9 @@ static void CreateImGuiBackend()
 #endif
 
     InitImGuiUtils();
+#ifdef MARATHON_RECOMP_IOS
+    TouchControls::Init();
+#endif
     OptionsMenu::Init();
     InstallerWizard::Init();
 
@@ -1968,6 +2030,9 @@ bool Video::CreateHostDevice(const char *sdlVideoDriver, bool graphicsApiRetry)
 
 #if defined(MARATHON_RECOMP_D3D12)
     g_backend = (DetectWine() || Config::GraphicsAPI == EGraphicsAPI::Vulkan) ? Backend::VULKAN : Backend::D3D12;
+#elif defined(MARATHON_RECOMP_IOS)
+    g_backend = Backend::METAL;
+    Config::GraphicsAPI = EGraphicsAPI::Metal;
 #elif defined(MARATHON_RECOMP_METAL)
     g_backend = Config::GraphicsAPI == EGraphicsAPI::Vulkan ? Backend::VULKAN : Backend::METAL;
 #endif
@@ -1991,6 +2056,8 @@ bool Video::CreateHostDevice(const char *sdlVideoDriver, bool graphicsApiRetry)
 
     interfaceFunctions.push_back((g_backend == Backend::VULKAN) ? CreateVulkanInterfaceWrapper : CreateD3D12Interface);
     interfaceFunctions.push_back((g_backend == Backend::VULKAN) ? CreateD3D12Interface : CreateVulkanInterfaceWrapper);
+#elif defined(MARATHON_RECOMP_IOS)
+    interfaceFunctions.push_back(CreateMetalInterface);
 #elif defined(MARATHON_RECOMP_METAL)
     interfaceFunctions.push_back((g_backend == Backend::VULKAN) ? CreateVulkanInterfaceWrapper : CreateMetalInterface);
     interfaceFunctions.push_back((g_backend == Backend::VULKAN) ? CreateMetalInterface : CreateVulkanInterfaceWrapper);
@@ -2098,12 +2165,15 @@ bool Video::CreateHostDevice(const char *sdlVideoDriver, bool graphicsApiRetry)
     bool lowEndType = deviceDescription.type != RenderDeviceType::UNKNOWN && deviceDescription.type != RenderDeviceType::DISCRETE;
     bool lowEndMemory = deviceDescription.dedicatedVideoMemory < LowEndMemoryLimit;
     bool lowEndUMA = deviceDescription.type == RenderDeviceType::UNKNOWN && g_capabilities.uma;
+#ifndef MARATHON_RECOMP_IOS
+    // iOS has its own, lower defaults in config_def.h. These would raise its anti-aliasing setting.
     if (lowEndType || lowEndMemory || lowEndUMA)
     {
         // Switch to low end defaults if a non-discrete GPU was detected or a low amount of VRAM was detected.
         // Checking for UMA on D3D12 seems to be a reliable way to detect integrated GPUs.
         ApplyLowEndDefaults();
     }
+#endif
 
     const RenderSampleCounts colourSampleCount = g_device->getSampleCountsSupported(RenderFormat::R16G16B16A16_FLOAT);
     const RenderSampleCounts depthSampleCount  = g_device->getSampleCountsSupported(RenderFormat::D32_FLOAT);
@@ -2127,6 +2197,9 @@ bool Video::CreateHostDevice(const char *sdlVideoDriver, bool graphicsApiRetry)
 
     for (auto& commandFence : g_commandFences)
         commandFence = g_device->createCommandFence();
+
+    g_waitForGPUCommandList = g_queue->createCommandList();
+    g_waitForGPUCommandFence = g_device->createCommandFence();
 
     for (auto& queryPool : g_queryPools)
         queryPool = g_device->createQueryPool(NUM_QUERIES);
@@ -2397,6 +2470,8 @@ static uint32_t g_waitForGPUCount = 0;
 
 void Video::WaitForGPU()
 {
+    std::lock_guard lock(g_waitForGPUMutex);
+
     g_waitForGPUCount++;
 
     // Wait for all queued frames to finish.
@@ -2410,10 +2485,12 @@ void Video::WaitForGPU()
     }
 
     // Execute an empty command list and wait for it to end to guarantee that any remaining presentation has finished.
-    g_commandLists[0]->begin();
-    g_commandLists[0]->end();
-    g_queue->executeCommandLists(g_commandLists[0].get(), g_commandFences[0].get());
-    g_queue->waitForCommandFence(g_commandFences[0].get());
+    // Reusing the first frame's command list here could break the frame the render thread was recording when the
+    // installer handed over to the game. On Metal, that frame's fence was then never signaled and the game hung.
+    g_waitForGPUCommandList->begin();
+    g_waitForGPUCommandList->end();
+    g_queue->executeCommandLists(g_waitForGPUCommandList.get(), g_waitForGPUCommandFence.get());
+    g_queue->waitForCommandFence(g_waitForGPUCommandFence.get());
 }
 
 static uint32_t getSetAddress(uint32_t base, int index) {
@@ -3034,6 +3111,9 @@ static void DrawImGui()
 
     DrawFPS();
     DrawProfiler();
+#ifdef MARATHON_RECOMP_IOS
+    TouchControls::Draw(float(width), float(height), mousePosOffsetX, mousePosOffsetY);
+#endif
     ImGui::Render();
 
     auto drawData = ImGui::GetDrawData();
@@ -3218,8 +3298,163 @@ void Video::WaitOnSwapChain()
 static bool g_shouldPrecompilePipelines;
 static std::atomic<bool> g_executedCommandList;
 
+#ifdef MARATHON_RECOMP_IOS
+void Video::HandleApplicationBackgroundState(bool isBackgrounded)
+{
+    // Only flag the change here. This runs while events are being pumped, which on iOS happens on the game's
+    // main thread, so blocking or touching render state here would freeze the game. Present() does the waiting.
+    if (g_appSuspended.exchange(isBackgrounded, std::memory_order_acq_rel) != isBackgrounded)
+        LOGFN("Application {} the background.", isBackgrounded ? "entered" : "left");
+}
+
+// iOS doesn't allow GPU work in the background, so stop presenting new frames until the app is back.
+static void WaitWhileApplicationSuspended()
+{
+    while (g_appSuspended.load(std::memory_order_acquire))
+    {
+        // The event telling us the app is back arrives on the main thread, so it has to keep pumping events.
+        if (std::this_thread::get_id() == g_eventThreadId)
+        {
+            SDL_PumpEvents();
+            SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(16));
+    }
+}
+#endif
+
+#ifdef MARATHON_RECOMP_IOS
+// CPU use per thread since the last call, as "name:percent" for the busiest threads. Heat is what eventually slows
+// the game down on phones, so this shows where the power goes.
+static std::string GetThreadCPUUsage(double elapsedSeconds)
+{
+    static ankerl::unordered_dense::map<uint64_t, double> s_lastThreadTimes;
+
+    thread_act_array_t threads = nullptr;
+    mach_msg_type_number_t threadCount = 0;
+    if (task_threads(mach_task_self(), &threads, &threadCount) != KERN_SUCCESS)
+        return {};
+
+    std::vector<std::pair<double, std::string>> usage;
+    ankerl::unordered_dense::map<uint64_t, double> threadTimes;
+
+    for (mach_msg_type_number_t i = 0; i < threadCount; i++)
+    {
+        thread_basic_info_data_t basicInfo{};
+        mach_msg_type_number_t basicCount = THREAD_BASIC_INFO_COUNT;
+        thread_identifier_info_data_t identifierInfo{};
+        mach_msg_type_number_t identifierCount = THREAD_IDENTIFIER_INFO_COUNT;
+
+        if (thread_info(threads[i], THREAD_BASIC_INFO, (thread_info_t)&basicInfo, &basicCount) == KERN_SUCCESS &&
+            thread_info(threads[i], THREAD_IDENTIFIER_INFO, (thread_info_t)&identifierInfo, &identifierCount) == KERN_SUCCESS)
+        {
+            double seconds = basicInfo.user_time.seconds + basicInfo.user_time.microseconds / 1e6 +
+                basicInfo.system_time.seconds + basicInfo.system_time.microseconds / 1e6;
+
+            threadTimes[identifierInfo.thread_id] = seconds;
+
+            if (auto last = s_lastThreadTimes.find(identifierInfo.thread_id); last != s_lastThreadTimes.end())
+            {
+                double percent = (seconds - last->second) * 100.0 / elapsedSeconds;
+                if (percent >= 3.0)
+                {
+                    char name[64]{};
+                    if (pthread_t pthread = pthread_from_mach_thread_np(threads[i]))
+                        pthread_getname_np(pthread, name, sizeof(name));
+
+                    usage.emplace_back(percent, name[0] != '\0' ? name : fmt::format("{:x}", identifierInfo.thread_id));
+                }
+            }
+        }
+
+        mach_port_deallocate(mach_task_self(), threads[i]);
+    }
+
+    vm_deallocate(mach_task_self(), (vm_address_t)threads, threadCount * sizeof(thread_act_t));
+    s_lastThreadTimes = std::move(threadTimes);
+
+    std::sort(usage.begin(), usage.end(), [](auto& a, auto& b) { return a.first > b.first; });
+
+    std::string result;
+    for (size_t i = 0; i < usage.size() && i < 8; i++)
+        result += fmt::format("{}{}:{:.0f}", i == 0 ? "" : " ", usage[i].second, usage[i].first);
+
+    return result;
+}
+
+// Logs frame pacing, memory and thermal state every few seconds. Players launch from the home screen without
+// a console, so this ends up in marathonrecomp.log, where it helps diagnose slowdowns and memory terminations.
+// guest: game code between presents. render: waiting for the render thread to submit. fence: waiting for the
+// GPU to finish an older frame. pso: pipelines compiled on the render thread, which stall it.
+static void LogPerformance()
+{
+    using namespace std::chrono;
+
+    static auto s_start = steady_clock::now();
+    static std::vector<double> s_frameTimes;
+    static double s_gpuTotal, s_guestTotal, s_renderWaitTotal, s_fenceTotal;
+
+    double frameTime = g_presentProfiler.value.load();
+    s_frameTimes.push_back(frameTime);
+    s_gpuTotal += g_gpuFrameProfiler.value.load();
+    s_guestTotal += g_perfGuestMs;
+    s_renderWaitTotal += g_perfRenderWaitMs;
+    s_fenceTotal += g_frameFenceProfiler.value.load();
+
+    auto now = steady_clock::now();
+    double elapsed = duration<double>(now - s_start).count();
+
+    if (elapsed < 5.0)
+        return;
+
+    size_t frames = s_frameTimes.size();
+    std::sort(s_frameTimes.begin(), s_frameTimes.end());
+    double p99 = s_frameTimes[std::min(frames - 1, size_t(frames * 0.99))];
+    size_t hitches = size_t(std::count_if(s_frameTimes.begin(), s_frameTimes.end(), [](double t) { return t > 34.0; }));
+
+    task_vm_info_data_t vmInfo{};
+    mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
+    uint64_t footprint = 0;
+
+    if (task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)&vmInfo, &count) == KERN_SUCCESS)
+        footprint = vmInfo.phys_footprint;
+
+    LOGFN("PERF fps={:.1f} frame={:.2f}ms p99={:.1f}ms hitches={} guest={:.2f}ms render={:.2f}ms fence={:.2f}ms gpu={:.2f}ms passes={}+{}blit (ends fb={} samefb={} barrier={} copy={} clear={} kept={}) draws={} pso={}/{:.0f}ms async={} skipped={} footprint={}MB available={}MB thermal={}",
+        frames / elapsed, elapsed * 1000.0 / frames, p99, hitches,
+        s_guestTotal / frames, s_renderWaitTotal / frames, s_fenceTotal / frames, s_gpuTotal / frames,
+        plume::g_metalRenderPassCount.exchange(0, std::memory_order_relaxed) / frames, plume::g_metalBlitPassCount.exchange(0, std::memory_order_relaxed) / frames,
+        plume::g_metalPassEndFramebuffer.exchange(0, std::memory_order_relaxed) / frames, plume::g_metalPassEndSameFramebuffer.exchange(0, std::memory_order_relaxed) / frames,
+        plume::g_metalPassEndBarrier.exchange(0, std::memory_order_relaxed) / frames, plume::g_metalPassEndCopy.exchange(0, std::memory_order_relaxed) / frames,
+        plume::g_metalPassEndClear.exchange(0, std::memory_order_relaxed) / frames, plume::g_metalBarrierKeptPass.exchange(0, std::memory_order_relaxed) / frames, plume::g_metalDrawCount.exchange(0, std::memory_order_relaxed) / frames,
+        g_perfPipelineCount.exchange(0, std::memory_order_relaxed), g_perfPipelineMicroseconds.exchange(0, std::memory_order_relaxed) / 1000.0,
+        g_perfAsyncPipelineCount.exchange(0, std::memory_order_relaxed), g_perfSkippedDrawCount.exchange(0, std::memory_order_relaxed),
+        footprint >> 20, os_proc_available_memory() >> 20, ios::GetThermalState());
+
+    LOGFN("CPU {}", GetThreadCPUUsage(elapsed));
+
+    s_start = now;
+    s_frameTimes.clear();
+    s_gpuTotal = s_guestTotal = s_renderWaitTotal = s_fenceTotal = 0.0;
+}
+#endif
+
+#ifdef MARATHON_RECOMP_IOS
+static std::chrono::steady_clock::time_point g_perfPresentEnd;
+#endif
+
 void Video::Present() 
 {
+#ifdef MARATHON_RECOMP_IOS
+    g_perfGuestMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - g_perfPresentEnd).count();
+    WaitWhileApplicationSuspended();
+#endif
+
+    // The Cap60FPS code. Clamping the setting itself keeps everything that depends on it, like the
+    // frame limiter and the game's own frame rate logic, consistent with the cap.
+    if (Config::Cap60FPS && Config::FPS > 60)
+        Config::FPS = 60;
+
     g_readyForCommands = false;
 
     RenderCommand cmd;
@@ -3238,8 +3473,14 @@ void Video::Present()
         g_shouldPrecompilePipelines = false;
     }
 
+#ifdef MARATHON_RECOMP_IOS
+    auto renderWaitStart = std::chrono::steady_clock::now();
+#endif
     g_executedCommandList.wait(false);
     g_executedCommandList = false;
+#ifdef MARATHON_RECOMP_IOS
+    g_perfRenderWaitMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - renderWaitStart).count();
+#endif
 
     if (g_swapChainValid)
     {
@@ -3249,6 +3490,11 @@ void Video::Present()
             g_swapChain->wait(); // Never gonna happen outside loading threads as explained above.
             g_presentWaitProfiler.End();
         }
+
+        // On displays faster than the frame rate cap (120 Hz ProMotion), presenting as soon as possible puts frames on
+        // whichever refresh comes next, showing some for shorter and others for longer, which looks like stuttering.
+        // Hold each frame for the same time instead.
+        g_swapChain->setMinimumPresentDuration((Config::FPS >= FPS_MIN && Config::FPS < FPS_MAX) ? 1.0 / Config::FPS : 0.0);
 
         RenderCommandSemaphore* signalSemaphores[] = { g_renderSemaphores[g_frame].get() };
         g_swapChainValid = g_swapChain->present(g_backBufferIndex, signalSemaphores, std::size(signalSemaphores));
@@ -3293,7 +3539,13 @@ void Video::Present()
 
         if (now < s_next)
         {
+#ifdef MARATHON_RECOMP_IOS
+            // iOS wakes threads accurately, so spin for much less of the frame. Spinning a core for milliseconds
+            // every frame heats the phone up, and iOS then lowers the clock speeds the game needs.
+            std::this_thread::sleep_for(std::chrono::floor<std::chrono::microseconds>(s_next - now - 500us));
+#else
             std::this_thread::sleep_for(std::chrono::floor<std::chrono::milliseconds>(s_next - now - 2ms));
+#endif
 
             while ((now = std::chrono::steady_clock::now()) < s_next)
                 std::this_thread::yield();
@@ -3307,6 +3559,11 @@ void Video::Present()
     }
 
     g_presentProfiler.Reset();
+
+#ifdef MARATHON_RECOMP_IOS
+    LogPerformance();
+    g_perfPresentEnd = std::chrono::steady_clock::now();
+#endif
 }
 
 void Video::StartPipelinePrecompilation()
@@ -3735,6 +3992,12 @@ static GuestSurface* CreateSurface(uint32_t width, uint32_t height, uint32_t for
     } else {
         sampleCount = multiSample == 1 ? RenderSampleCount::COUNT_2 : RenderSampleCount::COUNT_4;
     }
+
+#ifdef MARATHON_RECOMP_IOS
+    // The game multisamples its HDR targets as it did on the Xbox 360's EDRAM. At a phone's native resolution
+    // that alone exceeds its GPU's frame budget, so the Anti-Aliasing setting (off by default on iOS) caps it.
+    sampleCount = std::min<RenderSampleCounts>(sampleCount, std::max<uint32_t>(uint32_t(Config::AntiAliasing.Value), RenderSampleCount::COUNT_1));
+#endif
 
     const RenderFormat renderFormat = ConvertFormat(format);
     const bool isDepthStencil = RenderFormatIsDepth(renderFormat);
@@ -4894,6 +5157,95 @@ static std::unique_ptr<RenderPipeline> CreateGraphicsPipeline(const PipelineStat
     return pipeline;
 }
 
+#ifdef MARATHON_RECOMP_IOS
+// Pipelines compile on demand, and on iOS a pipeline the GPU driver hasn't compiled before takes 20-150 ms. During
+// gameplay, that freezes the game every time something new appears on screen. Instead, compile them on background
+// threads and skip the draws that need them until they're ready, a frame or a few later. Around loading screens,
+// where nothing moves, compile in place as before, so stages don't start with objects missing.
+// Only pipelines the driver has never compiled are slow. The ones compiled in earlier sessions are recorded next to
+// the system's Metal shader cache (iOS purges both together), and those still compile in place, which avoids skipping
+// their draws.
+static ankerl::unordered_dense::map<XXH64_hash_t, XXH64_hash_t> g_asyncPipelinesPending; // Hash to stable hash, render thread only.
+static ankerl::unordered_dense::set<XXH64_hash_t> g_knownPipelines; // Render thread only.
+static FILE* g_knownPipelinesFile;
+static bool g_pipelineMissing;
+static std::atomic<int64_t> g_lastLoadingScreenTicks;
+
+static void EnqueueAsyncPipeline(XXH64_hash_t hash, const PipelineState& pipelineState);
+
+// Pipeline states hold pointers to guest objects, which differ between sessions. Hash what they point to instead.
+static bool ComputeStablePipelineHash(const PipelineState& pipelineState, XXH64_hash_t& stableHash)
+{
+    PipelineState copy = pipelineState;
+
+    for (GuestShader** shader : { &copy.vertexShader, &copy.pixelShader })
+    {
+        if (*shader == nullptr)
+            continue;
+
+        // Shaders created by the port itself instead of the game.
+        if ((*shader)->shaderCacheEntry == nullptr)
+            return false;
+
+        *shader = reinterpret_cast<GuestShader*>((*shader)->shaderCacheEntry->hash);
+    }
+
+    if (copy.vertexDeclaration != nullptr)
+        copy.vertexDeclaration = reinterpret_cast<GuestVertexDeclaration*>(copy.vertexDeclaration->hash);
+
+    stableHash = XXH3_64bits(&copy, sizeof(copy));
+    return true;
+}
+
+static bool IsKnownPipeline(XXH64_hash_t stableHash)
+{
+    static bool s_loaded;
+
+    if (!s_loaded)
+    {
+        s_loaded = true;
+
+        const char* home = getenv("HOME");
+        auto path = std::filesystem::path(home != nullptr ? home : ".") / "Library" / "Caches" / "marathon_pipelines.bin";
+
+        if (FILE* file = fopen(path.c_str(), "rb"))
+        {
+            XXH64_hash_t hash;
+            while (fread(&hash, sizeof(hash), 1, file) == 1)
+                g_knownPipelines.insert(hash);
+
+            fclose(file);
+        }
+
+        g_knownPipelinesFile = fopen(path.c_str(), "ab");
+        LOGFN("Known pipelines: {}", g_knownPipelines.size());
+    }
+
+    return g_knownPipelines.contains(stableHash);
+}
+
+static void AddKnownPipeline(XXH64_hash_t stableHash)
+{
+    if (g_knownPipelines.insert(stableHash).second && g_knownPipelinesFile != nullptr)
+    {
+        fwrite(&stableHash, sizeof(stableHash), 1, g_knownPipelinesFile);
+        fflush(g_knownPipelinesFile);
+    }
+}
+
+static bool IsNearLoadingScreen()
+{
+    auto now = std::chrono::steady_clock::now().time_since_epoch();
+    return (std::chrono::duration_cast<std::chrono::milliseconds>(now).count() - g_lastLoadingScreenTicks.load()) < 1500;
+}
+
+void Video::NotifyLoadingScreen()
+{
+    auto now = std::chrono::steady_clock::now().time_since_epoch();
+    g_lastLoadingScreenTicks = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+}
+#endif
+
 static RenderPipeline* CreateGraphicsPipelineInRenderThread(PipelineState pipelineState)
 {
     SanitizePipelineState(pipelineState);
@@ -4902,7 +5254,31 @@ static RenderPipeline* CreateGraphicsPipelineInRenderThread(PipelineState pipeli
     auto& pipeline = g_pipelines[hash];
     if (pipeline == nullptr)
     {
+#ifdef MARATHON_RECOMP_IOS
+        XXH64_hash_t stableHash = 0;
+        bool isStable = ComputeStablePipelineHash(pipelineState, stableHash);
+
+        if (isStable && !IsKnownPipeline(stableHash) && !IsNearLoadingScreen())
+        {
+            if (g_asyncPipelinesPending.emplace(hash, stableHash).second)
+            {
+                g_perfAsyncPipelineCount.fetch_add(1, std::memory_order_relaxed);
+                EnqueueAsyncPipeline(hash, pipelineState);
+            }
+
+            return nullptr;
+        }
+
+        auto pipelineStart = std::chrono::steady_clock::now();
         pipeline = CreateGraphicsPipeline(pipelineState);
+        g_perfPipelineCount.fetch_add(1, std::memory_order_relaxed);
+        g_perfPipelineMicroseconds.fetch_add(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - pipelineStart).count(), std::memory_order_relaxed);
+
+        if (isStable)
+            AddKnownPipeline(stableHash);
+#else
+        pipeline = CreateGraphicsPipeline(pipelineState);
+#endif
 
 #ifdef ASYNC_PSO_DEBUG
         bool loading = *SWA::SGlobals::ms_IsLoading;
@@ -5223,6 +5599,13 @@ static void ProcSetPixelShaderConstants(const RenderCommand& cmd)
 static void ProcAddPipeline(const RenderCommand& cmd)
 {
     auto& args = cmd.addPipeline;
+#ifdef MARATHON_RECOMP_IOS
+    if (auto pending = g_asyncPipelinesPending.find(args.hash); pending != g_asyncPipelinesPending.end())
+    {
+        AddKnownPipeline(pending->second);
+        g_asyncPipelinesPending.erase(pending);
+    }
+#endif
     auto& pipeline = g_pipelines[args.hash];
 
     if (pipeline == nullptr)
@@ -5320,9 +5703,20 @@ static void FlushRenderStateForRenderThread()
         SetDirtyValue(g_dirtyStates.pipelineState, g_pipelineState.slopeScaledDepthBias, slopeScaledDepthBias);
     }
 
+#ifdef MARATHON_RECOMP_IOS
+    bool pipelineMissing = false;
+#endif
+
     if (g_dirtyStates.pipelineState)
     {
+#ifdef MARATHON_RECOMP_IOS
+        if (auto pipeline = CreateGraphicsPipelineInRenderThread(g_pipelineState))
+            commandList->setPipeline(pipeline);
+        else
+            pipelineMissing = true;
+#else
         commandList->setPipeline(CreateGraphicsPipelineInRenderThread(g_pipelineState));
+#endif
 
         // D3D12 resets the depth bias values. Check if they need to be set again.
         if (g_capabilities.dynamicDepthBias && g_backend == Backend::D3D12)
@@ -5363,6 +5757,12 @@ static void FlushRenderStateForRenderThread()
         commandList->setIndexBuffer(&g_indexBufferView);
 
     g_dirtyStates = DirtyStates(false);
+
+#ifdef MARATHON_RECOMP_IOS
+    // Ask for the pipeline again on the next draw, as the one bound now belongs to a different state.
+    g_pipelineMissing = pipelineMissing;
+    g_dirtyStates.pipelineState = pipelineMissing;
+#endif
 }
 
 static RenderPrimitiveTopology ConvertPrimitiveType(uint32_t primitiveType)
@@ -5415,6 +5815,14 @@ static void ProcDrawPrimitive(const RenderCommand& cmd)
 
     FlushRenderStateForRenderThread();
 
+#ifdef MARATHON_RECOMP_IOS
+    if (g_pipelineMissing)
+    {
+        g_perfSkippedDrawCount.fetch_add(1, std::memory_order_relaxed);
+        return;
+    }
+#endif
+
     auto& commandList = g_commandLists[g_frame];
     commandList->drawInstanced(args.primitiveCount, 1, args.startVertex, 0);
 }
@@ -5440,6 +5848,14 @@ static void ProcDrawIndexedPrimitive(const RenderCommand& cmd)
 
     SetPrimitiveType(args.primitiveType);
     FlushRenderStateForRenderThread();
+
+#ifdef MARATHON_RECOMP_IOS
+    if (g_pipelineMissing)
+    {
+        g_perfSkippedDrawCount.fetch_add(1, std::memory_order_relaxed);
+        return;
+    }
+#endif
 
     g_commandLists[g_frame]->drawIndexedInstanced(args.primCount, 1, args.startIndex, args.baseVertexIndex, 0);
 }
@@ -5491,6 +5907,14 @@ static void ProcDrawPrimitiveUP(const RenderCommand& cmd)
     }
 
     FlushRenderStateForRenderThread();
+
+#ifdef MARATHON_RECOMP_IOS
+    if (g_pipelineMissing)
+    {
+        g_perfSkippedDrawCount.fetch_add(1, std::memory_order_relaxed);
+        return;
+    }
+#endif
 
     if (indexCount != 0)
         g_commandLists[g_frame]->drawIndexedInstanced(indexCount, 1, 0, 0, 0);
@@ -6108,6 +6532,8 @@ static std::thread g_renderThread([]
 #ifdef _WIN32
         SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
         GuestThread::SetThreadName(GetCurrentThreadId(), "Render Thread");
+#elif defined(MARATHON_RECOMP_IOS)
+        pthread_setname_np("Render Thread");
 #endif
 
         RenderCommand commands[32];
@@ -6784,6 +7210,67 @@ static void CompilePipeline(XXH64_hash_t pipelineHash, const PipelineState& pipe
     cmd.addPipeline.pipeline = pipeline.release();
     g_renderQueue.enqueue(cmd);
 }
+
+#ifdef MARATHON_RECOMP_IOS
+struct AsyncPipelineJob
+{
+    XXH64_hash_t hash;
+    PipelineState pipelineState;
+};
+
+static std::mutex g_asyncPipelineMutex;
+static std::condition_variable g_asyncPipelineJobCondVar;
+static std::condition_variable g_asyncPipelineIdleCondVar;
+static std::deque<AsyncPipelineJob> g_asyncPipelineJobs;
+static uint32_t g_asyncPipelinesInFlight; // Queued or compiling, guarded by g_asyncPipelineMutex.
+
+static void AsyncPipelineThread()
+{
+    pthread_set_qos_class_self_np(QOS_CLASS_USER_INITIATED, 0);
+    pthread_setname_np("Pipeline Compiler");
+
+    while (true)
+    {
+        AsyncPipelineJob job;
+        {
+            std::unique_lock lock(g_asyncPipelineMutex);
+            g_asyncPipelineJobCondVar.wait(lock, [] { return !g_asyncPipelineJobs.empty(); });
+            job = g_asyncPipelineJobs.front();
+            g_asyncPipelineJobs.pop_front();
+        }
+
+        // Hands the pipeline to the render thread with an AddPipeline command.
+        CompilePipeline(job.hash, job.pipelineState);
+
+        std::lock_guard lock(g_asyncPipelineMutex);
+        if (--g_asyncPipelinesInFlight == 0)
+            g_asyncPipelineIdleCondVar.notify_all();
+    }
+}
+
+static void EnqueueAsyncPipeline(XXH64_hash_t hash, const PipelineState& pipelineState)
+{
+    static std::once_flag s_threadsStarted;
+    std::call_once(s_threadsStarted, []
+    {
+        // Metal compiles in a separate service process, so these threads mostly wait.
+        for (size_t i = 0; i < 2; i++)
+            std::thread(AsyncPipelineThread).detach();
+    });
+
+    std::lock_guard lock(g_asyncPipelineMutex);
+    g_asyncPipelineJobs.push_back({ hash, pipelineState });
+    g_asyncPipelinesInFlight++;
+    g_asyncPipelineJobCondVar.notify_one();
+}
+
+// Jobs point at guest shaders and vertex declarations, so they must finish before those are destroyed.
+static void WaitForAsyncPipelines()
+{
+    std::unique_lock lock(g_asyncPipelineMutex);
+    g_asyncPipelineIdleCondVar.wait(lock, [] { return g_asyncPipelinesInFlight == 0; });
+}
+#endif
 
 static void PipelineCompilerThread()
 {

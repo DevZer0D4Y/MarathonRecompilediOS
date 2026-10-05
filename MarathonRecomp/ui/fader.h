@@ -1,5 +1,8 @@
 #pragma once
 
+#include <functional>
+#include <imgui.h>
+
 class Fader
 {
 public:

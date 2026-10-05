@@ -1,5 +1,6 @@
 #include "loading_patches.h"
 #include <api/Marathon.h>
+#include <gpu/video.h>
 
 // Sonicteam::HUDLoading::Update
 PPC_FUNC_IMPL(__imp__sub_824D7340);
@@ -11,6 +12,10 @@ PPC_FUNC(sub_824D7340)
     {
         for (auto& event : LoadingPatches::Events)
             event->Update(ctx.f1.f64);
+
+#ifdef MARATHON_RECOMP_IOS
+        Video::NotifyLoadingScreen();
+#endif
     }
 
     __imp__sub_824D7340(ctx, base);
