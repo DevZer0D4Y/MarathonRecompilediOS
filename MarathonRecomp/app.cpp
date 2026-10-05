@@ -1,4 +1,8 @@
 #include "app.h"
+#ifdef MARATHON_RECOMP_IOS
+#include <os/ios/platform_ios.h>
+#endif
+#include <cpu/guest_thread.h>
 #include <gpu/video.h>
 #include <install/installer.h>
 #include <kernel/function.h>
@@ -15,7 +19,13 @@ static std::thread::id g_mainThreadId = std::this_thread::get_id();
 
 void App::Restart(std::vector<std::string> restartArgs)
 {
+#ifdef MARATHON_RECOMP_IOS
+    Config::Save();
+    ios::ShowRestartRequired();
+    return;
+#else
     os::process::StartProcess(os::process::GetExecutablePath(), restartArgs, os::process::GetWorkingDirectory());
+#endif
     Exit();
 }
 
@@ -122,14 +132,19 @@ PPC_FUNC(sub_82582648)
     __imp__sub_82582648(ctx, base);
 }
 
-#if _DEBUG
+#if _DEBUG || defined(MARATHON_RECOMP_IOS)
 // Sonicteam::SoX::Thread::Thread
 PPC_FUNC_IMPL(__imp__sub_825867A8);
 PPC_FUNC(sub_825867A8)
 {
     auto pThreadName = (const char*)g_memory.Translate(ctx.r4.u32);
 
+#if _DEBUG
     os::logger::Log(fmt::format("Created thread: {}", pThreadName), os::logger::ELogType::Utility, "Sonicteam::SoX::Thread");
+#endif
+#ifdef MARATHON_RECOMP_IOS
+    GuestThread::RegisterThreadName(ctx.r3.u32, pThreadName);
+#endif
 
     __imp__sub_825867A8(ctx, base);
 }

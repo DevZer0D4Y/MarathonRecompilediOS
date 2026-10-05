@@ -1,11 +1,10 @@
 #include "fader.h"
-#include "imgui_utils.h"
-#include <user/config.h>
+#include <utils/fade_timing.h>
 
 static bool g_isFading;
 static bool g_isFadeIn;
 
-static float g_startTime;
+static double g_startTime;
 
 static float g_duration;
 static ImU32 g_colour = IM_COL32_BLACK;
@@ -17,32 +16,22 @@ void Fader::Draw()
     if (!s_isVisible)
         return;
 
-    auto time = (ImGui::GetTime() - g_startTime) / g_duration;
-    auto alpha = 1.0f;
-
-    if (time >= g_duration)
+    const double now = ImGui::GetTime();
+    const float elapsed = float(now - g_startTime);
+    if (g_isFading && elapsed >= g_duration + g_endCallbackDelay)
     {
-        if (time >= g_duration + g_endCallbackDelay)
-        {
-            if (g_endCallback)
-            {
-                g_endCallback();
-                g_endCallback = nullptr;
-            }
-
-            g_isFading = false;
-        }
-    }
-    else
-    {
-        alpha = g_isFadeIn
-            ? Lerp(1, 0, time)
-            : Lerp(0, 1, time);
+        g_isFading = false;
+        auto callback = std::move(g_endCallback);
+        if (callback) callback();
     }
 
     if (g_isFadeIn && !g_isFading)
         return;
 
+    // Callback delays must not undo the completed fade. A callback may also
+    // start a new fade, so compute its opacity from the current state.
+    const float time = FadeProgress(float(now - g_startTime), g_duration);
+    const float alpha = g_isFadeIn ? 1.0f - time : time;
     auto colour = IM_COL32(g_colour & 0xFF, (g_colour >> 8) & 0xFF, (g_colour >> 16) & 0xFF, 255 * alpha);
 
     ImGui::GetBackgroundDrawList()->AddRectFilled({ 0, 0 }, ImGui::GetIO().DisplaySize, colour);
@@ -56,7 +45,7 @@ static void DoFade(bool isFadeIn, float duration, std::function<void()> endCallb
     g_isFading = true;
     g_isFadeIn = isFadeIn;
     g_startTime = ImGui::GetTime();
-    g_duration = duration;
+    g_duration = std::max(duration, 0.0f);
     g_endCallback = endCallback;
     g_endCallbackDelay = endCallbackDelay;
 

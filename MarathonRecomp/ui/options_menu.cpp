@@ -857,7 +857,10 @@ static void DrawOptions(ImVec2 min, ImVec2 max)
             DrawOption(rowCount++, &Config::ResolutionScale, false, devReason);                        // TODO: implement buffer resize. DrawOption(rowCount++, &Config::ResolutionScale, true, nullptr, 0.25f, 1.0f, 2.0f);
             DrawOption(rowCount++, &Config::Fullscreen, false, devReason);                             // TODO: implement buffer resize. DrawOption(rowCount++, &Config::Fullscreen, true);
             DrawOption(rowCount++, &Config::VSync, true);
-            DrawOption(rowCount++, &Config::FPS, true, nullptr, FPS_MIN, 120, FPS_MAX);
+            if (Config::Cap60FPS)
+                DrawOption(rowCount++, &Config::FPS, true, nullptr, FPS_MIN, 30, 60);
+            else
+                DrawOption(rowCount++, &Config::FPS, true, nullptr, FPS_MIN, 120, FPS_MAX);
             DrawOption(rowCount++, &Config::Brightness, true);
             DrawOption(rowCount++, &Config::AntiAliasing, false, devReason);                           // TODO: implement MSAA.          DrawOption(rowCount++, &Config::AntiAliasing, Config::AntiAliasing.InaccessibleValues.size() != 3, &Localise("Options_Desc_NotAvailableHardware"));
             DrawOption(rowCount++, &Config::TransparencyAntiAliasing, false, devReason);               // TODO: implement MSAA.          DrawOption(rowCount++, &Config::TransparencyAntiAliasing, Config::AntiAliasing != EAntiAliasing::Off, &Localise("Options_Desc_NotAvailableMSAA"));
@@ -1111,8 +1114,13 @@ void OptionsMenu::Draw()
             {
                 if (s_restartMessageResult == 0)
                 {
-                    Fader::FadeOut(1, []() { App::Restart({ "--use-cwd --skip-logos" }); });
+#ifdef MARATHON_RECOMP_IOS
+                    App::Restart();
+                    Close();
+#else
+                    Fader::FadeOut(1, []() { App::Restart({ "--use-cwd", "--skip-logos" }); });
                     s_restartFaderBegun = true;
+#endif
                 }
                 else
                 {

@@ -1,3 +1,7 @@
+#include <utils/release_version.h>
+#ifdef MARATHON_RECOMP_IOS
+#include <os/ios/platform_ios.h>
+#endif
 #include "update_checker.h"
 
 #include <curl/curl.h>
@@ -30,40 +34,19 @@ size_t updateCheckerWriteCallback(void *contents, size_t size, size_t nmemb, std
     return totalSize;
 }
 
-static bool parseVersion(const std::string &versionStr, int &major, int &minor, int &revision)
-{
-    size_t start = 0;
-    if (versionStr[0] == 'v')
-    {
-        start = 1;
-    }
-
-    size_t firstDot = versionStr.find('.', start);
-    size_t secondDot = versionStr.find('.', firstDot + 1);
-
-    if (firstDot == std::string::npos || secondDot == std::string::npos)
-    {
-        return false;
-    }
-
-    try
-    {
-        major = std::stoi(versionStr.substr(start, firstDot - start));
-        minor = std::stoi(versionStr.substr(firstDot + 1, secondDot - firstDot - 1));
-        revision = std::stoi(versionStr.substr(secondDot + 1));
-    }
-    catch (const std::exception &e)
-    {
-        LOGF_ERROR("Error while parsing version: {}.", e.what());
-        return false;
-    }
-
-    return true;
-}
 
 void updateCheckerThread()
 {
     CURL *curl = curl_easy_init();
+    if (!curl)
+    {
+        g_updateCheckerResult = UpdateChecker::Result::Failed;
+        g_updateCheckerFinished = true;
+        g_updateCheckerInProgress = false;
+        return;
+    }
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
     CURLcode res;
     int major, minor, revision;
     std::string response;
@@ -82,7 +65,7 @@ void updateCheckerThread()
             auto tag_name_element = root.find("tag_name");
             if (tag_name_element != root.end() && tag_name_element->is_string())
             {
-                if (parseVersion(*tag_name_element, major, minor, revision))
+                if (ParseReleaseVersion(tag_name_element->get_ref<const std::string&>(), major, minor, revision))
                 {
                     if ((g_versionMajor < major) || (g_versionMajor == major  && g_versionMinor < minor) || (g_versionMajor == major && g_versionMinor == minor && g_versionRevision < revision))
                     {
@@ -166,6 +149,8 @@ void UpdateChecker::visitWebsite()
 #elif defined(__linux__)
     std::string command = "xdg-open " + std::string(VISIT_URL) + " &";
     std::system(command.c_str());
+#elif defined(MARATHON_RECOMP_IOS)
+    ios::OpenURL(VISIT_URL);
 #elif defined(__APPLE__)
     std::string command = "open " + std::string(VISIT_URL) + " &";
     std::system(command.c_str());

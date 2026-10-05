@@ -6,6 +6,11 @@
 #include <app.h>
 #include <sdl_listener.h>
 #include <SDL_syswm.h>
+#ifdef MARATHON_RECOMP_IOS
+#include <os/ios/ios_scene.h>
+#include <os/ios/platform_ios.h>
+#include <os/ios/touch_controls.h>
+#endif
 
 #if _WIN32
 #include <dwmapi.h>
@@ -19,6 +24,9 @@ bool m_isResizing = false;
 
 int Window_OnSDLEvent(void*, SDL_Event* event)
 {
+#ifdef MARATHON_RECOMP_IOS
+    ios::HandleLifecycle(*event);
+#endif
     if (ImGui::GetIO().BackendPlatformUserData != nullptr)
         ImGui_ImplSDL2_ProcessEvent(event);
 
@@ -32,6 +40,19 @@ int Window_OnSDLEvent(void*, SDL_Event* event)
 
     switch (event->type)
     {
+#ifdef MARATHON_RECOMP_IOS
+        // Only pause rendering once the app is actually in the background. Notification Center, Control Center
+        // and screenshots only make it inactive, and it can keep drawing then.
+        case SDL_APP_DIDENTERBACKGROUND:
+            Video::HandleApplicationBackgroundState(true);
+            break;
+
+        case SDL_APP_WILLENTERFOREGROUND:
+        case SDL_APP_DIDENTERFOREGROUND:
+            Video::HandleApplicationBackgroundState(false);
+            break;
+#endif
+
         case SDL_QUIT:
         {
             if (App::s_isSaving)
@@ -194,7 +215,12 @@ void GameWindow::Init(const char* sdlVideoDriver)
     if (IsFullscreen())
         SDL_ShowCursor(SDL_DISABLE);
 
+#ifdef MARATHON_RECOMP_IOS
+    SDL_GetWindowSize(s_pWindow, &s_width, &s_height);
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
+#else
     SetDisplay(Config::Monitor);
+#endif
     SetIcon();
     SetTitle();
 
@@ -216,6 +242,16 @@ void GameWindow::Init(const char* sdlVideoDriver)
     s_renderWindow = s_pWindow;
 #elif defined(__linux__)
     s_renderWindow = { info.info.x11.display, info.info.x11.window };
+#elif defined(MARATHON_RECOMP_IOS)
+    s_renderWindow.window = info.info.uikit.window;
+
+    // The window only becomes visible once it's attached to the app's scene.
+    ios_scene::AttachWindow(s_renderWindow.window);
+
+    s_renderWindow.view = SDL_Metal_GetLayer(SDL_Metal_CreateView(s_pWindow));
+
+    // Put the new Metal view on screen now, rather than on the next touch.
+    ios_scene::FlushDisplayChanges();
 #elif defined(__APPLE__)
     s_renderWindow.window = info.info.cocoa.window;
     s_renderWindow.view = SDL_Metal_GetLayer(SDL_Metal_CreateView(s_pWindow));
@@ -246,6 +282,10 @@ void GameWindow::Update()
 
     if (g_needsResize)
         s_isChangingDisplay = false;
+
+#ifdef MARATHON_RECOMP_IOS
+    ios_scene::FlushDisplayChanges();
+#endif
 }
 
 SDL_Surface* GameWindow::GetIconSurface(void* pIconBmp, size_t iconSize)
@@ -431,6 +471,9 @@ void GameWindow::ResetDimensions()
 
 uint32_t GameWindow::GetWindowFlags()
 {
+#ifdef MARATHON_RECOMP_IOS
+    return SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_METAL;
+#endif
     uint32_t flags = SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
 
     if (Config::WindowState == EWindowState::Maximised)

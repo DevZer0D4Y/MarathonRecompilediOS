@@ -822,6 +822,39 @@ void Config::CreateCallbacks()
     };
 }
 
+#ifdef MARATHON_RECOMP_IOS
+// Picks the game language matching the system's preferred languages, in order of preference.
+static void DetectSystemLanguage()
+{
+    SDL_Locale* locales = SDL_GetPreferredLocales();
+    if (locales == nullptr)
+        return;
+
+    static const std::pair<const char*, ELanguage> languages[] =
+    {
+        { "en", ELanguage::English },
+        { "ja", ELanguage::Japanese },
+        { "de", ELanguage::German },
+        { "fr", ELanguage::French },
+        { "es", ELanguage::Spanish },
+        { "it", ELanguage::Italian }
+    };
+
+    for (SDL_Locale* locale = locales; locale->language != nullptr; locale++)
+    {
+        auto match = std::find_if(std::begin(languages), std::end(languages), [&](auto& language) { return strcmp(locale->language, language.first) == 0; });
+        if (match != std::end(languages))
+        {
+            Config::Language = match->second;
+            LOGFN("Using system language: {}", locale->language);
+            break;
+        }
+    }
+
+    SDL_free(locales);
+}
+#endif
+
 void Config::Load()
 {
     if (!s_isCallbacksCreated)
@@ -834,6 +867,10 @@ void Config::Load()
 
     if (!std::filesystem::exists(configPath))
     {
+#ifdef MARATHON_RECOMP_IOS
+        // First launch: start in the system's language instead of English.
+        DetectSystemLanguage();
+#endif
         Config::Save();
         return;
     }
