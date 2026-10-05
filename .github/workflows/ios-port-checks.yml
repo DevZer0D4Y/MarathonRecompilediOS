@@ -1,0 +1,24 @@
+name: iOS source checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - run: bash tests/run-port-regressions.sh
+  native-tools:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - run: brew install cmake ninja
+      - run: bash ios/prepare.sh
+      - run: cmake --preset ios-host-tools
+      - run: cmake --build out/build/ios-host-tools --target file_to_c u8extract XenonRecomp XenosRecomp --parallel
+      - run: python3 tests/game_inputs_regressions.py --u8extract out/build/ios-host-tools/bin/u8extract

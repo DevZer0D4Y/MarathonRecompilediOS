@@ -115,3 +115,7 @@ cmake --build ./out/build/macos-release --target MarathonRecomp
 ```bash
 open -a MarathonRecomp.app
 ```
+
+## iOS (experimental)
+
+See [the iOS build instructions](IOS.md) for the separate native-tool and arm64 device builds, imported touch controls, and validation status.

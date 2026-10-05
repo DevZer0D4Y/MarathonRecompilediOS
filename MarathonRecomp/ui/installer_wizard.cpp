@@ -15,7 +15,11 @@
 #include <ui/message_window.h>
 #include <decompressor.h>
 #include <exports.h>
+#ifdef MARATHON_RECOMP_IOS
+#include <os/ios/document_picker.h>
+#else
 #include <nfd.h>
+#endif
 #include <sdl_listener.h>
 
 #include <res/images/installer/install_001.dds.h>
@@ -472,6 +476,7 @@ static void DrawProgressBar(ImVec2 originMin, ImVec2 originMax, float progress)
     drawList->AddRectFilled(gaugeMin, { gaugeMin.x + (gaugeMax.x - gaugeMin.x) * progress, gaugeMax.y }, IM_COL32(112, 250, 255, 255 * g_alphaMotion), Scale(10, true));
 }
 
+#ifndef MARATHON_RECOMP_IOS
 static bool ConvertPathSet(const nfdpathset_t *pathSet, std::list<std::filesystem::path> &filePaths)
 {
     nfdpathsetsize_t pathSetCount = 0;
@@ -526,6 +531,8 @@ static void PickerThreadProcess()
     g_currentPickerResultsReady = true;
 }
 
+#endif
+
 static void PickerStart(bool folderMode)
 {
     if (g_currentPickerThread != nullptr)
@@ -539,6 +546,13 @@ static void PickerStart(bool folderMode)
     g_currentPickerResultsReady = false;
     g_currentPickerVisible = true;
 
+#ifdef MARATHON_RECOMP_IOS
+    ios::PickDocuments(folderMode, [](std::list<std::filesystem::path> paths, std::string error) {
+        g_currentPickerResults = std::move(paths);
+        g_currentPickerErrorMessage = std::move(error);
+        g_currentPickerResultsReady = true;
+    });
+#else
     // Optional single thread mode for testing on systems
     // that do not interact well with the separate thread
     // being used for NFD.
@@ -552,6 +566,7 @@ static void PickerStart(bool folderMode)
         PickerThreadProcess();
     else
         g_currentPickerThread = std::make_unique<std::thread>(PickerThreadProcess);
+#endif
 }
 
 static void PickerShow(bool folderMode)
@@ -1363,7 +1378,9 @@ bool InstallerWizard::Run(std::filesystem::path installPath, bool skipGame)
     g_installPath = installPath;
 
     EmbeddedPlayer::Init();
+#ifndef MARATHON_RECOMP_IOS
     NFD_Init();
+#endif
 
     // Guarantee that one controller is initialised.
     // We'll rely on SDL's event loop to get the controller events.
@@ -1396,7 +1413,11 @@ bool InstallerWizard::Run(std::filesystem::path installPath, bool skipGame)
     Fader::FadeIn(0);
     ButtonWindow::Close();
     GameWindow::SetFullscreenCursorVisibility(false);
+#ifdef MARATHON_RECOMP_IOS
+    ios::ReleasePickedDocuments();
+#else
     NFD_Quit();
+#endif
     EmbeddedPlayer::Shutdown();
     InstallerWizard::Shutdown();
 
