@@ -1228,7 +1228,7 @@ PPC_FUNC(sub_828C78E0)
 PPC_FUNC_IMPL(__imp__sub_8264AC48);
 PPC_FUNC(sub_8264AC48)
 {
-    if (Config::CutsceneAspectRatio == ECutsceneAspectRatio::Original)
+    if (Config::CutsceneAspectRatio == ECutsceneAspectRatio::Original && !Config::FillScreen)
         BlackBar::Show();
 
     __imp__sub_8264AC48(ctx, base);
@@ -1390,7 +1390,7 @@ PPC_FUNC(sub_8264CC90)
 
         if (g_aspectRatio > g_aspectRatioMovie)
         {
-            if ((movieModifier.Flags & MOVIE_CROP_WIDE) != 0)
+            if ((movieModifier.Flags & MOVIE_CROP_WIDE) != 0 || Config::FillScreen)
             {
                 // Crop vertically at wide aspect ratios.
                 height = 2.0f * (g_aspectRatio / g_aspectRatioMovie);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <kernel/xdm.h>
+#include <utils/thread_completion.h>
 
 // Use pthreads directly on macOS to be able to increase default stack size.
 #ifdef __APPLE__
@@ -33,13 +34,14 @@ struct GuestThreadHandle : KernelObject
 {
     GuestThreadParams params;
     std::atomic<bool> suspended;
+    ThreadCompletion completion;
+    std::mutex joinMutex;
     #ifdef USE_PTHREAD
-    pthread_t thread;
+    pthread_t thread{};
+    bool joinable = false;
     #else
     std::thread thread;
     #endif
-    // HACK(1)
-    std::atomic<bool> isFinished = false;
 
     GuestThreadHandle(const GuestThreadParams& params);
     ~GuestThreadHandle() override;
@@ -59,5 +61,9 @@ struct GuestThread
 
 #ifdef _WIN32
     static void SetThreadName(uint32_t threadId, const char* name);
+#endif
+#ifdef MARATHON_RECOMP_IOS
+    // Names the host thread of a Sonicteam::SoX::Thread object when it starts, for the performance log.
+    static void RegisterThreadName(uint32_t threadObject, const char* name);
 #endif
 };

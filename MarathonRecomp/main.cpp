@@ -30,6 +30,11 @@
 #include <preload_executable.h>
 #include <iostream>
 #include <app.h>
+#ifdef MARATHON_RECOMP_IOS
+#include <os/ios/ios_scene.h>
+#include <os/ios/platform_ios.h>
+#include <os/ios/sampling_profiler.h>
+#endif
 
 #ifdef _WIN32
 #include <timeapi.h>
@@ -167,12 +172,21 @@ int main(int argc, char *argv[])
     timeBeginPeriod(1);
 #endif
 
+#ifdef MARATHON_RECOMP_IOS
+    ios::Initialize();
+#endif
     os::process::CheckConsole();
 
     if (!os::registry::Init())
         LOGN_WARNING("OS does not support registry.");
 
     os::logger::Init();
+
+#ifdef MARATHON_RECOMP_IOS
+    // Nothing can be shown on screen until iOS has connected the app's scene.
+    ios_scene::WaitForScene();
+    ios::StartSamplingProfilerIfRequested();
+#endif
 
     PreloadContext preloadContext;
     preloadContext.PreloadExecutable();
@@ -206,7 +220,11 @@ int main(int argc, char *argv[])
     {
         // Set the current working directory to the executable's path.
         std::error_code ec;
+#ifdef MARATHON_RECOMP_IOS
+        std::filesystem::current_path(GetGamePath(), ec);
+#else
         std::filesystem::current_path(os::process::GetExecutablePath().parent_path(), ec);
+#endif
     }
 
     Config::Load();
@@ -219,7 +237,7 @@ int main(int argc, char *argv[])
         Journal journal;
         double lastProgressMiB = 0.0;
         double lastTotalMib = 0.0;
-        Installer::checkInstallIntegrity(GAME_INSTALL_DIRECTORY, journal, [&]()
+        Installer::checkInstallIntegrity(GetGamePath(), journal, [&]()
         {
             constexpr double MiBDivisor = 1024.0 * 1024.0;
             constexpr double MiBProgressThreshold = 128.0;
@@ -278,6 +296,7 @@ int main(int argc, char *argv[])
 #endif
 
     // Check the time since the last time an update was checked. Store the new time if the difference is more than six hours.
+#ifndef MARATHON_RECOMP_IOS
     constexpr double TimeBetweenUpdateChecksInSeconds = 6 * 60 * 60;
     time_t timeNow = std::time(nullptr);
     double timeDifferenceSeconds = difftime(timeNow, Config::LastChecked);
@@ -288,6 +307,8 @@ int main(int argc, char *argv[])
         Config::LastChecked = timeNow;
         Config::Save();
     }
+
+#endif
 
     if (Config::ShowConsole)
         os::process::ShowConsole();
