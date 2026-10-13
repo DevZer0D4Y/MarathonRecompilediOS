@@ -84,6 +84,7 @@ A list of everything fixed and added in this iOS port, on top of the original Ma
 | **Installer with the Files app** | The installer uses Apple's Files picker, so the game can be installed from local storage, iCloud Drive, USB drives or network shares. Game data, settings and saves live in the app's own folder, visible in the Files app and Finder. |
 | **Touch controls** | The on-screen gamepad from [Unleashed Recompiled for iOS](https://github.com/DevZer0D4Y/UnleashedRecompilediOS): a stick with a D-Pad ring, swipe anywhere to move the camera, all face, shoulder and trigger buttons, Start, Back and haptic feedback. They hide when you use a controller and come back when you touch the screen. See [What are the controls on iOS?](#what-are-the-controls-on-ios). |
 | **Touch layout editor** | Tap **EDIT** to move, resize and hide controls and change their transparency. Layouts are saved to `touch_layout.toml`. |
+| **Native mod manager** | Import extracted Sonic '06 asset mods, enable or disable them, drag to set priority and choose built-in codes before starting the game. See [iOS mod support](docs/IOS_MODS.md) for supported formats and limits. |
 | **Mobile graphics defaults** | MSAA off, 1024 shadows, quarter-resolution reflections and 4x anisotropic filtering by default, so the game runs smoothly on a phone. All of them can still be raised in the options menu. |
 
 ### iOS Fixes
@@ -180,6 +181,12 @@ bash ios/build.sh --game-source "/path/to/extracted/game"
 Then open `out/build/ios-device/MarathonRecomp-ALL.xcodeproj`, pick your signing team and device, and build **MarathonRecomp**. See [docs/IOS.md](/docs/IOS.md) for signing options, the regression tests and keeping the game files on another computer ([docs/PC_TO_IPHONE.md](/docs/PC_TO_IPHONE.md)).
 
 To make an unsigned `.ipa` like the release one, which contains only the app and no signing data:
+
+```bash
+bash ios/build-ipa.sh --game-source "/path/to/extracted/game" --output "out/MarathonRecomp-mods.ipa"
+```
+
+To package an app you have already compiled:
 
 ```bash
 python3 ios/package-playtest.py out/build/ios-device/MarathonRecomp/Release-iphoneos/MarathonRecomp.app MarathonRecomp.ipa

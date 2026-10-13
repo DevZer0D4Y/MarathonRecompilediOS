@@ -34,6 +34,7 @@
 #include <os/ios/ios_scene.h>
 #include <os/ios/platform_ios.h>
 #include <os/ios/sampling_profiler.h>
+#include <ui/ios_mod_manager.h>
 #endif
 
 #ifdef _WIN32
@@ -328,14 +329,41 @@ int main(int argc, char *argv[])
 
         if (!InstallerWizard::Run(GetGamePath(), isGameInstalled && forceDLCInstaller))
             std::_Exit(0);
+#ifdef MARATHON_RECOMP_IOS
+        // The installer may have populated an initially missing game/module.
+        if (!Installer::checkGameInstall(GetGamePath(), modulePath))
+        {
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), "Game installation is incomplete. Reopen the app and finish importing the game files.", GameWindow::s_pWindow);
+            std::_Exit(1);
+        }
+#endif
     }
 
-    // ModLoader::Init();
+#ifdef MARATHON_RECOMP_IOS
+    // UIKit needs the SDL scene/window before showing the startup manager.
+    if (!runInstallerWizard && !Video::CreateHostDevice(sdlVideoDriver, graphicsApiRetry))
+    {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), Localise("Video_BackendError").c_str(), GameWindow::s_pWindow);
+        std::_Exit(1);
+    }
+    if (!ios_mod_ui::Run())
+    {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), "Could not open the mod manager. Close and reopen the app.", GameWindow::s_pWindow);
+        std::_Exit(1);
+    }
+    try { ModLoader::Init(); }
+    catch (const std::exception& ex)
+    {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), ex.what(), GameWindow::s_pWindow);
+        std::_Exit(1);
+    }
+#endif
 
     KiSystemStartup();
 
     uint32_t entry = LdrLoadModule(modulePath);
 
+#ifndef MARATHON_RECOMP_IOS
     if (!runInstallerWizard)
     {
         if (!Video::CreateHostDevice(sdlVideoDriver, graphicsApiRetry))
@@ -344,6 +372,7 @@ int main(int argc, char *argv[])
             std::_Exit(1);
         }
     }
+#endif
     LOGN_WARNING("Start Guest Thread");
     LOGN_WARNING(modulePath.string());
     // Video::StartPipelinePrecompilation();
