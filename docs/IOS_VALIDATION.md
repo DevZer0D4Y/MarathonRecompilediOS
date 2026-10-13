@@ -1,5 +1,18 @@
 # iOS source validation
 
+## macOS update — 2026-10-13
+
+The native iOS mod manager and Sonic 2006 file overlays from cloud commit `facbd8e586ccb88c9a186dae9e81bb9775165c77` are integrated in local commit `a8fce5edbdb9f02f076a999056bdcf1285260ad1`, preserving Dev Zero's author and author date. The local integration branch is `ios-mod-integration-20261013`.
+
+Xcode 27.0 (27A266a), the iPhoneOS 27.0 SDK and Metal compiler successfully built and linked the Release arm64 app for iOS 17+. Original `default.xex`, `shader.arc` and `shader_lt.arc` supplied under Downloads were used for CPU/shader generation and retained unchanged by SHA-256 comparison. The unsigned IPA was packaged and its ZIP integrity, arm64 architecture, missing signing/provisioning data and absence of original game input files were verified. The linked executable contains the native manager entry point and import/scan/overlay symbols.
+
+Build fixes cover Bash 3.2 empty arrays, Xcode ordering for shared generated sources, native DXC visibility for helper shaders, and the SDL termination event name. The packaging helper required by the patch was also added. A disk-full build failure was resolved after clearing disposable dependency/Homebrew caches and resuming compilation.
+
+Mod regressions passed with ASan/UBSan. Portable port, touch and production fade regressions passed with UBSan; upstream warnings remain. Read-only game-input regressions passed, including after the CMake build-order changes. No physical device installation, gameplay, Files picker interaction, rendering, audio or performance tests were performed in this session. A successful build does not establish gameplay readiness.
+
+The sections below retain the original October 3 validation history.
+
+
 Validation date: 2026-10-03. Base: `sonicnext-dev/MarathonRecomp` commit `04431570d1ad56eaf3dda9ddd9f0efc628c455f5`.
 
 ## Checks completed in this workspace
