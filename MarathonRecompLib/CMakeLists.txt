@@ -108,6 +108,7 @@ add_custom_command(
 add_custom_target(marathon_codegen DEPENDS
     ${MARATHON_RECOMP_PPC_RECOMPILED_SOURCES}
     "${MARATHON_RECOMP_GENERATED_DIR}/shader/shader_cache.cpp")
+add_dependencies(marathon_codegen marathon_extract_shaders)
 if(MARATHON_RECOMP_HOST_TOOLS_ONLY)
     return()
 endif()
@@ -117,6 +118,9 @@ add_library(MarathonRecompLib
     "shader/shader_cache.h"
     "${MARATHON_RECOMP_GENERATED_DIR}/shader/shader_cache.cpp"
 )
+
+# Xcode requires one ordered owner for custom commands shared by targets.
+add_dependencies(MarathonRecompLib marathon_codegen)
 
 target_include_directories(MarathonRecompLib PUBLIC "${MARATHON_RECOMP_GENERATED_DIR}" ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(MarathonRecompLib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/shader")
