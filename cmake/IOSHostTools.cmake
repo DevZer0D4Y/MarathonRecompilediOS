@@ -19,4 +19,7 @@ if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
 else()
     set(DXC_HOST_ARCH x64)
 endif()
-set(DIRECTX_DXC_TOOL "DYLD_LIBRARY_PATH=${DXC_HOST_ROOT}/lib/${DXC_HOST_ARCH}" "${DXC_HOST_ROOT}/bin/${DXC_HOST_ARCH}/dxc-macos")
+# Export to the root directory so app helper shaders can use native DXC.
+set(DIRECTX_DXC_TOOL ${CMAKE_COMMAND} -E env
+    "DYLD_LIBRARY_PATH=${DXC_HOST_ROOT}/lib/${DXC_HOST_ARCH}"
+    "${DXC_HOST_ROOT}/bin/${DXC_HOST_ARCH}/dxc-macos" PARENT_SCOPE)
