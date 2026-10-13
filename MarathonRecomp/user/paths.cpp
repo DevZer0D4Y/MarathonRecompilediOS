@@ -1,16 +1,26 @@
 #include "paths.h"
 #include <os/process.h>
+#ifdef MARATHON_RECOMP_IOS
+#include <os/ios/platform_ios.h>
+#endif
 
 std::filesystem::path g_executableRoot = os::process::GetExecutableRoot();
 std::filesystem::path g_userPath = BuildUserPath();
 
 bool CheckPortable()
 {
+#ifdef MARATHON_RECOMP_IOS
+    return false;
+#else
     return std::filesystem::exists(g_executableRoot / "portable.txt");
+#endif
 }
 
 std::filesystem::path BuildUserPath()
 {
+#ifdef MARATHON_RECOMP_IOS
+    return ios::UserPath();
+#endif
     if (CheckPortable())
         return g_executableRoot;
 

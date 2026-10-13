@@ -1,0 +1,80 @@
+diff --git a/XenosRecomp/air_compiler.cpp b/XenosRecomp/air_compiler.cpp
+index 6cd79e3..ce11963 100644
+--- a/XenosRecomp/air_compiler.cpp
++++ b/XenosRecomp/air_compiler.cpp
+@@ -3,6 +3,11 @@
+ #include <fstream>
+ #include <iterator>
+ #include <spawn.h>
++#include <sys/wait.h>
++#include <cerrno>
++#include <cstdlib>
++
++extern char** environ;
+ #include <unistd.h>
+ 
+ struct TemporaryPath
+@@ -17,10 +22,23 @@ struct TemporaryPath
+     }
+ };
+ 
++#ifndef XENOS_RECOMP_METAL_SDK
++#define XENOS_RECOMP_METAL_SDK "macosx"
++#endif
++
+ static int executeCommand(const char** argv)
+ {
++    // An explicit installed toolchain also works when Apple's asset-discovery
++    // service is unavailable to command-line build processes.
++    std::string toolPath;
++    if (const char* toolchain = std::getenv("METAL_TOOLCHAIN_DIR"); toolchain && *toolchain)
++    {
++        toolPath = std::string(toolchain) + "/usr/bin/" + argv[3];
++        argv += 3;
++        argv[0] = toolPath.c_str();
++    }
+     pid_t pid;
+-    if (posix_spawn(&pid, argv[0], nullptr, nullptr, const_cast<char**>(argv), nullptr) != 0)
++    if (posix_spawn(&pid, argv[0], nullptr, nullptr, const_cast<char**>(argv), environ) != 0)
+         return -1;
+ 
+     int status;
+@@ -53,24 +71,33 @@ std::vector<uint8_t> AirCompiler::compile(const std::string& shaderSource)
+         std::exit(1);
+     }
+ 
+-    const char* compileCommand[] = {
+-        "/usr/bin/xcrun", "-sdk", "macosx", "metal", "-o", irPath.path.c_str(), "-c", sourcePath.path.c_str(), "-Wno-unused-variable", "-frecord-sources", "-gline-tables-only", "-fmetal-math-mode=relaxed", "-D__air__",
++    std::vector<const char*> compileCommand = {
++        "/usr/bin/xcrun", "-sdk", XENOS_RECOMP_METAL_SDK, "metal", "-o", irPath.path.c_str(), "-c", sourcePath.path.c_str(), "-Wno-unused-variable", "-frecord-sources", "-gline-tables-only", "-fmetal-math-mode=relaxed", "-D__air__",
++#ifdef XENOS_RECOMP_METAL_IOS
++        "-mios-version-min=17.0",
++#endif
+ #ifdef UNLEASHED_RECOMP
+         "-DUNLEASHED_RECOMP",
+ #endif
+ #ifdef MARATHON_RECOMP
+         "-DMARATHON_RECOMP",
+ #endif
+-        nullptr
+     };
+-    if (const int compileStatus = executeCommand(compileCommand); compileStatus != 0)
++    std::string moduleCacheOption;
++    if (const char* cache = std::getenv("CLANG_MODULE_CACHE_PATH"); cache && *cache)
++    {
++        moduleCacheOption = std::string("-fmodules-cache-path=") + cache;
++        compileCommand.push_back(moduleCacheOption.c_str());
++    }
++    compileCommand.push_back(nullptr);
++    if (const int compileStatus = executeCommand(compileCommand.data()); compileStatus != 0)
+     {
+         fmt::println("Metal compiler exited with status: {}", compileStatus);
+         fmt::println("Generated source:\n{}", shaderSource);
+         std::exit(1);
+     }
+ 
+-    const char* linkCommand[] = { "/usr/bin/xcrun", "-sdk", "macosx", "metallib", "-o", metalLibPath.path.c_str(), irPath.path.c_str(), nullptr };
++    const char* linkCommand[] = { "/usr/bin/xcrun", "-sdk", XENOS_RECOMP_METAL_SDK, "metallib", "-o", metalLibPath.path.c_str(), irPath.path.c_str(), nullptr };
+     if (const int linkStatus = executeCommand(linkCommand); linkStatus != 0)
+     {
+         fmt::println("Metal linker exited with status: {}", linkStatus);

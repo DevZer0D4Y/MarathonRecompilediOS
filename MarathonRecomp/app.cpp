@@ -1,4 +1,7 @@
 #include "app.h"
+#ifdef MARATHON_RECOMP_IOS
+#include <os/ios/platform_ios.h>
+#endif
 #include <gpu/video.h>
 #include <install/installer.h>
 #include <kernel/function.h>
@@ -15,7 +18,13 @@ static std::thread::id g_mainThreadId = std::this_thread::get_id();
 
 void App::Restart(std::vector<std::string> restartArgs)
 {
+#ifdef MARATHON_RECOMP_IOS
+    Config::Save();
+    ios::ShowRestartRequired();
+    return;
+#else
     os::process::StartProcess(os::process::GetExecutablePath(), restartArgs, os::process::GetWorkingDirectory());
+#endif
     Exit();
 }
 

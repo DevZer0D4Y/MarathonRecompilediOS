@@ -1,4 +1,7 @@
 #include "video.h"
+#ifdef MARATHON_RECOMP_IOS
+#include <os/ios/touch_controls.h>
+#endif
 
 #include "imgui/imgui_common.h"
 #include "imgui/imgui_snapshot.h"
@@ -44,80 +47,80 @@
 #include "../../tools/XenosRecomp/XenosRecomp/shader_common.h"
 
 #ifdef MARATHON_RECOMP_D3D12
-#include "shader/hlsl/blend_color_alpha_ps.hlsl.dxil.h"
-#include "shader/hlsl/conditional_survey_ps.hlsl.dxil.h"
-#include "shader/hlsl/copy_vs.hlsl.dxil.h"
-#include "shader/hlsl/copy_color_ps.hlsl.dxil.h"
-#include "shader/hlsl/copy_depth_ps.hlsl.dxil.h"
-#include "shader/hlsl/csd_filter_ps.hlsl.dxil.h"
-#include "shader/hlsl/csd_no_tex_vs.hlsl.dxil.h"
-#include "shader/hlsl/csd_vs.hlsl.dxil.h"
-#include "shader/hlsl/enhanced_burnout_blur_vs.hlsl.dxil.h"
-#include "shader/hlsl/enhanced_burnout_blur_ps.hlsl.dxil.h"
-#include "shader/hlsl/gamma_correction_ps.hlsl.dxil.h"
-#include "shader/hlsl/gaussian_blur_3x3.hlsl.dxil.h"
-#include "shader/hlsl/gaussian_blur_5x5.hlsl.dxil.h"
-#include "shader/hlsl/gaussian_blur_7x7.hlsl.dxil.h"
-#include "shader/hlsl/gaussian_blur_9x9.hlsl.dxil.h"
-#include "shader/hlsl/imgui_ps.hlsl.dxil.h"
-#include "shader/hlsl/imgui_vs.hlsl.dxil.h"
-#include "shader/hlsl/resolve_msaa_color_2x.hlsl.dxil.h"
-#include "shader/hlsl/resolve_msaa_color_4x.hlsl.dxil.h"
-#include "shader/hlsl/resolve_msaa_color_8x.hlsl.dxil.h"
-#include "shader/hlsl/resolve_msaa_depth_2x.hlsl.dxil.h"
-#include "shader/hlsl/resolve_msaa_depth_4x.hlsl.dxil.h"
-#include "shader/hlsl/resolve_msaa_depth_8x.hlsl.dxil.h"
+#include <gpu/shader/hlsl/blend_color_alpha_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/conditional_survey_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/copy_vs.hlsl.dxil.h>
+#include <gpu/shader/hlsl/copy_color_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/copy_depth_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/csd_filter_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/csd_no_tex_vs.hlsl.dxil.h>
+#include <gpu/shader/hlsl/csd_vs.hlsl.dxil.h>
+#include <gpu/shader/hlsl/enhanced_burnout_blur_vs.hlsl.dxil.h>
+#include <gpu/shader/hlsl/enhanced_burnout_blur_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/gamma_correction_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/gaussian_blur_3x3.hlsl.dxil.h>
+#include <gpu/shader/hlsl/gaussian_blur_5x5.hlsl.dxil.h>
+#include <gpu/shader/hlsl/gaussian_blur_7x7.hlsl.dxil.h>
+#include <gpu/shader/hlsl/gaussian_blur_9x9.hlsl.dxil.h>
+#include <gpu/shader/hlsl/imgui_ps.hlsl.dxil.h>
+#include <gpu/shader/hlsl/imgui_vs.hlsl.dxil.h>
+#include <gpu/shader/hlsl/resolve_msaa_color_2x.hlsl.dxil.h>
+#include <gpu/shader/hlsl/resolve_msaa_color_4x.hlsl.dxil.h>
+#include <gpu/shader/hlsl/resolve_msaa_color_8x.hlsl.dxil.h>
+#include <gpu/shader/hlsl/resolve_msaa_depth_2x.hlsl.dxil.h>
+#include <gpu/shader/hlsl/resolve_msaa_depth_4x.hlsl.dxil.h>
+#include <gpu/shader/hlsl/resolve_msaa_depth_8x.hlsl.dxil.h>
 #endif
 
 #ifdef MARATHON_RECOMP_METAL
-#include "shader/msl/blend_color_alpha_ps.metal.metallib.h"
-#include "shader/msl/conditional_survey_ps.metal.metallib.h"
-#include "shader/msl/copy_vs.metal.metallib.h"
-#include "shader/msl/copy_color_ps.metal.metallib.h"
-#include "shader/msl/copy_depth_ps.metal.metallib.h"
-#include "shader/msl/csd_filter_ps.metal.metallib.h"
-#include "shader/msl/csd_no_tex_vs.metal.metallib.h"
-#include "shader/msl/csd_vs.metal.metallib.h"
-#include "shader/msl/enhanced_burnout_blur_vs.metal.metallib.h"
-#include "shader/msl/enhanced_burnout_blur_ps.metal.metallib.h"
-#include "shader/msl/gamma_correction_ps.metal.metallib.h"
-#include "shader/msl/gaussian_blur_3x3.metal.metallib.h"
-#include "shader/msl/gaussian_blur_5x5.metal.metallib.h"
-#include "shader/msl/gaussian_blur_7x7.metal.metallib.h"
-#include "shader/msl/gaussian_blur_9x9.metal.metallib.h"
-#include "shader/msl/imgui_ps.metal.metallib.h"
-#include "shader/msl/imgui_vs.metal.metallib.h"
-#include "shader/msl/resolve_msaa_color_2x.metal.metallib.h"
-#include "shader/msl/resolve_msaa_color_4x.metal.metallib.h"
-#include "shader/msl/resolve_msaa_color_8x.metal.metallib.h"
-#include "shader/msl/resolve_msaa_depth_2x.metal.metallib.h"
-#include "shader/msl/resolve_msaa_depth_4x.metal.metallib.h"
-#include "shader/msl/resolve_msaa_depth_8x.metal.metallib.h"
+#include <gpu/shader/msl/blend_color_alpha_ps.metal.metallib.h>
+#include <gpu/shader/msl/conditional_survey_ps.metal.metallib.h>
+#include <gpu/shader/msl/copy_vs.metal.metallib.h>
+#include <gpu/shader/msl/copy_color_ps.metal.metallib.h>
+#include <gpu/shader/msl/copy_depth_ps.metal.metallib.h>
+#include <gpu/shader/msl/csd_filter_ps.metal.metallib.h>
+#include <gpu/shader/msl/csd_no_tex_vs.metal.metallib.h>
+#include <gpu/shader/msl/csd_vs.metal.metallib.h>
+#include <gpu/shader/msl/enhanced_burnout_blur_vs.metal.metallib.h>
+#include <gpu/shader/msl/enhanced_burnout_blur_ps.metal.metallib.h>
+#include <gpu/shader/msl/gamma_correction_ps.metal.metallib.h>
+#include <gpu/shader/msl/gaussian_blur_3x3.metal.metallib.h>
+#include <gpu/shader/msl/gaussian_blur_5x5.metal.metallib.h>
+#include <gpu/shader/msl/gaussian_blur_7x7.metal.metallib.h>
+#include <gpu/shader/msl/gaussian_blur_9x9.metal.metallib.h>
+#include <gpu/shader/msl/imgui_ps.metal.metallib.h>
+#include <gpu/shader/msl/imgui_vs.metal.metallib.h>
+#include <gpu/shader/msl/resolve_msaa_color_2x.metal.metallib.h>
+#include <gpu/shader/msl/resolve_msaa_color_4x.metal.metallib.h>
+#include <gpu/shader/msl/resolve_msaa_color_8x.metal.metallib.h>
+#include <gpu/shader/msl/resolve_msaa_depth_2x.metal.metallib.h>
+#include <gpu/shader/msl/resolve_msaa_depth_4x.metal.metallib.h>
+#include <gpu/shader/msl/resolve_msaa_depth_8x.metal.metallib.h>
 #endif
 
-#include "shader/hlsl/blend_color_alpha_ps.hlsl.spirv.h"
-#include "shader/hlsl/conditional_survey_ps.hlsl.spirv.h"
-#include "shader/hlsl/copy_vs.hlsl.spirv.h"
-#include "shader/hlsl/copy_color_ps.hlsl.spirv.h"
-#include "shader/hlsl/copy_depth_ps.hlsl.spirv.h"
-#include "shader/hlsl/csd_filter_ps.hlsl.spirv.h"
-#include "shader/hlsl/csd_no_tex_vs.hlsl.spirv.h"
-#include "shader/hlsl/csd_vs.hlsl.spirv.h"
-#include "shader/hlsl/enhanced_burnout_blur_vs.hlsl.spirv.h"
-#include "shader/hlsl/enhanced_burnout_blur_ps.hlsl.spirv.h"
-#include "shader/hlsl/gamma_correction_ps.hlsl.spirv.h"
-#include "shader/hlsl/gaussian_blur_3x3.hlsl.spirv.h"
-#include "shader/hlsl/gaussian_blur_5x5.hlsl.spirv.h"
-#include "shader/hlsl/gaussian_blur_7x7.hlsl.spirv.h"
-#include "shader/hlsl/gaussian_blur_9x9.hlsl.spirv.h"
-#include "shader/hlsl/imgui_ps.hlsl.spirv.h"
-#include "shader/hlsl/imgui_vs.hlsl.spirv.h"
-#include "shader/hlsl/resolve_msaa_color_2x.hlsl.spirv.h"
-#include "shader/hlsl/resolve_msaa_color_4x.hlsl.spirv.h"
-#include "shader/hlsl/resolve_msaa_color_8x.hlsl.spirv.h"
-#include "shader/hlsl/resolve_msaa_depth_2x.hlsl.spirv.h"
-#include "shader/hlsl/resolve_msaa_depth_4x.hlsl.spirv.h"
-#include "shader/hlsl/resolve_msaa_depth_8x.hlsl.spirv.h"
+#include <gpu/shader/hlsl/blend_color_alpha_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/conditional_survey_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/copy_vs.hlsl.spirv.h>
+#include <gpu/shader/hlsl/copy_color_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/copy_depth_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/csd_filter_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/csd_no_tex_vs.hlsl.spirv.h>
+#include <gpu/shader/hlsl/csd_vs.hlsl.spirv.h>
+#include <gpu/shader/hlsl/enhanced_burnout_blur_vs.hlsl.spirv.h>
+#include <gpu/shader/hlsl/enhanced_burnout_blur_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/gamma_correction_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/gaussian_blur_3x3.hlsl.spirv.h>
+#include <gpu/shader/hlsl/gaussian_blur_5x5.hlsl.spirv.h>
+#include <gpu/shader/hlsl/gaussian_blur_7x7.hlsl.spirv.h>
+#include <gpu/shader/hlsl/gaussian_blur_9x9.hlsl.spirv.h>
+#include <gpu/shader/hlsl/imgui_ps.hlsl.spirv.h>
+#include <gpu/shader/hlsl/imgui_vs.hlsl.spirv.h>
+#include <gpu/shader/hlsl/resolve_msaa_color_2x.hlsl.spirv.h>
+#include <gpu/shader/hlsl/resolve_msaa_color_4x.hlsl.spirv.h>
+#include <gpu/shader/hlsl/resolve_msaa_color_8x.hlsl.spirv.h>
+#include <gpu/shader/hlsl/resolve_msaa_depth_2x.hlsl.spirv.h>
+#include <gpu/shader/hlsl/resolve_msaa_depth_4x.hlsl.spirv.h>
+#include <gpu/shader/hlsl/resolve_msaa_depth_8x.hlsl.spirv.h>
 
 #ifdef _WIN32
 extern "C"
@@ -142,10 +145,14 @@ extern std::unique_ptr<RenderInterface> CreateMetalInterface();
 #endif
 
     static std::unique_ptr<RenderInterface> CreateVulkanInterfaceWrapper() {
+#ifdef MARATHON_RECOMP_IOS
+        return nullptr;
+#else
 #ifdef PLUME_SDL_VULKAN_ENABLED
         return CreateVulkanInterface(GameWindow::s_renderWindow);
 #else
         return CreateVulkanInterface();
+#endif
 #endif
     }
 }
@@ -1688,6 +1695,9 @@ static void CreateImGuiBackend()
 #endif
 
     InitImGuiUtils();
+#ifdef MARATHON_RECOMP_IOS
+    TouchControls::Init();
+#endif
     OptionsMenu::Init();
     InstallerWizard::Init();
 
@@ -1968,6 +1978,9 @@ bool Video::CreateHostDevice(const char *sdlVideoDriver, bool graphicsApiRetry)
 
 #if defined(MARATHON_RECOMP_D3D12)
     g_backend = (DetectWine() || Config::GraphicsAPI == EGraphicsAPI::Vulkan) ? Backend::VULKAN : Backend::D3D12;
+#elif defined(MARATHON_RECOMP_IOS)
+    g_backend = Backend::METAL;
+    Config::GraphicsAPI = EGraphicsAPI::Metal;
 #elif defined(MARATHON_RECOMP_METAL)
     g_backend = Config::GraphicsAPI == EGraphicsAPI::Vulkan ? Backend::VULKAN : Backend::METAL;
 #endif
@@ -1991,6 +2004,8 @@ bool Video::CreateHostDevice(const char *sdlVideoDriver, bool graphicsApiRetry)
 
     interfaceFunctions.push_back((g_backend == Backend::VULKAN) ? CreateVulkanInterfaceWrapper : CreateD3D12Interface);
     interfaceFunctions.push_back((g_backend == Backend::VULKAN) ? CreateD3D12Interface : CreateVulkanInterfaceWrapper);
+#elif defined(MARATHON_RECOMP_IOS)
+    interfaceFunctions.push_back(CreateMetalInterface);
 #elif defined(MARATHON_RECOMP_METAL)
     interfaceFunctions.push_back((g_backend == Backend::VULKAN) ? CreateVulkanInterfaceWrapper : CreateMetalInterface);
     interfaceFunctions.push_back((g_backend == Backend::VULKAN) ? CreateMetalInterface : CreateVulkanInterfaceWrapper);
@@ -3034,6 +3049,9 @@ static void DrawImGui()
 
     DrawFPS();
     DrawProfiler();
+#ifdef MARATHON_RECOMP_IOS
+    TouchControls::Draw(float(width), float(height), mousePosOffsetX, mousePosOffsetY);
+#endif
     ImGui::Render();
 
     auto drawData = ImGui::GetDrawData();
