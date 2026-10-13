@@ -75,8 +75,7 @@ static void* GuestThreadFunc(GuestThreadHandle* hThread)
 #endif
     hThread->suspended.wait(true);
     GuestThread::Start(hThread->params);
-    // HACK(1)
-    hThread->isFinished = true;
+    hThread->completion.Finish();
     return nullptr;
 }
 
@@ -88,10 +87,13 @@ GuestThreadHandle::GuestThreadHandle(const GuestThreadParams& params)
     pthread_attr_init(&attr);
     pthread_attr_setstacksize(&attr, GetStackSize());
     const auto ret = pthread_create(&thread, &attr, GuestThreadFunc, this);
+    pthread_attr_destroy(&attr);
     if (ret != 0) {
         fprintf(stderr, "pthread_create failed with error code 0x%X.\n", ret);
+        completion.Finish();
         return;
     }
+    joinable = true;
 }
 #else
 , thread(GuestThreadFunc, this)
@@ -102,7 +104,7 @@ GuestThreadHandle::GuestThreadHandle(const GuestThreadParams& params)
 GuestThreadHandle::~GuestThreadHandle()
 {
 #ifdef USE_PTHREAD
-    pthread_join(thread, nullptr);
+    if (joinable) pthread_join(thread, nullptr);
 #else
     if (thread.joinable())
         thread.join();
@@ -129,44 +131,20 @@ uint32_t GuestThreadHandle::GetThreadId() const
 
 uint32_t GuestThreadHandle::Wait(uint32_t timeout)
 {
-    if (timeout == INFINITE || isFinished.load()) // HACK(1): isFinished
-    {
+    if (!completion.Wait(timeout))
+        return STATUS_TIMEOUT;
+
+    std::lock_guard lock(joinMutex);
 #ifdef USE_PTHREAD
-        pthread_join(thread, nullptr);
-#else
-        if (thread.joinable())
-            thread.join();
-#endif
-
-        return STATUS_WAIT_0;
-    }
-    else if (timeout == 0)
+    if (joinable)
     {
-#ifndef USE_PTHREAD
-        if (thread.joinable())
-            return STATUS_TIMEOUT;
-#endif
-
-        return STATUS_WAIT_0;
-    }
-    else
-    {
-#ifdef USE_PTHREAD
         pthread_join(thread, nullptr);
-#else
-        auto start = std::chrono::steady_clock::now();
-        while (thread.joinable())
-        {
-            auto elapsed = std::chrono::steady_clock::now() - start;
-            if (std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count() >= timeout)
-                return STATUS_TIMEOUT;
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-#endif
-
-        return STATUS_WAIT_0;
+        joinable = false;
     }
+#else
+    if (thread.joinable()) thread.join();
+#endif
+    return STATUS_WAIT_0;
 }
 
 uint32_t GuestThread::Start(const GuestThreadParams& params)

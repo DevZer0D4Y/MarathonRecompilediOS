@@ -1,3 +1,6 @@
+#ifdef MARATHON_RECOMP_IOS
+#include <os/ios/touch_controls.h>
+#endif
 #include <stdafx.h>
 #include <SDL.h>
 #include <user/config.h>
@@ -287,6 +290,9 @@ int HID_OnSDLEvent(void*, SDL_Event* event)
                 {
                     SDL_ShowCursor(SDL_DISABLE);
                     SetControllerInputDevice(controller);
+#ifdef MARATHON_RECOMP_IOS
+                    TouchControls::OnPhysicalControllerInput();
+#endif
                 }
 
                 controller->PollAxis();
@@ -295,7 +301,9 @@ int HID_OnSDLEvent(void*, SDL_Event* event)
             {
                 SDL_ShowCursor(SDL_DISABLE);
                 SetControllerInputDevice(controller);
-
+#ifdef MARATHON_RECOMP_IOS
+                TouchControls::OnPhysicalControllerInput();
+#endif
                 controller->Poll();
             }
 
@@ -382,10 +390,15 @@ uint32_t hid::GetState(uint32_t dwUserIndex, XAMINPUT_STATE* pState)
 
     pState->dwPacketNumber = packet++;
 
+#ifdef MARATHON_RECOMP_IOS
+    if (g_activeController) pState->Gamepad = g_activeController->state;
+    if (!g_activeController && !TouchControls::IsActive()) return ERROR_DEVICE_NOT_CONNECTED;
+    TouchControls::Apply(pState->Gamepad);
+#else
     if (!g_activeController)
         return ERROR_DEVICE_NOT_CONNECTED;
-
     pState->Gamepad = g_activeController->state;
+#endif
 
     return ERROR_SUCCESS;
 }
@@ -396,7 +409,13 @@ uint32_t hid::SetState(uint32_t dwUserIndex, XAMINPUT_VIBRATION* pVibration)
         return ERROR_BAD_ARGUMENTS;
 
     if (!g_activeController)
+    {
+#ifdef MARATHON_RECOMP_IOS
+        return dwUserIndex == 0 && TouchControls::IsActive() ? ERROR_SUCCESS : ERROR_DEVICE_NOT_CONNECTED;
+#else
         return ERROR_DEVICE_NOT_CONNECTED;
+#endif
+    }
 
     g_activeController->SetVibration(*pVibration);
 
@@ -409,7 +428,17 @@ uint32_t hid::GetCapabilities(uint32_t dwUserIndex, XAMINPUT_CAPABILITIES* pCaps
         return ERROR_BAD_ARGUMENTS;
 
     if (!g_activeController)
+    {
+#ifdef MARATHON_RECOMP_IOS
+        if (dwUserIndex != 0 || !TouchControls::IsActive()) return ERROR_DEVICE_NOT_CONNECTED;
+        memset(pCaps, 0, sizeof(*pCaps));
+        pCaps->Type = XAMINPUT_DEVTYPE_GAMEPAD;
+        pCaps->SubType = XAMINPUT_DEVSUBTYPE_GAMEPAD;
+        return ERROR_SUCCESS;
+#else
         return ERROR_DEVICE_NOT_CONNECTED;
+#endif
+    }
 
     memset(pCaps, 0, sizeof(*pCaps));
 

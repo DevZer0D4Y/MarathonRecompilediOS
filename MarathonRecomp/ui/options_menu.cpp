@@ -1111,8 +1111,13 @@ void OptionsMenu::Draw()
             {
                 if (s_restartMessageResult == 0)
                 {
-                    Fader::FadeOut(1, []() { App::Restart({ "--use-cwd --skip-logos" }); });
+#ifdef MARATHON_RECOMP_IOS
+                    App::Restart();
+                    Close();
+#else
+                    Fader::FadeOut(1, []() { App::Restart({ "--use-cwd", "--skip-logos" }); });
                     s_restartFaderBegun = true;
+#endif
                 }
                 else
                 {
