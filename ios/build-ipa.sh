@@ -26,7 +26,7 @@ fi
 command -v xcodebuild >/dev/null || { echo 'Install and select full Xcode first.' >&2; exit 1; }
 command -v python3 >/dev/null || { echo 'Missing python3' >&2; exit 1; }
 xcrun --sdk iphoneos --show-sdk-path >/dev/null
-bash "$repo_root/ios/build.sh" "${build_args[@]}"
+bash "$repo_root/ios/build.sh" ${build_args[@]+"${build_args[@]}"}
 xcodebuild -project "$repo_root/out/build/ios-device/MarathonRecomp-ALL.xcodeproj" \
     -scheme MarathonRecomp -configuration Release -sdk iphoneos \
     -destination 'generic/platform=iOS' -jobs "${MARATHON_RECOMP_BUILD_JOBS:-2}" \
