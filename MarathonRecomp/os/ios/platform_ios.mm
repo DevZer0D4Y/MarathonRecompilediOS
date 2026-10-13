@@ -36,7 +36,7 @@ void ios::HandleLifecycle(const SDL_Event& event)
     switch (event.type)
     {
     case SDL_APP_WILLENTERBACKGROUND:
-    case SDL_APP_WILLTERMINATE:
+    case SDL_APP_TERMINATING:
         GameWindow::s_isFocused = false;
         TouchControls::Reset();
         Config::Save();
