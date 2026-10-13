@@ -1,5 +1,9 @@
 #include "mod_loader.h"
 #include "ini_file.h"
+#ifdef MARATHON_RECOMP_IOS
+#include "ios_mod_manager.h"
+static ios_mod_manager::FileOverlay g_iosMods;
+#endif
 
 #include <cpu/guest_stack_var.h>
 #include <kernel/function.h>
@@ -28,6 +32,9 @@ static std::vector<Mod> g_mods;
 
 std::filesystem::path ModLoader::ResolvePath(std::string_view path)
 {
+#ifdef MARATHON_RECOMP_IOS
+    return g_iosMods.Resolve(path);
+#else
     std::string_view root;
 
     size_t sepIndex = path.find(":\\");
@@ -83,15 +90,66 @@ std::filesystem::path ModLoader::ResolvePath(std::string_view path)
     }
 
     return s_cache.emplace(hash, std::filesystem::path{}).first->second;
+#endif
 }
 
 std::vector<std::filesystem::path>* ModLoader::GetIncludeDirectories(size_t modIndex)
 {
+#ifdef MARATHON_RECOMP_IOS
+    return g_iosMods.IncludeDirectories(modIndex);
+#else
     return modIndex < g_mods.size() ? &g_mods[modIndex].includeDirs : nullptr;
+#endif
+}
+
+std::vector<std::filesystem::path> ModLoader::GetSearchDirectories(std::string_view path)
+{
+#ifdef MARATHON_RECOMP_IOS
+    return g_iosMods.SearchDirectories(path);
+#else
+    return {};
+#endif
+}
+
+std::vector<ModLoader::Code> ModLoader::GetBuiltInCodes()
+{
+    std::vector<Code> codes;
+    for (auto* definition : g_configDefinitions)
+    {
+        if (definition->GetSection() != "Codes") continue;
+        if (auto* code = dynamic_cast<ConfigDef<bool, true>*>(definition))
+            codes.push_back({ std::string(code->GetName()), code->Value });
+    }
+    return codes;
+}
+
+void ModLoader::SaveBuiltInCodes(const std::vector<Code>& codes)
+{
+    for (auto* definition : g_configDefinitions)
+    {
+        if (definition->GetSection() != "Codes") continue;
+        auto* target = dynamic_cast<ConfigDef<bool, true>*>(definition);
+        if (!target) continue;
+        for (const auto& code : codes)
+            if (target->GetName() == code.name)
+            {
+                target->Value = code.enabled;
+                target->IsLoadedFromConfig = true;
+                break;
+            }
+    }
+    Config::Save();
 }
 
 void ModLoader::Init()
 {
+#ifdef MARATHON_RECOMP_IOS
+    // Native relative paths survive iOS container relocation. Desktop INIs
+    // must not override the selection saved by the startup manager.
+    g_iosMods.Load(GetUserPath());
+    s_saveFilePath = g_iosMods.SaveFile();
+    return;
+#endif
     const std::filesystem::path& userPath = GetUserPath();
 
     IniFile configIni;

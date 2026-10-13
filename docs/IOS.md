@@ -63,6 +63,7 @@ Run the checks that do not need game files:
 
 ```bash
 bash tests/run-port-regressions.sh
+bash tests/run-mod-regressions.sh
 ```
 
 They exercise the production touch-control implementation with simulated SDL events, layout editing and persistence, controller switching, input reset, thread wait deadlines, surround channel order, release-version parsing, allocation failure, fade drawing and callback timing, and compressed texture decoding. The tests use the undefined-behavior sanitizer. The host tools can be built without game files:

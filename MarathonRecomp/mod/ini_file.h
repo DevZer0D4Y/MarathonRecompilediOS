@@ -1,5 +1,14 @@
 #pragma once
 
+#include <filesystem>
+#include <charconv>
+#include <fstream>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <xxhash.h>
+#include <ankerl/unordered_dense.h>
 #include <xxHashMap.h>
 
 class IniFile
