@@ -148,6 +148,16 @@ If you're using a third-party input translation layer (such as DS4Windows or Ste
 
 This project does not plan to support any more platforms other than Windows, Linux and macOS at the moment. Any contributors who wish to support more platforms should do so through a fork.
 
+## iOS mod support
+
+The native iOS mod manager imports extracted Sonic '06 asset mods, enables or disables them, sets priority by dragging, and selects built-in codes before starting the game. See [iOS mod support](docs/IOS_MODS.md) for formats and limits.
+
+Build and package an unsigned IPA with your extracted game folder:
+
+```bash
+bash ios/build-ipa.sh --game-source "/path/to/extracted/game" --output "out/MarathonRecomp-mods.ipa"
+```
+
 ## Building
 
 [Check out the building instructions here](/docs/BUILDING.md).
