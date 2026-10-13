@@ -59,5 +59,5 @@ if [[ ! -f out/ios-ffmpeg/lib/libavcodec.a ]]; then
 fi
 cmake --preset ios-host-tools "-DMARATHON_RECOMP_GAME_INPUT_DIR=$game_input_dir"
 cmake --build out/build/ios-host-tools --target file_to_c u8extract marathon_codegen --parallel "$CMAKE_BUILD_PARALLEL_LEVEL"
-cmake --preset ios-device "${device_cmake_args[@]}" "-DMARATHON_RECOMP_GAME_INPUT_DIR=$game_input_dir"
+cmake --preset ios-device ${device_cmake_args[@]+"${device_cmake_args[@]}"} "-DMARATHON_RECOMP_GAME_INPUT_DIR=$game_input_dir"
 echo 'Generated out/build/ios-device/MarathonRecomp-ALL.xcodeproj. Open it in Xcode, choose your signing team and an iPhone/iPad, then build MarathonRecomp.'
