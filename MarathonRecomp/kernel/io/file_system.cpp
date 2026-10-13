@@ -29,6 +29,12 @@ struct FindHandle : KernelObject
                 for (auto& entry : std::filesystem::directory_iterator(directory, ec))
                 {
                     std::u8string relativePath = entry.path().lexically_relative(directory).u8string();
+#ifdef MARATHON_RECOMP_IOS
+                    // Xbox paths are case-insensitive, including conflicts
+                    // between a mod's spelling and the original game files.
+                    for (char8_t& c : relativePath)
+                        if (c >= u8'A' && c <= u8'Z') c += u8'a' - u8'A';
+#endif
                     searchResult.emplace(relativePath, std::make_pair(entry.is_directory(ec) ? 0 : entry.file_size(ec), entry.is_directory(ec)));
                 }
             };
@@ -38,6 +44,12 @@ struct FindHandle : KernelObject
         if (index != std::string_view::npos)
             pathNoPrefix.remove_prefix(index + 2);
 
+#ifdef MARATHON_RECOMP_IOS
+        // Sonic '06 assets live under xenon; enumerate every selected overlay
+        // directory, with higher-priority entries inserted first.
+        for (const auto& directory : ModLoader::GetSearchDirectories(path))
+            addDirectory(directory);
+#else
         // Force add a work folder to let the game see the files in mods,
         // if by some rare chance the user has no DLC or update files.
         if (pathNoPrefix.empty())
@@ -59,6 +71,7 @@ struct FindHandle : KernelObject
                     addDirectory(includeDir / pathStr);
             }
         }
+#endif
 
         addDirectory(FileSystem::ResolvePath(path, false));
 
