@@ -1,5 +1,16 @@
 # iOS source validation
 
+## Launch fix — 2026-10-14
+
+The October 13 IPA was reproduced crashing on an iPhone 14 Pro Max running iOS 27.0.1. Its crash report faults in `___UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption_block_invoke`. The previously omitted scene lifecycle implementation from repository main commit `146aeed` is now included in the app, declared in the bundle, awaited before window creation and attached to SDL's window.
+
+A follow-up device launch exposed a second startup abort in `__CBFRAMEWORK_CRASHING_DUE_TO_PRIVACY_VIOLATION__`. Controller discovery requires `NSBluetoothAlwaysUsageDescription`; that purpose string is now included. The packager verifies the scene manifest, linked scene delegate and Bluetooth purpose string, rejecting the old release bundle before creating an IPA.
+
+The final Release app built and signed successfully using an isolated test identifier and with extended-memory entitlements disabled for the personal development team. It launched without either abort and was confirmed running by two process snapshots after the second launch, with no additional app crash report. UIKit/Metal/controller initialization ran. These are startup checks; game installation, gameplay and mod import/selection were not exercised. The public unsigned package retains `com.devz.MarathonRecomp` and excludes signing/provisioning data. No original game inputs are included.
+
+`MARATHON_RECOMP_IOS_EXTENDED_MEMORY` remains enabled by default; setting it OFF permits signing a test build with a personal team that cannot provision that entitlement. The unsigned release needs recipient signing as before.
+
+
 ## macOS update — 2026-10-13
 
 The native iOS mod manager and Sonic 2006 file overlays from cloud commit `facbd8e586ccb88c9a186dae9e81bb9775165c77` are integrated in local commit `a8fce5edbdb9f02f076a999056bdcf1285260ad1`, preserving Dev Zero's author and author date. The local integration branch is `ios-mod-integration-20261013`.

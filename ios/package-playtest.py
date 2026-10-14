@@ -18,6 +18,17 @@ def package(app: Path, output: Path) -> None:
     executable = app / info['CFBundleExecutable']
     if not executable.is_file():
         raise ValueError(f'Missing app executable: {executable}')
+    # Reject the two startup omissions that can pass linking but abort in UIKit.
+    scenes = info.get('UIApplicationSceneManifest', {}).get('UISceneConfigurations', {})
+    configurations = scenes.get('UIWindowSceneSessionRoleApplication', [])
+    delegates = [item.get('UISceneDelegateClassName') for item in configurations]
+    if 'MarathonSceneDelegate' not in delegates:
+        raise ValueError('Missing MarathonSceneDelegate scene lifecycle configuration')
+    if not info.get('NSBluetoothAlwaysUsageDescription', '').strip():
+        raise ValueError('Missing Bluetooth usage description required by controller discovery')
+    symbols = subprocess.check_output(['nm', str(executable)], text=True)
+    if '_OBJC_CLASS_$_MarathonSceneDelegate' not in symbols:
+        raise ValueError('Scene delegate is configured but absent from the linked executable')
     if output.is_relative_to(app):
         raise ValueError('IPA output must be outside the source app')
     output.parent.mkdir(parents=True, exist_ok=True)

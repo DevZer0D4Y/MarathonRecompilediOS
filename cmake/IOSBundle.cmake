@@ -1,4 +1,6 @@
 set(MARATHON_RECOMP_IOS_BUNDLE_ID "dev.sonicnext.MarathonRecomp.ios" CACHE STRING "iOS bundle identifier")
+option(MARATHON_RECOMP_IOS_EXTENDED_MEMORY "Request extended virtual addressing and increased memory entitlements" ON)
+
 target_compile_definitions(MarathonRecomp PRIVATE MARATHON_RECOMP_IOS)
 target_compile_options(MarathonRecomp PRIVATE "$<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc>")
 target_link_libraries(MarathonRecomp PRIVATE SDL2::SDL2main
@@ -13,7 +15,11 @@ set_target_properties(MarathonRecomp PROPERTIES
     MACOSX_BUNDLE_BUNDLE_VERSION "${MACOS_BUNDLE_VERSION}"
     MACOSX_BUNDLE_SHORT_VERSION_STRING "${MACOS_BUNDLE_VERSION}"
     XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
-    XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_SOURCE_DIR}/ios/MarathonRecomp.entitlements"
     XCODE_ATTRIBUTE_ENABLE_BITCODE NO
     XCODE_ATTRIBUTE_SUPPORTS_MACCATALYST NO
     XCODE_ATTRIBUTE_CODE_SIGN_STYLE Automatic)
+
+if(MARATHON_RECOMP_IOS_EXTENDED_MEMORY)
+    set_target_properties(MarathonRecomp PROPERTIES
+        XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_SOURCE_DIR}/ios/MarathonRecomp.entitlements")
+endif()

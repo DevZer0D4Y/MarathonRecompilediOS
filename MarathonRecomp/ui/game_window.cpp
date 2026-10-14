@@ -8,6 +8,7 @@
 #include <SDL_syswm.h>
 #ifdef MARATHON_RECOMP_IOS
 #include <os/ios/platform_ios.h>
+#include <os/ios/ios_scene.h>
 #include <os/ios/touch_controls.h>
 #endif
 
@@ -230,7 +231,9 @@ void GameWindow::Init(const char* sdlVideoDriver)
     s_renderWindow = { info.info.x11.display, info.info.x11.window };
 #elif defined(MARATHON_RECOMP_IOS)
     s_renderWindow.window = info.info.uikit.window;
+    ios_scene::AttachWindow(s_renderWindow.window);
     s_renderWindow.view = SDL_Metal_GetLayer(SDL_Metal_CreateView(s_pWindow));
+    ios_scene::FlushDisplayChanges();
 #elif defined(__APPLE__)
     s_renderWindow.window = info.info.cocoa.window;
     s_renderWindow.view = SDL_Metal_GetLayer(SDL_Metal_CreateView(s_pWindow));
@@ -261,6 +264,10 @@ void GameWindow::Update()
 
     if (g_needsResize)
         s_isChangingDisplay = false;
+
+#ifdef MARATHON_RECOMP_IOS
+    ios_scene::FlushDisplayChanges();
+#endif
 }
 
 SDL_Surface* GameWindow::GetIconSurface(void* pIconBmp, size_t iconSize)
