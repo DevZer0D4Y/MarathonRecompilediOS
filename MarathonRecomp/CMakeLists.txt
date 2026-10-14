@@ -109,6 +109,7 @@ elseif (MARATHON_RECOMP_IOS)
     set(MARATHON_RECOMP_OS_CXX_SOURCES
         "os/macos/logger_macos.cpp"
         "os/ios/platform_ios.mm"
+        "os/ios/ios_scene.mm"
         "os/ios/document_picker.mm"
         "os/ios/touch_controls.cpp"
         "os/ios/touch_haptics_ios.mm"

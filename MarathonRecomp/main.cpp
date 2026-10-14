@@ -32,6 +32,7 @@
 #include <app.h>
 #ifdef MARATHON_RECOMP_IOS
 #include <os/ios/platform_ios.h>
+#include <os/ios/ios_scene.h>
 #include <ui/ios_mod_manager.h>
 #endif
 
@@ -180,6 +181,10 @@ int main(int argc, char *argv[])
         LOGN_WARNING("OS does not support registry.");
 
     os::logger::Init();
+
+#ifdef MARATHON_RECOMP_IOS
+    ios_scene::WaitForScene();
+#endif
 
     PreloadContext preloadContext;
     preloadContext.PreloadExecutable();
