@@ -1,5 +1,16 @@
 # iOS source validation
 
+## Mod release and identity restoration — 2026-10-15
+
+The mod manager is now applied directly to the current published port base `146aeed`, preserving Dev Zero's authorship in `4cac222`. This restores the runtime changes omitted from the older integration snapshot: a dedicated GPU-wait command list/fence, ARM event/critical-section synchronization fixes, guest-memory page reclamation, Metal render-pass preservation, asynchronous pipeline compilation, reduced frame pacing spin, hidden guest symbols and the optimized BC texture upload path. These changes address known stall and memory/CPU overhead risks; this session did not reproduce or measure the user's gameplay freeze because the device was unavailable.
+
+The unsigned Release IPA built and linked with Xcode 27.0 and the iPhoneOS 27.0 SDK. Mod regressions (ASan/UBSan), portable port/touch/fade regressions (UBSan), and read-only game input checks passed. The generated CPU/shader sources, native tools and installed iOS dependencies from the earlier verified build were reused; the app and updated port libraries were compiled anew.
+
+The package was checked against the actual GitHub R1 IPA: `com.devz.sonic2006`, display name and bundle name `Sonic (2006)`, and the iPhone/iPad icon metadata match. Both compiled AppIcon PNG files are byte-identical to R1. The build number advances from 1.0.5 to 1.0.6. The packager now rejects a different identity, missing icon assets, or missing required launch metadata/delegate. ZIP integrity, arm64 architecture, absence of provisioning/signing data and absence of original game inputs passed.
+
+The historical MarathonRecomp-bundle-ID prereleases are separate apps and should not be used as the identity for subsequent Sonic (2006) updates. This new IPA uses the R1 identity; the signing tool must preserve it to update that app. No installed app or player data was deleted or migrated in this session.
+
+
 Validation date: 2026-10-03. Base: `sonicnext-dev/MarathonRecomp` commit `04431570d1ad56eaf3dda9ddd9f0efc628c455f5`.
 
 ## Checks completed in this workspace
