@@ -9,6 +9,7 @@
 #include <xxhash.h>
 #include <ankerl/unordered_dense.h>
 #include "ini_file.h"
+#include "arc_merge.h"
 
 namespace ios_mod_manager
 {
@@ -54,8 +55,6 @@ namespace ios_mod_manager
                 return "Requires a native plugin; this mod needs an iOS port.";
             if (!ini.getString("Main", "CodeFile", "").empty())
                 return "Custom HMM code is not supported by this loader.";
-            if (ini.getBool("Details", "Merge", ini.getBool("Filesystem", "Merge", false)))
-                return "Archive merging needs a Sonic '06 port. Use complete replacement .arc files.";
             if (ini.get<size_t>("Main", "DependsCount", 0) > 256)
                 return "Invalid dependency count.";
             const auto base = modIni.parent_path();
@@ -83,6 +82,9 @@ namespace ios_mod_manager
                 if (!names.emplace(key, file.path()).second)
                     return "Two mod paths differ only in letter case.";
                 const auto name = FoldPath(file.path().filename().string());
+                if (ini.getBool("Details", "Merge", ini.getBool("Filesystem", "Merge", ini.getBool("Main", "Merge", false))) &&
+                    (name.ends_with(".ar") || name.ends_with(".arl") || name.find(".ar.") != std::string::npos))
+                    return "This archive uses Unleashed's .ar/.arl format. Sonic '06 asset merging requires U8 .arc archives.";
                 if (name.starts_with('+') && (name.ends_with(".arl") || name.ends_with(".ar") || name.find(".ar.") != std::string::npos))
                     return "Unleashed append archives are not supported. Use Sonic '06 replacement .arc files.";
                 if (name.ends_with(".xex") || name.ends_with(".xexp") || name.ends_with(".dll") || name.ends_with(".dylib"))
@@ -334,6 +336,7 @@ namespace ios_mod_manager
         const auto issue = SelectionIssue(entries);
         if (!issue.empty()) throw std::runtime_error(issue);
         FileOverlay next;
+        std::vector<arc::Layer> archiveLayers;
         for (const auto& entry : entries)
         {
             if (!entry.enabled) continue;
@@ -350,6 +353,19 @@ namespace ios_mod_manager
                     includes.push_back(ResolveRelative(base, ini.getString("Main", "IncludeDir" + std::to_string(i), "")));
             for (const auto& include : includes)
             {
+                arc::Layer layer{include, ini.getBool("Details", "Merge",
+                    ini.getBool("Filesystem", "Merge", ini.getBool("Main", "Merge", false))), {}};
+                auto readOnly = ini.getString("Details", "Read-only", ini.getString("Filesystem", "Read-only", ""));
+                for (size_t begin = 0; begin < readOnly.size(); )
+                {
+                    const auto end = readOnly.find(',', begin);
+                    auto name = readOnly.substr(begin, end == std::string::npos ? end : end - begin);
+                    const auto first = name.find_first_not_of(" \t"), last = name.find_last_not_of(" \t");
+                    if (first != std::string::npos) layer.replacements.insert(FoldPath(name.substr(first, last - first + 1)));
+                    if (end == std::string::npos) break;
+                    begin = end + 1;
+                }
+                archiveLayers.push_back(std::move(layer));
                 next.m_paths.try_emplace("", include);
                 next.m_directories[""].push_back(include);
                 for (const auto& file : std::filesystem::recursive_directory_iterator(include))
@@ -366,6 +382,23 @@ namespace ios_mod_manager
             {
                 next.m_saveFile = ResolveRelative(base, save);
                 if (!umm) next.m_saveFile /= "SonicNextSaveData.bin";
+            }
+        }
+        for (const auto& [key, file] : arc::BuildOverlays(userPath / "game", userPath / "mod-cache", archiveLayers))
+        {
+            next.m_paths[key] = file;
+            // A generated archive must win enumeration too, including its size
+            // and file type when its source was an extracted .arc directory.
+            auto relative = std::filesystem::path(key).parent_path();
+            auto physical = file.parent_path();
+            while (true)
+            {
+                auto& directories = next.m_directories[relative.generic_string()];
+                directories.insert(directories.begin(), physical);
+                next.m_paths.try_emplace(relative.generic_string(), physical);
+                if (relative.empty()) break;
+                relative = relative.parent_path();
+                physical = physical.parent_path();
             }
         }
         *this = std::move(next);

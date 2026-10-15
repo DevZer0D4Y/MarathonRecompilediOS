@@ -114,7 +114,25 @@
 - (void)play
 {
     if (![self saveMods]) return;
-    [self.navigationController dismissViewControllerAnimated:YES completion:^{ if (self.completion) self.completion(); }];
+    self.tableView.userInteractionEnabled = NO;
+    self.title = @"Preparing mods…";
+    self.navigationItem.leftBarButtonItem.enabled = NO;
+    self.navigationItem.rightBarButtonItem.enabled = NO;
+    // Archive preparation can involve large files. Keep UIKit responsive and
+    // leave the manager open so a failed patch can be disabled and retried.
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        NSString* error = nil;
+        try { ModLoader::Init(); }
+        catch (const std::exception& ex) { error = [NSString stringWithUTF8String:ex.what()]; }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.tableView.userInteractionEnabled = YES;
+            self.title = @"Mods — top wins conflicts";
+            self.navigationItem.leftBarButtonItem.enabled = YES;
+            self.navigationItem.rightBarButtonItem.enabled = YES;
+            if (error) { [self showError:error]; return; }
+            [self.navigationController dismissViewControllerAnimated:YES completion:^{ if (self.completion) self.completion(); }];
+        });
+    });
 }
 - (void)importFolder
 {
