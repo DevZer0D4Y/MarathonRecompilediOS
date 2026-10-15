@@ -1,6 +1,7 @@
 #include <mod/arc_merge.h>
 #include <mod/ios_mod_manager.h>
 #include <cassert>
+#include <array>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -153,14 +154,53 @@ void ArchiveMergeTests(const fs::path& root) {
     put(ambiguous/"xenon/archives/test/file","extracted");
     put(ambiguous/key,original);
     rejects([&]{run({{ambiguous,true,{}}});});
-    // Standard Nintendo U8 has 12-byte nodes and is not a Sonic '06 archive.
+    // Ordinary U8 input is converted to the extended game layout, never
+    // mistaken for compressed 16-byte metadata.
     std::string nintendo;
     be(nintendo,0x55aa382d); be(nintendo,32); be(nintendo,54); be(nintendo,96); nintendo.resize(32,'\0');
     be(nintendo,0x01000000); be(nintendo,0); be(nintendo,3);
     be(nintendo,1); be(nintendo,96); be(nintendo,1);
     be(nintendo,10); be(nintendo,97); be(nintendo,1);
     nintendo += std::string("\0Keep.bin\0Raw.bin\0",18); nintendo.resize(96,'\0'); nintendo += "ab";
-    bad(nintendo);
+    put(root/"ordinary.arc",nintendo);
+    auto ordinary=arc::Read(root/"ordinary.arc"); assert(ordinary.size()==2);
+    arc::Write(root/"converted.arc",ordinary);
+    assert(decoded(root/"converted.arc").at("Keep.bin")=="a");
+    assert(decoded(root/"converted.arc").at("Raw.bin")=="b");
+    assert(u32(get(root/"converted.arc"),16)!=0);
+    put(game/"win32/archives/ordinary.arc",nintendo);
+    put(high/"win32/archives/ordinary.arc/Raw.bin","converted replacement");
+    auto mixed=decoded(run({{high,true,{}}}).at("win32/archives/ordinary.arc"));
+    assert(mixed.at("Keep.bin")=="a" && mixed.at("Raw.bin")=="converted replacement");
+    std::string tree;
+    be(tree,0x55aa382d); be(tree,32); be(tree,94); be(tree,256); tree.resize(32,'\0');
+    for(const auto& node:std::vector<std::array<unsigned,3>>{
+        {0x01000000,0,6},{0x01000001,0,5},{5,256,1},
+        {0x01000007,1,5},{11,257,0},{17,257,1}}) {
+        for(auto field:node) be(tree,field);
+    }
+    tree+=std::string("\0Dir\0A\0Sub\0Empty\0Root\0",22); tree.resize(256,'\0'); tree+="xy";
+    put(root/"ordinary-tree.arc",tree);
+    arc::Write(root/"converted-tree.arc",arc::Read(root/"ordinary-tree.arc"));
+    auto treeContents=decoded(root/"converted-tree.arc");
+    assert(treeContents.at("Dir/A")=="x" && treeContents.at("Dir/Sub/Empty").empty() && treeContents.at("Root")=="y");
+    // Root labels, root parent metadata and directory extension words are not
+    // file payload fields. Older strict parsing rejected these valid layouts.
+    bytes=original;
+    bytes[35]=1; bytes[36]=char(0xde); bytes[37]=char(0xad); bytes[38]=char(0xbe); bytes[39]=char(0xef);
+    bytes[44]=char(0xca); bytes[45]=char(0xfe); bytes[46]=char(0xba); bytes[47]=char(0xbe);
+    put(root/"metadata.arc",bytes);
+    assert(arc::Fingerprint(arc::Read(root/"metadata.arc"))==arc::Fingerprint(arc::Read(game/key)));
+    put(game/key,bytes);
+    assert(decoded(run({{high,true,{}}}).at(key)).at("Keep.bin")=="original compressed payload");
+    put(game/key,original);
+    auto dirs=get(root/"packed"/key);
+    for(unsigned i=1;i<u32(dirs,40);++i) {
+        auto node=32+i*16;
+        if(u32(dirs,node)>>24) dirs[node+12]=char(0xa5);
+    }
+    put(root/"directory-metadata.arc",dirs);
+    assert(arc::Fingerprint(arc::Read(root/"directory-metadata.arc"))==arc::Fingerprint(arc::Read(root/"packed"/key)));
     // Runtime overlay integration, enumeration precedence, reload and rollback.
     const auto user=root/"user";
     put(user/"game"/key,original);
@@ -187,6 +227,33 @@ void ArchiveMergeTests(const fs::path& root) {
         arc::Write(root/"real-roundtrip.arc",members);
         assert(arc::Fingerprint(arc::Read(root/"real-roundtrip.arc"))==before);
         assert(decoded(real)==decoded(root/"real-roundtrip.arc"));
+    }
+    // Optional downloaded mod corpus: run the complete manager/merge pipeline,
+    // compare every decoded patch member and retain an original-only sentinel.
+    if(const auto supplied=std::getenv("ARC_TEST_MOD_FOLDER")) {
+        const fs::path mod=supplied, corpusUser=root/"corpus-user";
+        std::map<std::string,std::map<std::string,std::string>> patches;
+        for(const auto& entry:fs::recursive_directory_iterator(mod)) {
+            if(entry.path().extension()!=".arc" || !entry.is_regular_file()) continue;
+            auto key=entry.path().lexically_relative(mod).generic_string();
+            patches.emplace(key,decoded(entry.path()));
+            auto base=original; base[44]=char(0xa5); // Nonzero root extension metadata.
+            put(corpusUser/"game"/key,base);
+        }
+        assert(!patches.empty());
+        std::string importError;
+        assert(ios_mod_manager::Import(corpusUser,mod,importError));
+        auto mods=ios_mod_manager::Scan(corpusUser);
+        assert(mods.size()==1 && mods[0].issue.empty()); mods[0].enabled=true;
+        assert(ios_mod_manager::Save(corpusUser,mods,importError));
+        ios_mod_manager::FileOverlay actual; actual.Load(corpusUser);
+        for(const auto& [key,patch]:patches) {
+            auto path=actual.Resolve("game:\\"+key);
+            assert(fs::is_regular_file(path));
+            auto merged=decoded(path);
+            for(const auto& [member,bytes]:patch) assert(merged.at(member)==bytes);
+            assert(merged.at("Keep.bin")=="original compressed payload");
+        }
     }
     std::cout << "Passed: Sonic '06 U8 archive merging, independent zlib decoding, priority, loose/packed/extracted layouts, full replacements, content cache, malformed inputs and overlay rollback.\n";
 }

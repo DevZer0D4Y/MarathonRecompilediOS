@@ -29,6 +29,11 @@ namespace ios_mod_manager::arc
         if (!condition) throw std::runtime_error(message);
     }
 
+    static void Require(bool condition, const std::string& message)
+    {
+        if (!condition) throw std::runtime_error(message);
+    }
+
     static uint32_t U32(const uint8_t* p)
     {
         return uint32_t(p[0]) << 24 | uint32_t(p[1]) << 16 | uint32_t(p[2]) << 8 | p[3];
@@ -50,54 +55,79 @@ namespace ios_mod_manager::arc
     {
         Require(fs::is_regular_file(file) && !fs::is_symlink(file), "Archive is not an ordinary file.");
         const auto length = fs::file_size(file);
-        Require(length >= 48 && length <= UINT32_MAX, "Invalid Sonic '06 archive size.");
+        Require(length >= 45 && length <= UINT32_MAX, "Invalid U8 archive size.");
         std::ifstream in(file, std::ios::binary);
         std::array<uint8_t, 32> header{};
         Require(bool(in.read(reinterpret_cast<char*>(header.data()), header.size())), "Cannot read archive header.");
-        Require(U32(header.data()) == Magic, "Merging requires a Sonic '06 U8 .arc archive.");
+        Require(U32(header.data()) == Magic, "Merging requires a U8 .arc archive.");
         const uint32_t start = U32(header.data() + 4), tableSize = U32(header.data() + 8), data = U32(header.data() + 12);
-        Require(start >= 32 && tableSize >= 17 && tableSize <= MaxTable &&
+        Require(start >= 32 && tableSize >= 13 && tableSize <= MaxTable &&
             uint64_t(start) + tableSize <= data && data <= length, "Invalid archive table bounds.");
         std::vector<uint8_t> table(tableSize);
         in.seekg(start);
         Require(bool(in.read(reinterpret_cast<char*>(table.data()), table.size())), "Truncated archive table.");
         const uint32_t count = U32(table.data() + 8);
-        Require(count > 0 && count <= MaxEntries && uint64_t(count) * 16 < tableSize &&
-            U32(table.data()) == 0x01000000 && U32(table.data() + 4) == 0 && U32(table.data() + 12) == 0,
-            "Invalid Sonic '06 U8 root (16-byte entries required).");
-        const size_t strings = size_t(count) * 16;
-        Require(table[strings] == 0, "Invalid archive root name.");
-        struct Directory { uint32_t index, end; std::string path; };
-        std::vector<Directory> stack{{0, count, ""}};
-        Members result;
-        for (uint32_t i = 1; i < count; ++i)
+        Require(count > 0 && count <= MaxEntries && (U32(table.data()) >> 24) == 1,
+            "Invalid U8 root type or entry count (flags=" + std::to_string(U32(table.data())) +
+            ", count=" + std::to_string(count) + ").");
+        // Toolchains emit both extended Sonic '06 nodes and ordinary raw U8
+        // nodes. Validate the entire table for each layout instead of assuming
+        // that root padding, parent metadata or its label must be zero.
+        const auto parse = [&](size_t stride) -> Members
         {
-            while (i >= stack.back().end) stack.pop_back();
-            const uint8_t* node = table.data() + size_t(i) * 16;
-            const uint32_t flags = U32(node), offset = U32(node + 4), size = U32(node + 8), expanded = U32(node + 12);
-            Require((flags >> 24) <= 1, "Unknown archive entry type.");
-            const size_t nameOffset = strings + (flags & 0xFFFFFF);
-            Require(nameOffset < table.size(), "Invalid archive name offset.");
-            size_t end = nameOffset;
-            while (end < table.size() && table[end]) ++end;
-            Require(end < table.size(), "Unterminated archive name.");
-            const std::string name(reinterpret_cast<const char*>(table.data() + nameOffset), end - nameOffset);
-            Require(SafeName(name), "Unsafe archive member name.");
-            const std::string path = stack.back().path.empty() ? name : stack.back().path + '/' + name;
-            Require(path.size() <= 4096, "Archive member path is too long.");
-            Member member{path, (flags >> 24) == 1, file, offset, size, expanded};
-            if (member.directory)
+            Require(uint64_t(count) * stride < tableSize, "Entry table exceeds its declared size.");
+            const size_t strings = size_t(count) * stride;
+            const auto nameAt = [&](uint32_t flags)
             {
-                Require(offset == stack.back().index && size > i && size <= stack.back().end && expanded == 0,
-                    "Invalid archive directory hierarchy.");
-                stack.push_back({i, size, path});
+                const size_t nameOffset = strings + (flags & 0xFFFFFF);
+                Require(nameOffset < table.size(), "Invalid archive name offset.");
+                size_t end = nameOffset;
+                while (end < table.size() && table[end]) ++end;
+                Require(end < table.size(), "Unterminated archive name.");
+                return std::string(reinterpret_cast<const char*>(table.data() + nameOffset), end - nameOffset);
+            };
+            // The root label is metadata, not a path component. Several packers
+            // name it, and the game's lookup starts with its children.
+            nameAt(U32(table.data()));
+            struct Directory { uint32_t index, end; std::string path; };
+            std::vector<Directory> stack{{0, count, ""}};
+            Members result;
+            for (uint32_t i = 1; i < count; ++i)
+            {
+                while (i >= stack.back().end) stack.pop_back();
+                const uint8_t* node = table.data() + size_t(i) * stride;
+                const uint32_t flags = U32(node), offset = U32(node + 4), size = U32(node + 8);
+                const uint32_t expanded = stride == 16 ? U32(node + 12) : 0;
+                Require((flags >> 24) <= 1, "Unknown archive entry type.");
+                const auto name = nameAt(flags);
+                Require(SafeName(name), "Unsafe archive member name.");
+                const std::string path = stack.back().path.empty() ? name : stack.back().path + '/' + name;
+                Require(path.size() <= 4096, "Archive member path is too long.");
+                Member member{path, (flags >> 24) == 1, file, offset, size, expanded};
+                if (member.directory)
+                {
+                    Require(offset == stack.back().index && size > i && size <= stack.back().end,
+                        "Invalid archive directory hierarchy.");
+                    // The extended word is only a decompressed size for files.
+                    member.expandedSize = 0;
+                    stack.push_back({i, size, path});
+                }
+                else
+                    Require(offset >= data && uint64_t(offset) + size <= length && (expanded == 0 || size != 0),
+                        "Invalid archive member bounds.");
+                Require(result.emplace(Key(path), std::move(member)).second, "Duplicate case-insensitive archive member.");
             }
-            else
-                Require(offset >= data && uint64_t(offset) + size <= length && (expanded == 0 || size != 0),
-                    "Invalid archive member bounds.");
-            Require(result.emplace(Key(path), std::move(member)).second, "Duplicate case-insensitive archive member.");
+            return result;
+        };
+        std::string extendedError;
+        try { return parse(16); }
+        catch (const std::runtime_error& ex) { extendedError = ex.what(); }
+        try { return parse(12); }
+        catch (const std::runtime_error& ex)
+        {
+            throw std::runtime_error("Invalid U8 table (16-byte: " + extendedError +
+                "; 12-byte: " + ex.what() + ").");
         }
-        return result;
     }
 
     Members ReadFolder(const fs::path& folder)
@@ -160,7 +190,7 @@ namespace ios_mod_manager::arc
         Require(bool(hash), "Cannot allocate archive fingerprint.");
         XXH3_64bits_reset(hash.get());
         const auto update = [&](const void* data, size_t size) { XXH3_64bits_update(hash.get(), data, size); };
-        constexpr std::string_view version = "Sonic06-U8-merge-v1";
+        constexpr std::string_view version = "Sonic06-U8-merge-v2";
         update(version.data(), version.size());
         for (const auto& [key, member] : members)
         {
@@ -230,7 +260,10 @@ namespace ios_mod_manager::arc
         Require(bool(out), "Cannot create merged archive (check free storage).");
         Put(out, Magic); Put(out, 32); Put(out, uint32_t(tableSize)); Put(out, uint32_t(data));
         const std::array<char, 32> zeros{};
-        out.write(zeros.data(), 16);
+        // Identify the extended Sonic '06 layout to U8 tools. All-zero
+        // reserved words conventionally identify ordinary 12-byte U8 nodes.
+        Put(out, 0xE4F91200); Put(out, 0x00000402);
+        out.write(zeros.data(), 8);
         for (const auto* node : nodes)
         {
             const bool directory = !node->member || node->member->directory;
@@ -367,17 +400,21 @@ namespace ios_mod_manager::arc
                     if (layers[i].merge && (inputs[i].archives.contains(key) || inputs[i].affected.contains(key))) needsMerge = true;
                 if (!needsMerge) continue; // Keep the normal, unmodified full-file overlay.
 
-                const auto readInput = [](const fs::path& path) { return fs::is_directory(path) ? ReadFolder(path) : Read(path); };
+                const auto readInput = [](const fs::path& path, const std::string& origin)
+                {
+                    try { return fs::is_directory(path) ? ReadFolder(path) : Read(path); }
+                    catch (const std::exception& ex) { throw std::runtime_error(origin + ": " + ex.what()); }
+                };
                 Members merged;
-                if (boundary < layers.size()) merged = readInput(inputs[boundary].archives.at(key));
-                else if (auto found = originals.find(key); found != originals.end()) merged = Read(found->second);
+                if (boundary < layers.size()) merged = readInput(inputs[boundary].archives.at(key), "Full replacement archive");
+                else if (auto found = originals.find(key); found != originals.end()) merged = readInput(found->second, "Installed original archive");
 
                 const auto slash = key.find('/');
                 const auto platform = slash == std::string::npos ? "" : key.substr(0, slash + 1);
                 for (size_t i = boundary; i-- > 0; )
                 {
                     if (auto input = inputs[i].archives.find(key); input != inputs[i].archives.end())
-                        Overlay(merged, readInput(input->second));
+                        Overlay(merged, readInput(input->second, "Mod archive in " + layers[i].root.filename().string()));
                     if (layers[i].merge)
                         for (auto& [memberKey, member] : merged)
                         {

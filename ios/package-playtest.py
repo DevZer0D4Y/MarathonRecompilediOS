@@ -62,7 +62,7 @@ def main():
         if not re.fullmatch(r'\d+\.\d+\.\d+', version):
             raise RuntimeError('Invalid iOS version string')
         info['CFBundleShortVersionString'] = version
-        info['CFBundleVersion'] = '1.0.7'
+        info['CFBundleVersion'] = '1.0.8'
         (app / 'Info.plist').write_bytes(plistlib.dumps(info, fmt=plistlib.FMT_BINARY))
         forbidden = [b'/Users/', b'/Volumes/', b'@gmail.com', b'BEGIN PRIVATE KEY']
         for path in app.iterdir():
