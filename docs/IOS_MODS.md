@@ -88,6 +88,13 @@ archive folder replaces `scripts/player.lua` inside that game's archive.
 A loose `scripts/player.lua` can replace that member in every matching archive.
 New members can be added through packed or extracted archive patches.
 
+The reader accepts extended Sonic '06 U8 nodes and ordinary 12-byte raw U8
+nodes, validating the complete table before selecting a layout. Root labels and
+unused directory metadata do not affect member lookup. Generated files always
+use the extended Sonic '06 layout with its tool compatibility marker; raw U8
+input is converted rather than passed to the game unchanged. Errors distinguish
+installed originals, complete replacements and mod archives.
+
 Untouched members, including their original zlib-compressed bytes, are retained.
 Matching ignores ASCII case, preserves existing member spelling, and applies
 mods from bottom to top so the top enabled mod wins each member conflict.
@@ -133,7 +140,11 @@ collisions, unsupported declarations, dependency versions, persistence/order,
 path confinement, case-insensitive priority, directory searches, reloads, mod
 saves and container relocation. Archive tests cover independent U8/zlib decoding,
 packed/extracted/loose patches, conflict priority, full-replacement boundaries,
-content cache invalidation, malformed inputs and failed-reload rollback. The existing source tests cover touch controls,
+content cache invalidation, malformed inputs and failed-reload rollback.
+`ARC_TEST_REAL_ARCHIVE=/path/to/shader.arc` adds a real-game archive round trip;
+`ARC_TEST_MOD_FOLDER=/path/to/mod` tests a packed mod through import, selection
+and merging against synthetic originals, comparing every decoded patch member.
+These optional tests read the supplied inputs without modifying them. The existing source tests cover touch controls,
 fade rendering, texture decoding and other portable port behavior.
 
 The macOS CI job also compiles the UIKit manager against the iPhoneOS SDK. This
