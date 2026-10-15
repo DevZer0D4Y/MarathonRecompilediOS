@@ -19,6 +19,7 @@
     <key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
     <key>UISupportedInterfaceOrientations~ipad</key><array><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
     <key>UIRequiresFullScreen</key><true/>
+    <key>NSBluetoothAlwaysUsageDescription</key><string>Connect to wireless game controllers.</string>
     <key>UIFileSharingEnabled</key><true/>
     <key>LSSupportsOpeningDocumentsInPlace</key><true/>
     <key>UIStatusBarHidden</key><true/>
