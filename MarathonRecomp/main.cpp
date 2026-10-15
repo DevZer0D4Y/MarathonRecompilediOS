@@ -351,12 +351,7 @@ int main(int argc, char *argv[])
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), "Could not open the mod manager. Close and reopen the app.", GameWindow::s_pWindow);
         std::_Exit(1);
     }
-    try { ModLoader::Init(); }
-    catch (const std::exception& ex)
-    {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), ex.what(), GameWindow::s_pWindow);
-        std::_Exit(1);
-    }
+    // The startup manager prepares mods before completing Play.
 #endif
 
     KiSystemStartup();

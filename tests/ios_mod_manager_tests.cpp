@@ -13,6 +13,8 @@ static void write(const fs::path& path, const std::string& contents)
     std::ofstream(path) << contents;
 }
 
+void ArchiveMergeTests(const fs::path& root);
+
 int main(int argc, char** argv)
 {
     assert(argc == 2); // Use a disposable scratch directory.
@@ -132,7 +134,7 @@ int main(int argc, char** argv)
 
     // Do not advertise Unleashed hooks or executable patches as Sonic '06 support.
     write(overlayUser / "mods/Merge/mod.ini", "[Details]\nMerge=true\n");
-    assert(!CompatibilityIssue(overlayUser / "mods/Merge/mod.ini").empty());
+    assert(CompatibilityIssue(overlayUser / "mods/Merge/mod.ini").empty());
     write(overlayUser / "mods/Append/mod.ini", asset);
     write(overlayUser / "mods/Append/+sonic.ar.00", "unsupported append archive");
     assert(!CompatibilityIssue(overlayUser / "mods/Append/mod.ini").empty());
@@ -185,6 +187,7 @@ int main(int argc, char** argv)
     std::ifstream(root / "keep.txt") >> kept;
     assert(kept == "preserve");
 
+    ArchiveMergeTests(root / "archives");
     fs::remove_all(root);
     std::cout << "Passed: mod imports, collisions, persistence/order, dependency versions, unsupported requirements, path confinement, sandbox relocation, Sonic '06 file overlay priority/case handling, directory lookup, reload and mod saves.\n";
 }

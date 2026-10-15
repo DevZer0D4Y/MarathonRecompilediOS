@@ -9,5 +9,7 @@ trap 'rm -rf "$test_dir"' EXIT
     -I"$repo_root/thirdparty/unordered_dense/include" \
     -I"$repo_root/tools/XenonRecomp/thirdparty/xxHash" \
     "$repo_root/MarathonRecomp/mod/ios_mod_manager.cpp" \
-    "$repo_root/tests/ios_mod_manager_tests.cpp" -o "$test_dir/mod-regressions"
+    "$repo_root/MarathonRecomp/mod/arc_merge.cpp" \
+    "$repo_root/tests/arc_merge_tests.cpp" \
+    "$repo_root/tests/ios_mod_manager_tests.cpp" -lz -o "$test_dir/mod-regressions"
 "$test_dir/mod-regressions" "$test_dir/fixtures"

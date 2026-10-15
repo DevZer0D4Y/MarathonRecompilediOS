@@ -207,6 +207,7 @@ set(MARATHON_RECOMP_USER_CXX_SOURCES
 set(MARATHON_RECOMP_MOD_CXX_SOURCES
     "mod/mod_loader.cpp"
     "mod/ios_mod_manager.cpp"
+    "mod/arc_merge.cpp"
 )
 
 set(MARATHON_RECOMP_UTILS_CXX_SOURCES

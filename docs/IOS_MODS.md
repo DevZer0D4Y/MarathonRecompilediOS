@@ -27,8 +27,8 @@ do not break them. Desktop `cpkredir.ini` settings do not override this selectio
 
 ## Asset layout and compatibility
 
-The first version supports complete file replacements through the game's virtual
-filesystem, including complete `.arc` archives. Each include directory mirrors
+The manager supports complete file replacements and Sonic '06 U8 `.arc`
+merging through the game's virtual filesystem. Each include directory mirrors
 the installed `game` folder. For example:
 
 ```text
@@ -63,21 +63,56 @@ or selecting a mod.
 HMM `SaveFile` names a directory inside the mod. The game uses
 `SonicNextSaveData.bin` there, with the existing base-save fallback. UMM `Save`
 names a file inside the mod. The first enabled mod declaring a save wins.
-Without a declaration, the normal save location is used. UMM file replacement
-is supported when `Merge` is disabled.
+Without a declaration, the normal save location is used.
 
 Dependencies use HMM IDs and minimum dotted numeric versions. Non-numeric
 versions require an exact match. Symlinks, escaping include/save paths, and
 case-colliding paths inside a package are rejected.
 
-Unleashed mods, `+*.ar`/`+*.arl` append archives, and UMM archive merging are not
-implemented for Sonic '06. Replacing individual members of an original `.arc`
-requires a separately implemented archive hook; loose files only work when the
-game actually opens that file through its filesystem. DLL plugins, custom HMM
-`CodeFile` scripts, `.xex`/`.xexp` patches and native libraries require individual
-source ports. Mods introducing shaders also need compatibility with the compiled
-shader cache. The manager can check declarations and paths, but cannot establish
-that every asset is compatible with the game or Metal renderer.
+### Archive merging
+
+UMM `[Details]` or `[Filesystem]` `Merge=true` enables archive merging. HMM
+packages can opt in with `[Main] Merge=true`. The setting now performs a real
+Sonic '06 archive merge instead of rejecting the mod. Supported layouts are:
+
+- A partial packed `.arc` at the original archive's relative path.
+- An extracted directory named `example.arc` at that same path, with member
+  paths below it. An extensionless `example` directory is also recognized when
+  the installed game contains `example.arc` beside that location.
+- Loose files matching existing archive member paths, optionally prefixed by
+  the archive's platform directory (for example `xenon/`). The member index also
+  includes new members supplied by another enabled partial archive.
+
+For example, `xenon/archives/example.arc/scripts/player.lua` in an extracted
+archive folder replaces `scripts/player.lua` inside that game's archive.
+A loose `scripts/player.lua` can replace that member in every matching archive.
+New members can be added through packed or extracted archive patches.
+
+Untouched members, including their original zlib-compressed bytes, are retained.
+Matching ignores ASCII case, preserves existing member spelling, and applies
+mods from bottom to top so the top enabled mod wins each member conflict.
+A complete archive from a `Merge=false` mod cuts off the original and lower
+mods for that archive. UMM's comma-separated `Read-only` list likewise treats
+those relative archive paths as complete replacements. Higher merging mods can
+still patch that replacement.
+
+Archives are prepared in the background before game startup with bounded payload
+buffers. The manager shows **Preparing mods…** and stays open on an error, so
+you can change the selection and retry. The
+installed game and imported mod files remain untouched. Generated archives live
+in `mod-cache` beside `ios-mods.ini`; content fingerprints invalidate them after
+asset changes even if size and modification date stay the same. Repeated launches
+reuse verified cache entries. First preparation needs extra storage for merged
+archives and can take longer. You may remove `mod-cache` while the game is closed
+to reclaim space; it is rebuilt when needed. Invalid or conflicting archive
+structures stop preparation with an error instead of launching a partial merge.
+
+This supports Sonic '06 asset formats, not every executable modification.
+Unleashed `.ar`/`.arl` archives, DLL plugins, custom HMM `CodeFile` scripts,
+`.xex`/`.xexp` patches and native libraries require individual source ports.
+Mods introducing shaders also need compatibility with the compiled shader cache.
+The manager cannot establish that every mod asset is compatible with the game
+or Metal renderer.
 
 The built-in codes are the boolean codes compiled into Marathon and saved in
 `config.toml`. They do not execute downloaded scripts. There is no online catalog,
@@ -96,7 +131,9 @@ The first command runs the portable manager and the production iOS file-overlay
 backend under AddressSanitizer and UndefinedBehaviorSanitizer. It checks import
 collisions, unsupported declarations, dependency versions, persistence/order,
 path confinement, case-insensitive priority, directory searches, reloads, mod
-saves and container relocation. The existing source tests cover touch controls,
+saves and container relocation. Archive tests cover independent U8/zlib decoding,
+packed/extracted/loose patches, conflict priority, full-replacement boundaries,
+content cache invalidation, malformed inputs and failed-reload rollback. The existing source tests cover touch controls,
 fade rendering, texture decoding and other portable port behavior.
 
 The macOS CI job also compiles the UIKit manager against the iPhoneOS SDK. This
@@ -115,10 +152,7 @@ Release arm64 app with signing disabled, then calls `ios/package-playtest.py`.
 The IPA must be signed with your sideloading tool or your own identity before
 installation. See [IOS.md](IOS.md) for prerequisites and memory entitlements.
 
-For this change, the portable mod and existing port tests passed on Linux. The
-Linux environment has no Xcode/iPhoneOS SDK or original game inputs, so no IPA
-was built there. The new UIKit code, full app link and physical-device mod loading
-still require validation on the Mac. Test import via Files, enable/disable,
-conflict priority, missing dependencies, separate saves, no-mod fallback and
-relaunch/container persistence with an actual compatible Sonic '06 mod before
-distributing the build.
+A successful portable test or app build does not establish physical-device mod
+compatibility. Test import via Files, enable/disable, conflict priority, missing
+dependencies, separate saves, no-mod fallback and relaunch/container persistence
+with compatible Sonic '06 mods on the target device.
