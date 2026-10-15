@@ -28,7 +28,20 @@ def main():
         app = Path(temporary) / 'Payload' / 'MarathonRecomp.app'
         app.mkdir(parents=True)
         info = plistlib.loads((source / 'Info.plist').read_bytes())
+        if info.get('CFBundleIdentifier') != 'com.devz.sonic2006':
+            raise RuntimeError('Release must update the original com.devz.sonic2006 app')
+        if info.get('CFBundleDisplayName') != 'Sonic (2006)':
+            raise RuntimeError('Release display name must remain Sonic (2006)')
+        scenes = info.get('UIApplicationSceneManifest', {}).get('UISceneConfigurations', {})
+        delegates = [item.get('UISceneDelegateClassName') for item in scenes.get('UIWindowSceneSessionRoleApplication', [])]
+        if 'MarathonSceneDelegate' not in delegates or not info.get('NSBluetoothAlwaysUsageDescription'):
+            raise RuntimeError('Required launch lifecycle or Bluetooth metadata is missing')
+        if not (source / 'Assets.car').is_file() or not list(source.glob('AppIcon*.png')):
+            raise RuntimeError('Original app icon catalog is missing')
         executable = info['CFBundleExecutable']
+        symbols = subprocess.check_output(['nm', str(source / executable)], text=True)
+        if '_OBJC_CLASS_$_MarathonSceneDelegate' not in symbols:
+            raise RuntimeError('Scene delegate is missing from the linked executable')
         allowed = {executable, 'Info.plist', 'PkgInfo', 'Assets.car'}
         for path in source.iterdir():
             if path.name in allowed or re.fullmatch(r'AppIcon[^/]*\.png', path.name):
@@ -49,7 +62,7 @@ def main():
         if not re.fullmatch(r'\d+\.\d+\.\d+', version):
             raise RuntimeError('Invalid iOS version string')
         info['CFBundleShortVersionString'] = version
-        info['CFBundleVersion'] = '1.0.5'
+        info['CFBundleVersion'] = '1.0.6'
         (app / 'Info.plist').write_bytes(plistlib.dumps(info, fmt=plistlib.FMT_BINARY))
         forbidden = [b'/Users/', b'/Volumes/', b'@gmail.com', b'BEGIN PRIVATE KEY']
         for path in app.iterdir():
