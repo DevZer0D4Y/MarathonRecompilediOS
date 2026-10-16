@@ -84,6 +84,8 @@ A list of everything fixed and added in this iOS port, on top of the original Ma
 | **Installer with the Files app** | The installer uses Apple's Files picker, so the game can be installed from local storage, iCloud Drive, USB drives or network shares. Game data, settings and saves live in the app's own folder, visible in the Files app and Finder. |
 | **Touch controls** | The on-screen gamepad from [Unleashed Recompiled for iOS](https://github.com/DevZer0D4Y/UnleashedRecompilediOS): a stick with a D-Pad ring, swipe anywhere to move the camera, all face, shoulder and trigger buttons, Start, Back and haptic feedback. They hide when you use a controller and come back when you touch the screen. See [What are the controls on iOS?](#what-are-the-controls-on-ios). |
 | **Touch layout editor** | Tap **EDIT** to move, resize and hide controls and change their transparency. Layouts are saved to `touch_layout.toml`. |
+| **Floating stick** | The movement stick stays hidden until your thumb touches the lower left of the screen, then appears right under it, like ARMSX2's dynamic stick. Switch back to the fixed stick with **STICK** in the layout editor. |
+| **Up to 120 FPS** | The frame rate goes up to 120 FPS on ProMotion iPhones and iPads, and is capped there. Older 60 Hz screens still run at 60. Set a lower limit under **Options → Frame Rate**. |
 | **Native mod manager** | Import extracted Sonic '06 asset mods, enable or disable them, drag to set priority and choose built-in codes before starting the game. See [iOS mod support](docs/IOS_MODS.md) for supported formats and limits. |
 | **Mobile graphics defaults** | MSAA off, 1024 shadows, quarter-resolution reflections and 4x anisotropic filtering by default, so the game runs smoothly on a phone. All of them can still be raised in the options menu. |
 
@@ -102,6 +104,8 @@ A list of everything fixed and added in this iOS port, on top of the original Ma
 | **Crash when memory runs out** | Failed memory allocations are handled instead of crashing. |
 | **Fades not drawn or stuck** | Screen fades are drawn and finish at the right time. |
 | **Going to the background** | Held touch inputs are released when the app goes to the background, so Sonic doesn't keep running when you come back. |
+| **Stretched buttons after switching apps** | After the app switcher or a screenshot, iOS could report the screen as portrait, and the touch buttons were drawn several times too tall. They now follow the orientation the game is actually drawn in. |
+| **Crash in-game with some heavy mods** | Mods that patch the game executable, such as Khronos and the mods built on it (Physics, Physics Companion), crashed the game while loading a stage. The mod manager now shows why they can't be enabled instead. Patches Marathon has as built-in codes are switched on automatically. |
 | **Restarting the game did nothing** | iOS apps can't relaunch themselves. Settings that need a restart are saved, and the game asks you to close and reopen it. |
 
 ### Can't Be Fixed From This Project
@@ -125,7 +129,7 @@ Before reporting a bug, check whether it also happens in [Marathon Recompiled](h
 
 The game has on-screen touch controls:
 
-- **Left stick:** drag inside the circle on the bottom left. Tap the arrows on its outer ring for the D-Pad.
+- **Left stick:** put your thumb anywhere on the lower left of the screen. The stick appears under it; drag to move, let go to hide it. With the fixed stick (see below), drag inside the circle on the bottom left and tap the arrows on its outer ring for the D-Pad.
 - **Camera (right stick):** swipe anywhere on the screen that isn't a button.
 - **A, B, X, Y:** the diamond of buttons on the right.
 - **LT, RT:** the wide buttons above the stick and above the face buttons.
@@ -141,10 +145,11 @@ Pause the game, then tap **EDIT** at the top of the screen to open the layout ed
 - **Resize** it by tapping it to select it, then using **SIZE -** and **SIZE +**.
 - **Hide** a control you don't need by selecting it and tapping **HIDE**. Hidden controls stay faintly visible in the editor, so you can select them and tap **SHOW** to bring them back.
 - **ALPHA -** and **ALPHA +** make all the controls more or less see-through.
+- **STICK** switches between the floating stick and the fixed stick with a D-Pad ring. Resizing the stick also resizes the floating one.
 - **RESET** restores the default layout.
 - **DONE** saves your layout and goes back to the game.
 
-Your layout is saved to `touch_layout.toml`, in the same folder as `config.toml`. Delete that file to go back to the default layout. The touch controls can also be turned off with `TouchControls = false` in `config.toml`.
+Your layout is saved to `touch_layout.toml`, in the same folder as `config.toml`. Delete that file to go back to the default layout. The touch controls can also be turned off with `TouchControls = false` in `config.toml`, and the floating stick with `TouchDynamicStick = false`.
 
 ### Where is the save data and configuration file stored?
 

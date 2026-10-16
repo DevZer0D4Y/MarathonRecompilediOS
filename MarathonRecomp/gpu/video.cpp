@@ -3458,10 +3458,12 @@ void Video::Present()
     WaitWhileApplicationSuspended();
 #endif
 
-    // The Cap60FPS code. Clamping the setting itself keeps everything that depends on it, like the
-    // frame limiter and the game's own frame rate logic, consistent with the cap.
-    if (Config::Cap60FPS && Config::FPS > 60)
-        Config::FPS = 60;
+#ifdef MARATHON_RECOMP_IOS
+    // Clamping the setting itself keeps everything that depends on it, like the frame limiter
+    // and the game's own frame rate logic, consistent with the cap.
+    if (Config::FPS > FPS_CAP_IOS)
+        Config::FPS = FPS_CAP_IOS;
+#endif
 
     g_readyForCommands = false;
 

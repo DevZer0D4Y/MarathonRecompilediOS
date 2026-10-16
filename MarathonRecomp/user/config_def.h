@@ -16,6 +16,7 @@ CONFIG_DEFINE_LOCALISED("Input", bool, AllowBackgroundInput, false, false);
 #ifdef MARATHON_RECOMP_IOS
 CONFIG_DEFINE("Input", bool, TouchControls, true, false);
 CONFIG_DEFINE("Input", float, TouchControlsOpacity, 1.0f, false);
+CONFIG_DEFINE("Input", bool, TouchDynamicStick, true, false);
 #endif
 CONFIG_DEFINE_ENUM_LOCALISED("Input", EControllerIcons, ControllerIcons, EControllerIcons::Auto, false);
 CONFIG_DEFINE_ENUM_LOCALISED("Input", ELightDash, LightDash, ELightDash::X, false);
@@ -70,7 +71,11 @@ CONFIG_DEFINE_LOCALISED("Video", float, ResolutionScale, 1.0f, false);
 CONFIG_DEFINE_LOCALISED("Video", bool, Fullscreen, true, false);
 CONFIG_DEFINE_LOCALISED("Video", bool, VSync, true, false);
 CONFIG_DEFINE_ENUM("Video", ETripleBuffering, TripleBuffering, ETripleBuffering::Auto, false);
+#ifdef MARATHON_RECOMP_IOS
+CONFIG_DEFINE_LOCALISED("Video", int32_t, FPS, FPS_CAP_IOS, false);
+#else
 CONFIG_DEFINE_LOCALISED("Video", int32_t, FPS, 60, false);
+#endif
 CONFIG_DEFINE("Video", bool, ShowFPS, false, false);
 CONFIG_DEFINE("Video", uint32_t, MaxFrameLatency, 2, false);
 CONFIG_DEFINE_LOCALISED("Video", float, Brightness, 0.5f, false);
@@ -92,11 +97,6 @@ CONFIG_DEFINE_ENUM_LOCALISED("Video", ECutsceneAspectRatio, CutsceneAspectRatio,
 CONFIG_DEFINE_ENUM_LOCALISED("Video", EUIAlignmentMode, UIAlignmentMode, EUIAlignmentMode::Edge, false);
 
 CONFIG_DEFINE_HIDDEN("Codes", bool, AntigravityRetainsMomentum, false, false);
-#ifdef MARATHON_RECOMP_IOS
-CONFIG_DEFINE_HIDDEN("Codes", bool, Cap60FPS, true, false);
-#else
-CONFIG_DEFINE_HIDDEN("Codes", bool, Cap60FPS, false, false);
-#endif
 CONFIG_DEFINE_HIDDEN("Codes", bool, ControllableBoundAttack, false, false);
 CONFIG_DEFINE_HIDDEN("Codes", bool, ControllableSpinkick, false, false);
 CONFIG_DEFINE_HIDDEN("Codes", bool, ControllableTeleportDash, false, false);

@@ -26,12 +26,15 @@
     self.tableView.editing = YES;
     self.tableView.rowHeight = 76;
     _codes = ModLoader::GetBuiltInCodes();
+    std::vector<std::string> codeNames;
+    for (const auto& code : _codes) codeNames.push_back(code.name);
+    ios_mod_manager::SetBuiltInCodes(std::move(codeNames));
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Import folder" style:UIBarButtonItemStylePlain target:self action:@selector(importFolder)];
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Play" style:UIBarButtonItemStyleDone target:self action:@selector(play)];
     UILabel* footer = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 600, 90)];
     footer.numberOfLines = 0;
     footer.textAlignment = NSTextAlignmentCenter;
-    footer.text = @"Tap to enable or disable; drag to reorder. Import an extracted Marathon Recompiled mod folder containing mod.ini. DLL and custom code mods require ports.\nChanges apply when you tap Play.";
+    footer.text = @"Tap to enable or disable; drag to reorder. Import an extracted Marathon Recompiled mod folder containing mod.ini. Mods that patch the game executable or load Xbox DLLs (such as Khronos) need ports.\nChanges apply when you tap Play.";
     footer.font = [UIFont preferredFontForTextStyle:UIFontTextStyleFootnote];
     self.tableView.tableFooterView = footer;
     [self reloadMods];
@@ -107,7 +110,20 @@
 {
     if (_scanFailed) { [self showError:@"The mods folder could not be scanned. Fix its permissions using Files and relaunch."]; return NO; }
     std::string error;
-    if (ios_mod_manager::Save(GetUserPath(), _mods, error)) { ModLoader::SaveBuiltInCodes(_codes); return YES; }
+    if (ios_mod_manager::Save(GetUserPath(), _mods, error))
+    {
+        // Switch on the built-in codes that enabled mods declare as required patches.
+        for (const auto& mod : _mods)
+        {
+            if (!mod.enabled || !mod.issue.empty()) continue;
+            for (const auto& name : ios_mod_manager::RequiredCodes(mod.iniPath))
+                for (auto& code : _codes)
+                    if (code.name == name) code.enabled = true;
+        }
+        ModLoader::SaveBuiltInCodes(_codes);
+        [self.tableView reloadData];
+        return YES;
+    }
     [self showError:[NSString stringWithUTF8String:error.c_str()]];
     return NO;
 }

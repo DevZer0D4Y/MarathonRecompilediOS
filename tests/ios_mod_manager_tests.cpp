@@ -187,7 +187,39 @@ int main(int argc, char** argv)
     std::ifstream(root / "keep.txt") >> kept;
     assert(kept == "preserve");
 
+    // Khronos-based mods (Physics, Physics Companion) patch the executable or need patches that
+    // only exist as executable edits. They must be rejected instead of crashing the game.
+    const auto patched = root / "patched";
+    const std::string umm = "[Details]\nTitle=\"%s\"\nPlatform=\"Xbox 360\"\n[Filesystem]\nMerge=\"True\"\n";
+    auto ummIni = [&](const std::string& title, const std::string& extra) {
+        std::string text = umm;
+        text.replace(text.find("%s"), 2, title);
+        return text + extra;
+    };
+    write(patched / "Khronos/mod.ini", ummIni("Khronos", ""));
+    write(patched / "Khronos/patch.mlua", "WriteVirtualBytes(0x82AEA31C|\"01 01\")\n-- DLL_STRING: .string \"game:\\\\Core.xex\"\n");
+    assert(CompatibilityIssue(patched / "Khronos/mod.ini").find("Khronos") != std::string::npos);
+    write(patched / "Companion/mod.ini", ummIni("Companion", ""));
+    write(patched / "Companion/patch.mlua", "DecryptExecutable()\nWriteBytes(Executable|0xB18E2B|\"1C821A4CB0\")\n");
+    assert(CompatibilityIssue(patched / "Companion/mod.ini").find("executable") != std::string::npos);
+    write(patched / "AssetPatch/mod.ini", ummIni("Asset patch", ""));
+    write(patched / "AssetPatch/patch.mlua", "BeginBlock(\"core\\\\archives\\\\player.arc\")\nEndBlock(\"core\\\\archives\\\\player.arc\")\n");
+    assert(CompatibilityIssue(patched / "AssetPatch/mod.ini").empty());
+
+    const std::string physics = "[Patches]\nRequiredPatches=\"ControllableBoundAttack.mlua, Restore Sonic Action Gauge.mlua,DisableCharacterStumble.mlua\"\n";
+    write(patched / "Physics/mod.ini", ummIni("Physics", physics));
+    SetBuiltInCodes({ "ControllableBoundAttack", "RestoreSonicActionGauge" });
+    const auto physicsIssue = CompatibilityIssue(patched / "Physics/mod.ini");
+    assert(physicsIssue.find("DisableCharacterStumble.mlua") != std::string::npos);
+    assert(physicsIssue.find("ControllableBoundAttack") == std::string::npos);
+    write(patched / "Codes/mod.ini", ummIni("Codes", "[Patches]\nRequiredPatches=\"ControllableBoundAttack.mlua,restore_sonic_action_gauge.mlua\"\n"));
+    assert(CompatibilityIssue(patched / "Codes/mod.ini").empty());
+    const auto codes = RequiredCodes(patched / "Codes/mod.ini");
+    assert(codes.size() == 2 && codes[0] == "ControllableBoundAttack" && codes[1] == "RestoreSonicActionGauge");
+    SetBuiltInCodes({});
+    assert(!CompatibilityIssue(patched / "Codes/mod.ini").empty());
+
     ArchiveMergeTests(root / "archives");
     fs::remove_all(root);
-    std::cout << "Passed: mod imports, collisions, persistence/order, dependency versions, unsupported requirements, path confinement, sandbox relocation, Sonic '06 file overlay priority/case handling, directory lookup, reload and mod saves.\n";
+    std::cout << "Passed: mod imports, collisions, persistence/order, dependency versions, unsupported requirements, path confinement, sandbox relocation, Sonic '06 file overlay priority/case handling, directory lookup, reload, mod saves, executable patches and required built-in codes.\n";
 }

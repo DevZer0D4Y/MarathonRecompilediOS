@@ -108,6 +108,8 @@ enum class ETripleBuffering : uint32_t
 
 static constexpr int32_t FPS_MIN = 15;
 static constexpr int32_t FPS_MAX = 241;
+// iPhone and iPad displays refresh at up to 120 Hz, so faster rendering would only add heat.
+static constexpr int32_t FPS_CAP_IOS = 120;
 
 enum class EAntiAliasing : uint32_t
 {

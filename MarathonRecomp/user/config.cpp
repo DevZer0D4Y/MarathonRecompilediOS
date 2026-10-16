@@ -891,6 +891,14 @@ void Config::Load()
             LOGFN_UTILITY("{} (0x{:X})", def->GetDefinition().c_str(), (intptr_t)def->GetValue());
 #endif
         }
+
+#ifdef MARATHON_RECOMP_IOS
+        // Earlier iOS builds capped the game at 60 FPS with a Cap60FPS code, enabled by default.
+        // The cap is now 120, so frame rates left at that old default move up to the new one.
+        // The code is no longer saved, so this happens once.
+        if (toml["Codes"]["Cap60FPS"].value_or(false) && Config::FPS == 60)
+            Config::FPS = FPS_CAP_IOS;
+#endif
     }
     catch (toml::parse_error& err)
     {

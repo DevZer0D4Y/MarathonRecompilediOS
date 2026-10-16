@@ -857,10 +857,11 @@ static void DrawOptions(ImVec2 min, ImVec2 max)
             DrawOption(rowCount++, &Config::ResolutionScale, false, devReason);                        // TODO: implement buffer resize. DrawOption(rowCount++, &Config::ResolutionScale, true, nullptr, 0.25f, 1.0f, 2.0f);
             DrawOption(rowCount++, &Config::Fullscreen, false, devReason);                             // TODO: implement buffer resize. DrawOption(rowCount++, &Config::Fullscreen, true);
             DrawOption(rowCount++, &Config::VSync, true);
-            if (Config::Cap60FPS)
-                DrawOption(rowCount++, &Config::FPS, true, nullptr, FPS_MIN, 30, 60);
-            else
-                DrawOption(rowCount++, &Config::FPS, true, nullptr, FPS_MIN, 120, FPS_MAX);
+#ifdef MARATHON_RECOMP_IOS
+            DrawOption(rowCount++, &Config::FPS, true, nullptr, FPS_MIN, 60, FPS_CAP_IOS);
+#else
+            DrawOption(rowCount++, &Config::FPS, true, nullptr, FPS_MIN, 120, FPS_MAX);
+#endif
             DrawOption(rowCount++, &Config::Brightness, true);
             DrawOption(rowCount++, &Config::AntiAliasing, false, devReason);                           // TODO: implement MSAA.          DrawOption(rowCount++, &Config::AntiAliasing, Config::AntiAliasing.InaccessibleValues.size() != 3, &Localise("Options_Desc_NotAvailableHardware"));
             DrawOption(rowCount++, &Config::TransparencyAntiAliasing, false, devReason);               // TODO: implement MSAA.          DrawOption(rowCount++, &Config::TransparencyAntiAliasing, Config::AntiAliasing != EAntiAliasing::Off, &Localise("Options_Desc_NotAvailableMSAA"));
