@@ -114,6 +114,24 @@ archives and can take longer. You may remove `mod-cache` while the game is close
 to reclaim space; it is rebuilt when needed. Invalid or conflicting archive
 structures stop preparation with an error instead of launching a partial merge.
 
+### Executable patches and Khronos
+
+The recompiled game is native code, so patches written for the Xbox executable
+cannot be applied to it. The manager inspects each mod and refuses to enable:
+
+- Mods whose `.mlua` patch writes to the executable (`WriteVirtualBytes`,
+  `DecryptExecutable`, `WriteBytes(Executable|...)`, `WriteNopsToExecutable`).
+  `.mlua` files that only edit archives are ignored and do not block the mod.
+- Khronos, whose patch loads the `Core.xex` DLL into the game. Mods built on
+  it, like Physics and Physics Companion, need its DLL and crash without it.
+- Mods whose UMM `[Patches] RequiredPatches` names a patch that Marathon does not
+  have as a built-in code. The message lists the missing patches. Required
+  patches that match a built-in code (for example `ControllableBoundAttack.mlua`)
+  are allowed, and that code is switched on when you tap **Play**.
+
+Before this check, such mods could be enabled, and the game crashed while loading
+a stage. Supporting Khronos would need a port of its DLL to the recompiled game.
+
 This supports Sonic '06 asset formats, not every executable modification.
 Unleashed `.ar`/`.arl` archives, DLL plugins, custom HMM `CodeFile` scripts,
 `.xex`/`.xexp` patches and native libraries require individual source ports.

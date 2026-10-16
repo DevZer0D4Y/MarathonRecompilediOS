@@ -42,6 +42,11 @@ static constexpr float LOOK_VERTICAL_SCALE = 1.2f;
 static constexpr double LOOK_HOLD_SECONDS = 0.10;
 static constexpr double BUTTON_TAP_HOLD_SECONDS = 0.10;
 
+// The dynamic stick appears wherever a thumb lands in this part of the layout space,
+// below the top row of buttons and left of the face buttons.
+static constexpr float DYNAMIC_STICK_ZONE_RIGHT = 0.42f;
+static constexpr float DYNAMIC_STICK_ZONE_TOP = 0.22f;
+
 // Horizontal margin kept free on wide screens so controls stay clear of the notch and rounded corners.
 static constexpr float WIDE_SCREEN_SAFE_MARGIN = 0.055f;
 
@@ -112,6 +117,7 @@ enum class EditorAction
     ToggleHidden,
     LessOpaque,
     MoreOpaque,
+    ToggleDynamicStick,
     Reset,
     Done
 };
@@ -129,6 +135,7 @@ static const EditorButton g_editorButtons[] =
     { EditorAction::ToggleHidden, "HIDE" },
     { EditorAction::LessOpaque,   "ALPHA -" },
     { EditorAction::MoreOpaque,   "ALPHA +" },
+    { EditorAction::ToggleDynamicStick, "STICK" },
     { EditorAction::Reset,        "RESET" },
     { EditorAction::Done,         "DONE" },
 };
@@ -158,6 +165,7 @@ struct TouchCapture
     ImVec2 anchor;  // Window points.
     ImVec2 current; // Window points.
     TouchRect frameAtAnchor; // Layout space, used when dragging in the editor.
+    bool dynamicStick; // The stick is centred on the anchor instead of its layout frame.
 };
 
 static std::mutex g_mutex;
@@ -166,6 +174,8 @@ static double g_buttonPressTimes[CONTROL_COUNT];
 static ImVec2 g_lookVector;
 static double g_lookTime = -1.0;
 static ImVec2 g_windowSize{ 1.0f, 1.0f };
+// Orientation of the swap chain the overlay is drawn into: -1 until the first frame, else 0 or 1.
+static std::atomic<int> g_swapChainLandscape{ -1 };
 static std::atomic<bool> g_hiddenByController;
 static std::atomic<bool> g_isEditing;
 static int g_selectedControl = -1;
@@ -174,6 +184,11 @@ static ImFont* g_font;
 static double GetTime()
 {
     return double(SDL_GetPerformanceCounter()) / double(SDL_GetPerformanceFrequency());
+}
+
+static bool IsDynamicStick()
+{
+    return Config::TouchDynamicStick;
 }
 
 static bool IsEnabled()
@@ -458,6 +473,12 @@ static void ApplyEditorAction(EditorAction action)
             break;
         }
 
+        case EditorAction::ToggleDynamicStick:
+        {
+            Config::TouchDynamicStick = !Config::TouchDynamicStick;
+            break;
+        }
+
         case EditorAction::Reset:
         {
             ResetLayout();
@@ -531,6 +552,28 @@ static void OnGameplayFingerDown(TouchCapture& capture, ImVec2 point)
 
     capture.control = FindControlAtPoint(point, false);
 
+    if (IsDynamicStick() && (capture.control < 0 || g_controls[capture.control].kind == TouchControlKind::Stick))
+    {
+        TouchRect space = GetLayoutSpace(g_windowSize);
+        const bool inZone = point.x < space.x + space.width * DYNAMIC_STICK_ZONE_RIGHT &&
+            point.y > space.y + space.height * DYNAMIC_STICK_ZONE_TOP;
+
+        if (inZone || capture.control >= 0)
+        {
+            for (size_t i = 0; i < CONTROL_COUNT; i++)
+            {
+                if (g_controls[i].kind == TouchControlKind::Stick && !g_layout[i].hidden)
+                {
+                    capture.control = int(i);
+                    capture.stickZone = StickZone::Stick;
+                    capture.dynamicStick = true;
+                    PlayHaptic(true);
+                    return;
+                }
+            }
+        }
+    }
+
     if (capture.control < 0)
     {
         capture.control = LOOK_ZONE;
@@ -558,8 +601,17 @@ static void UpdateWindowSize()
     int windowHeight = 0;
     SDL_GetWindowSize(GameWindow::s_pWindow, &windowWidth, &windowHeight);
 
-    if (windowWidth > 0 && windowHeight > 0)
-        g_windowSize = { float(windowWidth), float(windowHeight) };
+    if (windowWidth <= 0 || windowHeight <= 0)
+        return;
+
+    // After the app switcher or a screenshot, SDL can keep reporting the portrait size although the
+    // landscape-only game is still drawn in landscape, which stretched every control vertically.
+    // Touch positions are normalised to the real view, so only the size needs correcting.
+    int landscape = g_swapChainLandscape;
+    if (landscape >= 0 && (windowWidth > windowHeight) != bool(landscape))
+        std::swap(windowWidth, windowHeight);
+
+    g_windowSize = { float(windowWidth), float(windowHeight) };
 }
 
 static int TouchControls_OnSDLEvent(void*, SDL_Event* event)
@@ -787,6 +839,9 @@ void TouchControls::Draw(float swapChainWidth, float swapChainHeight, float view
 
     std::lock_guard lock(g_mutex);
 
+    if (swapChainWidth > 0.0f && swapChainHeight > 0.0f && swapChainWidth != swapChainHeight)
+        g_swapChainLandscape = swapChainWidth > swapChainHeight ? 1 : 0;
+
     // Don't wait for the first touch to learn the window size. Until then, the controls would be scaled
     // for a 1x1 window, and their outlines would be thousands of pixels thick, covering the game in white.
     UpdateWindowSize();
@@ -864,6 +919,24 @@ void TouchControls::Draw(float swapChainWidth, float swapChainHeight, float view
 
         if (control.kind == TouchControlKind::Stick)
         {
+            // The dynamic stick is only drawn while a thumb holds it, centred where the thumb landed.
+            const TouchCapture* dynamicCapture = nullptr;
+            if (!isEditing && IsDynamicStick())
+            {
+                for (auto& capture : g_captures)
+                {
+                    if (capture.control == int(i) && capture.dynamicStick)
+                        dynamicCapture = &capture;
+                }
+
+                if (dynamicCapture == nullptr)
+                    continue;
+
+                frame.x = dynamicCapture->anchor.x - frame.width * 0.5f;
+                frame.y = dynamicCapture->anchor.y - frame.height * 0.5f;
+                centre = toScreen(dynamicCapture->anchor);
+            }
+
             float radius = GetRadius(frame) * scale;
             float ringRadius = std::min(frame.width, frame.height) * STICK_DPAD_RING_RADIUS * scale;
 
@@ -877,7 +950,7 @@ void TouchControls::Draw(float swapChainWidth, float swapChainHeight, float view
             const ImVec2 directions[] = { { 0.0f, -1.0f }, { 0.0f, 1.0f }, { -1.0f, 0.0f }, { 1.0f, 0.0f } };
             const StickZone zones[] = { StickZone::DpadUp, StickZone::DpadDown, StickZone::DpadLeft, StickZone::DpadRight };
 
-            for (size_t d = 0; d < 4; d++)
+            for (size_t d = 0; d < 4 && dynamicCapture == nullptr; d++)
             {
                 bool pressed = !isEditing && std::any_of(g_captures.begin(), g_captures.end(), [&](const TouchCapture& c) { return c.control == int(i) && c.stickZone == zones[d]; });
                 ImVec2 dir = directions[d];
@@ -948,6 +1021,9 @@ void TouchControls::Draw(float swapChainWidth, float swapChainHeight, float view
             if (button.action == EditorAction::ToggleHidden && g_selectedControl >= 0 && g_layout[g_selectedControl].hidden)
                 label = "SHOW";
 
+            if (button.action == EditorAction::ToggleDynamicStick)
+                label = IsDynamicStick() ? "STICK: FLOAT" : "STICK: FIXED";
+
             ImU32 fill = isDone ? IM_COL32(255, 200, 40, 200) : white(enabled ? 0.25f : 0.08f, false);
             ImU32 text = isDone ? IM_COL32(0, 0, 0, 255) : white(enabled ? 1.0f : 0.35f, false);
             ImVec2 min = toScreen({ frame.x, frame.y });
@@ -956,7 +1032,14 @@ void TouchControls::Draw(float swapChainWidth, float swapChainHeight, float view
 
             drawList->AddRectFilled(min, max, fill, rounding);
             drawList->AddRect(min, max, white(0.6f, false), rounding, 0, borderWidth);
-            drawLabel(label, toScreen(GetCentre(frame)), frame.height * 0.32f * scale, text);
+            float labelSize = frame.height * 0.32f * scale;
+            if (g_font != nullptr)
+            {
+                float labelWidth = g_font->CalcTextSizeA(labelSize, FLT_MAX, 0.0f, label).x;
+                if (labelWidth > frame.width * 0.9f * scale)
+                    labelSize *= frame.width * 0.9f * scale / labelWidth;
+            }
+            drawLabel(label, toScreen(GetCentre(frame)), labelSize, text);
         }
     }
 }

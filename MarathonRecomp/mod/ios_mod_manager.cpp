@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <charconv>
 #include <fstream>
+#include <iterator>
 #include <memory>
 #include <stdexcept>
 #include <string_view>
@@ -21,6 +22,74 @@ namespace ios_mod_manager
             else if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
         }
         return value;
+    }
+
+    static std::vector<std::string> g_builtInCodes;
+
+    // Patch names are compared without the extension, spacing, underscores or letter case.
+    static std::string PatchKey(std::string_view name)
+    {
+        if (name.size() >= 5 && FoldPath(std::string(name.substr(name.size() - 5))) == ".mlua")
+            name.remove_suffix(5);
+        std::string key;
+        for (char c : name)
+        {
+            if (c == ' ' || c == '_' || c == '-' || c == '\t') continue;
+            key += (c >= 'A' && c <= 'Z') ? char(c + 'a' - 'A') : c;
+        }
+        return key;
+    }
+
+    static std::vector<std::string> SplitList(const std::string& value)
+    {
+        std::vector<std::string> items;
+        size_t start = 0;
+        for (;;)
+        {
+            const auto end = value.find(',', start);
+            auto item = value.substr(start, end == std::string::npos ? end : end - start);
+            item.erase(0, item.find_first_not_of(" \t"));
+            item.erase(item.find_last_not_of(" \t") + 1);
+            if (!item.empty()) items.push_back(std::move(item));
+            if (end == std::string::npos) break;
+            start = end + 1;
+        }
+        return items;
+    }
+
+    void SetBuiltInCodes(std::vector<std::string> names) { g_builtInCodes = std::move(names); }
+
+    static std::string FindBuiltInCode(std::string_view patch)
+    {
+        const auto key = PatchKey(patch);
+        for (const auto& code : g_builtInCodes)
+            if (PatchKey(code) == key) return code;
+        return {};
+    }
+
+    std::vector<std::string> RequiredCodes(const std::filesystem::path& modIni)
+    {
+        IniFile ini;
+        std::vector<std::string> codes;
+        if (!ini.read(modIni)) return codes;
+        for (const auto& patch : SplitList(ini.getString("Patches", "RequiredPatches", "")))
+            if (auto code = FindBuiltInCode(patch); !code.empty()) codes.push_back(std::move(code));
+        return codes;
+    }
+
+    // UMM .mlua patches run against the Xbox executable before boot. Asset edits are harmless to
+    // skip, but code edits cannot reach recompiled code, and mods built on them crash in-game.
+    static std::string ScriptPatchIssue(const std::filesystem::path& path)
+    {
+        std::ifstream stream(path, std::ios::binary);
+        std::string text(std::istreambuf_iterator<char>(stream), {});
+        const auto folded = FoldPath(text);
+        if (folded.find("core.xex") != std::string::npos)
+            return "Loads the Khronos code DLL (Core.xex) by patching the game executable. Xbox DLLs cannot run in the recompiled game, so this mod and mods built on Khronos need a native port.";
+        for (const char* call : { "writevirtualbytes", "decryptexecutable", "executable|", "writenopstoexecutable" })
+            if (folded.find(call) != std::string::npos)
+                return "Its " + path.filename().string() + " patches the game executable, which the recompiled game cannot apply.";
+        return {};
     }
 
     std::filesystem::path DatabasePath(const std::filesystem::path& userPath)
@@ -57,6 +126,12 @@ namespace ios_mod_manager
                 return "Custom HMM code is not supported by this loader.";
             if (ini.get<size_t>("Main", "DependsCount", 0) > 256)
                 return "Invalid dependency count.";
+            std::string missingPatches;
+            for (const auto& patch : SplitList(ini.getString("Patches", "RequiredPatches", "")))
+                if (FindBuiltInCode(patch).empty())
+                    missingPatches += (missingPatches.empty() ? "" : ", ") + patch;
+            if (!missingPatches.empty())
+                return "Needs executable patches the recompiled game doesn't include: " + missingPatches + ".";
             const auto base = modIni.parent_path();
             if (!ini.contains("Details") && !ini.contains("Filesystem"))
             {
@@ -89,6 +164,9 @@ namespace ios_mod_manager
                     return "Unleashed append archives are not supported. Use Sonic '06 replacement .arc files.";
                 if (name.ends_with(".xex") || name.ends_with(".xexp") || name.ends_with(".dll") || name.ends_with(".dylib"))
                     return "Executable patches and native plugins need an individual source port.";
+                if (name.ends_with(".mlua") && file.is_regular_file())
+                    if (auto issue = ScriptPatchIssue(file.path()); !issue.empty())
+                        return issue;
             }
             const auto save = ini.contains("Details") || ini.contains("Filesystem")
                 ? ini.getString("Details", "Save", ini.getString("Filesystem", "Save", ""))

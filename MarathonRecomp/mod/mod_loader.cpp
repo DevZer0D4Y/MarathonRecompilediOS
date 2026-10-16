@@ -146,6 +146,10 @@ void ModLoader::Init()
 #ifdef MARATHON_RECOMP_IOS
     // Native relative paths survive iOS container relocation. Desktop INIs
     // must not override the selection saved by the startup manager.
+    std::vector<std::string> codeNames;
+    for (const auto& code : GetBuiltInCodes())
+        codeNames.push_back(code.name);
+    ios_mod_manager::SetBuiltInCodes(std::move(codeNames));
     g_iosMods.Load(GetUserPath());
     s_saveFilePath = g_iosMods.SaveFile();
     return;

@@ -23,7 +23,8 @@ static double testTime=100;
 static SDL_EventFilter testEventWatch=nullptr;
 extern "C" Uint64 SDL_GetPerformanceCounter() { return Uint64(testTime*1000000); }
 extern "C" Uint64 SDL_GetPerformanceFrequency() { return 1000000; }
-extern "C" void SDL_GetWindowSize(SDL_Window*, int* w, int* h) { *w=1280; *h=720; }
+static int testWindowWidth=1280, testWindowHeight=720;
+extern "C" void SDL_GetWindowSize(SDL_Window*, int* w, int* h) { *w=testWindowWidth; *h=testWindowHeight; }
 extern "C" void SDL_AddEventWatch(SDL_EventFilter callback, void*) { testEventWatch=callback; }
 namespace TouchHaptics { void Init() {} void Play(bool) {} }
 #define MARATHON_RECOMP_TOUCH_TEST
@@ -91,6 +92,8 @@ int main(int argc, char** argv)
     testTime+=0.06;
     assert(Pad().wButtons==0);
 
+    // Fixed stick: the stick and its D-pad ring stay at their layout position.
+    Config::TouchDynamicStick=false;
     Touch(SDL_FINGERDOWN, 2, 192, 516.6f);
     Touch(SDL_FINGERMOTION, 2, 194, 516.6f, 2, 0);
     assert(Pad().sThumbLX==0); // Stick deadzone.
@@ -104,8 +107,40 @@ int main(int argc, char** argv)
     assert(Pad().wButtons & XAMINPUT_GAMEPAD_DPAD_UP);
     TouchControls::Reset();
 
-    Touch(SDL_FINGERDOWN, 5, 500, 300); // Free area is swipe-to-look.
-    Touch(SDL_FINGERMOTION, 5, 508, 296, 8, -4);
+    // After the app switcher SDL can report the portrait size while the game is drawn in landscape.
+    g_swapChainLandscape=1;
+    testWindowWidth=720; testWindowHeight=1280;
+    testTime+=0.2;
+    Touch(SDL_FINGERDOWN, 17, 1014.4f, 556.2f);
+    assert(Pad().wButtons & XAMINPUT_GAMEPAD_A);
+    assert(g_windowSize.x==1280 && g_windowSize.y==720);
+    TouchControls::Reset();
+    testWindowWidth=1280; testWindowHeight=720;
+    testTime+=0.2;
+
+    // Floating stick: it appears under the thumb anywhere in the lower left and steers from there.
+    Config::TouchDynamicStick=true;
+    Touch(SDL_FINGERDOWN, 13, 400, 600);
+    assert(Pad().sThumbLX==0 && Pad().wButtons==0);
+    Touch(SDL_FINGERMOTION, 13, 400, 480, 0, -120);
+    assert(Pad().sThumbLY==32767 && Pad().sThumbRY==0);
+    Touch(SDL_FINGERUP, 13, 400, 480);
+    assert(Pad().sThumbLY==0);
+    Touch(SDL_FINGERDOWN, 14, 192, 420); // The old D-pad ring area also starts the stick.
+    assert(Pad().wButtons==0);
+    TouchControls::Reset();
+    Touch(SDL_FINGERDOWN, 15, 250, 120); // The top of the screen still looks around.
+    Touch(SDL_FINGERMOTION, 15, 258, 120, 8, 0);
+    assert(Pad().sThumbRX>30000 && Pad().sThumbLX==0);
+    TouchControls::Reset();
+    testTime+=0.2;
+    Touch(SDL_FINGERDOWN, 16, 1014.4f, 556.2f); // Face buttons keep priority over the stick zone.
+    assert(Pad().wButtons & XAMINPUT_GAMEPAD_A);
+    TouchControls::Reset();
+    testTime+=0.2;
+
+    Touch(SDL_FINGERDOWN, 5, 650, 300); // Free area is swipe-to-look.
+    Touch(SDL_FINGERMOTION, 5, 658, 296, 8, -4);
     assert(Pad().sThumbRX>30000 && Pad().sThumbRY>30000);
     testTime+=0.11;
     assert(Pad().sThumbRX==0 && Pad().sThumbRY==0);
@@ -145,6 +180,6 @@ int main(int argc, char** argv)
     assert(std::isfinite(g_layout[10].frame.x));
     assert(g_layout[10].frame.x+g_layout[10].frame.width<=1);
     assert(g_layout[10].frame.y+g_layout[10].frame.height<=1);
-    std::puts("Passed: imported Unleashed controls, multi-touch, tap timing, deadzone, D-pad, swipe camera, controller switching, reset, layout editing/persistence.");
+    std::puts("Passed: imported Unleashed controls, multi-touch, tap timing, deadzone, D-pad, swipe camera, controller switching, reset, layout editing/persistence, floating stick, stale portrait window size.");
     CheckFades();
 }

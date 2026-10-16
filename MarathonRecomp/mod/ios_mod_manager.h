@@ -20,6 +20,12 @@ namespace ios_mod_manager
     std::filesystem::path DatabasePath(const std::filesystem::path& userPath);
     std::filesystem::path ResolveRelative(const std::filesystem::path& base, std::string value);
     std::string CompatibilityIssue(const std::filesystem::path& modIni);
+
+    // Names of the codes compiled into the game. A mod's UMM RequiredPatches are satisfied by
+    // codes of the same name; any other required patch rewrites the executable and is unsupported.
+    void SetBuiltInCodes(std::vector<std::string> names);
+    // The built-in codes a mod's RequiredPatches name, to switch on when the mod is enabled.
+    std::vector<std::string> RequiredCodes(const std::filesystem::path& modIni);
     std::vector<Entry> Scan(const std::filesystem::path& userPath);
     std::string SelectionIssue(const std::vector<Entry>& entries);
     bool Save(const std::filesystem::path& userPath, const std::vector<Entry>& entries, std::string& error);
