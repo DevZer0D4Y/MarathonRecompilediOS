@@ -24,7 +24,9 @@
     self.title = @"Mods — top wins conflicts";
     self.tableView.allowsSelectionDuringEditing = YES;
     self.tableView.editing = YES;
-    self.tableView.rowHeight = 76;
+    // Rows grow to fit why a mod can't be enabled, instead of spilling into the next row.
+    self.tableView.rowHeight = UITableViewAutomaticDimension;
+    self.tableView.estimatedRowHeight = 76;
     _codes = ModLoader::GetBuiltInCodes();
     std::vector<std::string> codeNames;
     for (const auto& code : _codes) codeNames.push_back(code.name);
@@ -71,6 +73,7 @@
     }
     const auto& mod = _mods[indexPath.row];
     cell.textLabel.text = [NSString stringWithUTF8String:mod.title.c_str()];
+    cell.textLabel.numberOfLines = 0;
     const auto subtitle = mod.issue.empty() ? (mod.enabled ? "Enabled • " : "Disabled • ") + mod.author : mod.issue;
     cell.detailTextLabel.text = [NSString stringWithUTF8String:subtitle.c_str()];
     cell.detailTextLabel.numberOfLines = 0;
