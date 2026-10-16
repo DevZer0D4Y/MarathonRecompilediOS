@@ -14,6 +14,7 @@ static void write(const fs::path& path, const std::string& contents)
 }
 
 void ArchiveMergeTests(const fs::path& root);
+void PatchTests(const fs::path& root);
 
 int main(int argc, char** argv)
 {
@@ -220,6 +221,7 @@ int main(int argc, char** argv)
     assert(!CompatibilityIssue(patched / "Codes/mod.ini").empty());
 
     ArchiveMergeTests(root / "archives");
+    PatchTests(root / "patches");
     fs::remove_all(root);
     std::cout << "Passed: mod imports, collisions, persistence/order, dependency versions, unsupported requirements, path confinement, sandbox relocation, Sonic '06 file overlay priority/case handling, directory lookup, reload, mod saves, executable patches and required built-in codes.\n";
 }

@@ -208,6 +208,7 @@ set(MARATHON_RECOMP_MOD_CXX_SOURCES
     "mod/mod_loader.cpp"
     "mod/ios_mod_manager.cpp"
     "mod/arc_merge.cpp"
+    "mod/umm_patch.cpp"
 )
 
 set(MARATHON_RECOMP_UTILS_CXX_SOURCES
@@ -376,6 +377,8 @@ if (MARATHON_RECOMP_FLATPAK)
 endif()
 
 find_package(CURL REQUIRED)
+# Inflates archive members edited by Sonic '06 Mod Manager patches.
+find_package(ZLIB REQUIRED)
 
 if (MARATHON_RECOMP_METAL)
     target_compile_definitions(MarathonRecomp PRIVATE MARATHON_RECOMP_METAL)
@@ -415,6 +418,7 @@ if (WIN32)
 endif()
 
 target_link_libraries(MarathonRecomp PRIVATE
+    ZLIB::ZLIB
     fmt::fmt
     libzstd_static
     msdf-atlas-gen::msdf-atlas-gen

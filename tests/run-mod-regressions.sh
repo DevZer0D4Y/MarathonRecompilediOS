@@ -10,6 +10,8 @@ trap 'rm -rf "$test_dir"' EXIT
     -I"$repo_root/tools/XenonRecomp/thirdparty/xxHash" \
     "$repo_root/MarathonRecomp/mod/ios_mod_manager.cpp" \
     "$repo_root/MarathonRecomp/mod/arc_merge.cpp" \
+    "$repo_root/MarathonRecomp/mod/umm_patch.cpp" \
+    "$repo_root/tests/umm_patch_tests.cpp" \
     "$repo_root/tests/arc_merge_tests.cpp" \
     "$repo_root/tests/ios_mod_manager_tests.cpp" -lz -o "$test_dir/mod-regressions"
 "$test_dir/mod-regressions" "$test_dir/fixtures"
