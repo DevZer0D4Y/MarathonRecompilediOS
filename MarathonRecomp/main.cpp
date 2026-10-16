@@ -358,6 +358,11 @@ int main(int argc, char *argv[])
 
     uint32_t entry = LdrLoadModule(modulePath);
 
+#ifdef MARATHON_RECOMP_IOS
+    // Data patches must land after the image is copied and before any guest code runs.
+    ModLoader::ApplyMemoryPatches();
+#endif
+
 #ifndef MARATHON_RECOMP_IOS
     if (!runInstallerWizard)
     {

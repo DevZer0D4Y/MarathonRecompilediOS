@@ -1,6 +1,7 @@
 #include "ios_mod_manager.h"
 #include <algorithm>
 #include <exception>
+#include <set>
 #include <unordered_map>
 #include <mod/ios_mod_manager.h>
 #include <mod/mod_loader.h>
@@ -12,10 +13,15 @@
 {
     std::vector<ios_mod_manager::Entry> _mods;
     std::vector<ModLoader::Code> _codes;
+    std::vector<ios_mod_manager::patch::Info> _patches;
+    std::set<std::string> _enabledPatches;
     bool _scanFailed;
 }
 @property(nonatomic, copy) void (^completion)(void);
 @end
+
+// Table sections, top to bottom.
+enum : NSInteger { ModsSection, PatchesSection, CodesSection, SectionCount };
 
 @implementation RecompModManager
 - (void)viewDidLoad
@@ -36,10 +42,17 @@
     UILabel* footer = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 600, 90)];
     footer.numberOfLines = 0;
     footer.textAlignment = NSTextAlignmentCenter;
-    footer.text = @"Tap to enable or disable; drag to reorder. Import an extracted Marathon Recompiled mod folder containing mod.ini. Mods that patch the game executable or load Xbox DLLs (such as Khronos) need ports.\nChanges apply when you tap Play.";
+    footer.text = @"Tap to enable or disable; drag to reorder mods. Import an extracted mod folder containing mod.ini, or a folder of Sonic '06 Mod Manager .mlua patches. Mods and patches that change the game's code or load Xbox DLLs (such as Khronos) need ports.\nChanges apply when you tap Play.";
     footer.font = [UIFont preferredFontForTextStyle:UIFontTextStyleFootnote];
     self.tableView.tableFooterView = footer;
+    _enabledPatches = ios_mod_manager::patch::LoadSelection(GetUserPath());
     [self reloadMods];
+}
+- (void)showMessage:(NSString*)message
+{
+    UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Mod manager" message:message preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+    [self presentViewController:alert animated:YES completion:nil];
 }
 - (void)showError:(NSString*)message
 {
@@ -51,15 +64,50 @@
 {
     try { _mods = ios_mod_manager::Scan(GetUserPath()); _scanFailed = false; }
     catch (const std::exception& ex) { _scanFailed = true; [self showError:[NSString stringWithUTF8String:ex.what()]]; }
+    // Patches that can run come first; the rest stay listed with the reason.
+    _patches = ios_mod_manager::patch::Scan(GetUserPath());
+    std::stable_partition(_patches.begin(), _patches.end(), [](const auto& patch) { return patch.issue.empty(); });
     [self.tableView reloadData];
 }
-- (NSInteger)numberOfSectionsInTableView:(UITableView*)tableView { return 2; }
-- (NSString*)tableView:(UITableView*)tableView titleForHeaderInSection:(NSInteger)section { return section == 0 ? @"Installed mods" : @"Built-in codes"; }
-- (NSInteger)tableView:(UITableView*)tableView numberOfRowsInSection:(NSInteger)section { return section == 0 ? _mods.size() : _codes.size(); }
+- (bool)isPatchEnabled:(const ios_mod_manager::patch::Info&)patch
+{
+    return patch.issue.empty() && _enabledPatches.contains(patch.file.filename().string());
+}
+- (NSInteger)numberOfSectionsInTableView:(UITableView*)tableView { return SectionCount; }
+- (NSString*)tableView:(UITableView*)tableView titleForHeaderInSection:(NSInteger)section
+{
+    if (section == ModsSection) return @"Installed mods";
+    if (section == PatchesSection) return @"Patches (.mlua)";
+    return @"Built-in codes";
+}
+- (NSString*)tableView:(UITableView*)tableView titleForFooterInSection:(NSInteger)section
+{
+    if (section != PatchesSection) return nil;
+    return @"Import the extracted Sonic-06-Mod-Manager-Patches folder (or any folder of .mlua patches) with Import folder. Patches that edit archives, packages or game data run here; those that rewrite game code or edit compiled Lua scripts can't, and show why.";
+}
+- (NSInteger)tableView:(UITableView*)tableView numberOfRowsInSection:(NSInteger)section
+{
+    if (section == ModsSection) return _mods.size();
+    if (section == PatchesSection) return _patches.size();
+    return _codes.size();
+}
 - (UITableViewCell*)tableView:(UITableView*)tableView cellForRowAtIndexPath:(NSIndexPath*)indexPath
 {
     UITableViewCell* cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:nil];
-    if (indexPath.section == 1)
+    if (indexPath.section == PatchesSection)
+    {
+        const auto& patch = _patches[indexPath.row];
+        const bool enabled = [self isPatchEnabled:patch];
+        cell.textLabel.text = [NSString stringWithUTF8String:patch.title.c_str()];
+        cell.textLabel.numberOfLines = 0;
+        const auto subtitle = patch.issue.empty() ? (enabled ? "Enabled • " : "Disabled • ") + patch.blurb : patch.issue;
+        cell.detailTextLabel.text = [NSString stringWithUTF8String:subtitle.c_str()];
+        cell.detailTextLabel.numberOfLines = 0;
+        cell.accessoryType = enabled ? UITableViewCellAccessoryCheckmark : UITableViewCellAccessoryNone;
+        cell.textLabel.textColor = patch.issue.empty() ? UIColor.labelColor : UIColor.secondaryLabelColor;
+        return cell;
+    }
+    if (indexPath.section == CodesSection)
     {
         const auto& code = _codes[indexPath.row];
         NSString* title = [NSString stringWithUTF8String:code.name.c_str()];
@@ -83,7 +131,18 @@
 }
 - (void)tableView:(UITableView*)tableView didSelectRowAtIndexPath:(NSIndexPath*)indexPath
 {
-    if (indexPath.section == 1)
+    if (indexPath.section == PatchesSection)
+    {
+        const auto& patch = _patches[indexPath.row];
+        const auto name = patch.file.filename().string();
+        if (!patch.issue.empty()) [self showError:[NSString stringWithUTF8String:patch.issue.c_str()]];
+        else if (_enabledPatches.contains(name)) _enabledPatches.erase(name);
+        else _enabledPatches.insert(name);
+        [tableView deselectRowAtIndexPath:indexPath animated:YES];
+        [tableView reloadData];
+        return;
+    }
+    if (indexPath.section == CodesSection)
     {
         _codes[indexPath.row].enabled = !_codes[indexPath.row].enabled;
         [tableView deselectRowAtIndexPath:indexPath animated:YES];
@@ -96,10 +155,10 @@
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     [tableView reloadData];
 }
-- (BOOL)tableView:(UITableView*)tableView canMoveRowAtIndexPath:(NSIndexPath*)indexPath { return indexPath.section == 0; }
+- (BOOL)tableView:(UITableView*)tableView canMoveRowAtIndexPath:(NSIndexPath*)indexPath { return indexPath.section == ModsSection; }
 - (NSIndexPath*)tableView:(UITableView*)tableView targetIndexPathForMoveFromRowAtIndexPath:(NSIndexPath*)source toProposedIndexPath:(NSIndexPath*)destination
 {
-    return destination.section == 0 ? destination : source;
+    return destination.section == ModsSection ? destination : source;
 }
 - (UITableViewCellEditingStyle)tableView:(UITableView*)tableView editingStyleForRowAtIndexPath:(NSIndexPath*)indexPath { return UITableViewCellEditingStyleNone; }
 - (BOOL)tableView:(UITableView*)tableView shouldIndentWhileEditingRowAtIndexPath:(NSIndexPath*)indexPath { return NO; }
@@ -113,7 +172,10 @@
 {
     if (_scanFailed) { [self showError:@"The mods folder could not be scanned. Fix its permissions using Files and relaunch."]; return NO; }
     std::string error;
-    if (ios_mod_manager::Save(GetUserPath(), _mods, error))
+    std::set<std::string> patches;
+    for (const auto& patch : _patches)
+        if ([self isPatchEnabled:patch]) patches.insert(patch.file.filename().string());
+    if (ios_mod_manager::Save(GetUserPath(), _mods, error) && ios_mod_manager::patch::SaveSelection(GetUserPath(), patches, error))
     {
         // Switch on the built-in codes that enabled mods declare as required patches.
         for (const auto& mod : _mods)
@@ -167,14 +229,29 @@
     if (!url || !url.isFileURL) return;
     BOOL scoped = [url startAccessingSecurityScopedResource];
     self.tableView.userInteractionEnabled = NO;
-    self.title = @"Importing mod…";
+    self.title = @"Importing…";
     self.navigationItem.leftBarButtonItem.enabled = NO;
     self.navigationItem.rightBarButtonItem.enabled = NO;
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         std::string error;
-        const bool success = ios_mod_manager::Import(GetUserPath(), std::filesystem::path(url.fileSystemRepresentation), error);
+        const std::filesystem::path folder(url.fileSystemRepresentation);
+        // A folder with mod.ini is a mod; otherwise import the .mlua patches it contains.
+        std::error_code ec;
+        bool success;
+        std::string notice;
+        if (std::filesystem::is_regular_file(folder / "mod.ini", ec))
+            success = ios_mod_manager::Import(GetUserPath(), folder, error);
+        else
+        {
+            const auto count = ios_mod_manager::patch::Import(GetUserPath(), folder, error);
+            success = count > 0;
+            if (success) notice = "Imported " + std::to_string(count) + (count == 1 ? " patch." : " patches.");
+            else if (error == "The folder contains no .mlua patches.")
+                error = "The folder has no mod.ini and no .mlua patches. Select the folder that contains mod.ini, or a folder of patches.";
+        }
         if (scoped) [url stopAccessingSecurityScopedResource];
         NSString* message = [NSString stringWithUTF8String:error.c_str()];
+        NSString* info = notice.empty() ? nil : [NSString stringWithUTF8String:notice.c_str()];
         dispatch_async(dispatch_get_main_queue(), ^{
             self.tableView.userInteractionEnabled = YES;
             self.title = @"Mods — top wins conflicts";
@@ -182,6 +259,7 @@
             self.navigationItem.rightBarButtonItem.enabled = YES;
             [self reloadMods];
             if (!success) [self showError:message];
+            else if (info) [self showMessage:info];
         });
     });
 }

@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iterator>
 #include <memory>
+#include <set>
 #include <stdexcept>
 #include <string_view>
 #include <unordered_map>
@@ -408,6 +409,50 @@ namespace ios_mod_manager
         return true;
     }
 
+    // Sonic '06 Mod Manager patches run on top of the mods, as they did on Xbox.
+    static void ApplyPatches(const std::filesystem::path& userPath,
+        std::unordered_map<std::string, std::filesystem::path>& paths, std::vector<patch::MemoryWrite>& memory)
+    {
+        const auto selected = patch::LoadSelection(userPath);
+        std::vector<std::filesystem::path> files;
+        for (const auto& info : patch::Scan(userPath))
+        {
+            if (!selected.contains(info.file.filename().string())) continue;
+            if (!info.issue.empty()) throw std::runtime_error(info.title + ": " + info.issue);
+            files.push_back(info.file);
+        }
+        if (files.empty()) return;
+        // Index the installed game once, ignoring letter case like the game does.
+        std::unordered_map<std::string, std::filesystem::path> game;
+        const auto gameRoot = userPath / "game";
+        if (std::filesystem::is_directory(gameRoot))
+            for (const auto& entry : std::filesystem::recursive_directory_iterator(gameRoot))
+                if (entry.is_regular_file() && !entry.is_symlink())
+                    game.try_emplace(FoldPath(entry.path().lexically_relative(gameRoot).generic_string()), entry.path());
+        const auto resolve = [&](const std::string& key) -> std::filesystem::path
+        {
+            std::error_code ec;
+            if (auto found = paths.find(key); found != paths.end() && std::filesystem::is_regular_file(found->second, ec)) return found->second;
+            if (auto found = game.find(key); found != game.end()) return found->second;
+            return {};
+        };
+        const auto list = [&](const std::string& directory)
+        {
+            std::set<std::string> keys;
+            const auto collect = [&](const auto& map)
+            {
+                for (const auto& [key, path] : map)
+                    if (std::filesystem::path(key).parent_path().generic_string() == directory && std::filesystem::is_regular_file(path)) keys.insert(key);
+            };
+            collect(game);
+            collect(paths);
+            return std::vector<std::string>(keys.begin(), keys.end());
+        };
+        auto result = patch::Apply(files, userPath / "mod-cache", resolve, list);
+        for (auto& [key, file] : result.files) paths[key] = std::move(file);
+        memory = std::move(result.memory);
+    }
+
     void FileOverlay::Load(const std::filesystem::path& userPath)
     {
         const auto entries = Scan(userPath);
@@ -479,6 +524,7 @@ namespace ios_mod_manager
                 physical = physical.parent_path();
             }
         }
+        ApplyPatches(userPath, next.m_paths, next.m_memoryWrites);
         *this = std::move(next);
     }
 

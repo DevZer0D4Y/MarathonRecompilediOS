@@ -26,4 +26,7 @@ struct ModLoader
     static void SaveBuiltInCodes(const std::vector<Code>& codes);
 
     static void Init();
+
+    // Writes data patches from enabled .mlua patches into the loaded game image.
+    static void ApplyMemoryPatches();
 };

@@ -10,7 +10,8 @@
             "platform": "windows"
         },
         "freetype",
-        "curl"
+        "curl",
+        "zlib"
     ],
     "vcpkg-configuration": {
         "overlay-triplets": [

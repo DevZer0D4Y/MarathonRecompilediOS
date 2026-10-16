@@ -114,6 +114,40 @@ archives and can take longer. You may remove `mod-cache` while the game is close
 to reclaim space; it is rebuilt when needed. Invalid or conflicting archive
 structures stop preparation with an error instead of launching a partial merge.
 
+## Sonic '06 Mod Manager patches (.mlua)
+
+Patches written for the Sonic '06 Mod Manager, such as
+[Knuxfan24/Sonic-06-Mod-Manager-Patches](https://github.com/Knuxfan24/Sonic-06-Mod-Manager-Patches),
+appear in the manager's **Patches** section.
+
+1. Download the patches and extract them in Files.
+2. Tap **Import folder** and select the folder with the `.mlua` files (subfolders
+   are searched). A folder with a `mod.ini` is imported as a mod instead.
+   The patches are copied into `Documents/MarathonRecomp/patches`; importing a newer
+   copy replaces the old one.
+3. Tap a patch to enable it, then tap **Play**.
+
+Patches run at launch on top of the enabled mods, as they did on Xbox. Nothing in
+the installed game is modified: edited archives and files are written to
+`mod-cache/patches` and reused until the selection, a patch or one of its inputs
+changes. The selection is saved in `ios-patches.ini`.
+
+What runs:
+
+| Operation | Support |
+|---|---|
+| `BeginBlock`/`EndBlock` archive edits, `WriteBytes`, `WriteByte`, `WriteNullBytes`, `WriteTextBytes`, `WriteBase64`, `Copy`, `Rename`, `RenameByExtension`, `Delete`, `Ignore`, `Search` | Yes. Compressed archive members are inflated, edited and stored; untouched members keep their original compression. |
+| `PackageAdd`, `PackageEdit`, `PackageErase` | Yes. The `.pkg` writer reproduces real game packages byte for byte. |
+| Executable writes to **data** (`WriteBytes(Executable\|…)`, `WriteVirtualBytes`, …) | Yes. They are written into the loaded game image before the game starts (Xbox file offsets map to `0x82000000 + offset − 0x3000`). |
+| Executable writes to **code** (`WriteNopPPC`, branch or instruction rewrites) | No. The game's code is recompiled ahead of time, so these patches show the address they would change. |
+| `ParameterEdit`, `ParameterAdd`, `ParameterRename`, `ParameterErase`, `StringReplace` | No. They edit decompiled Lua text, and the game's scripts are compiled bytecode. |
+| `TextAdd`, `TextEdit` (message tables) | Not yet. |
+| PlayStation 3 patches, and the PlayStation 3 sections of "All Systems" patches | Skipped, like the original manager does on Xbox. |
+
+With the Knuxfan24 collection, 39 of its 150 patches run (for example Disable Fog,
+Disable Character Stumble, Disable Hint Rings, E3 Timers, Disable Music and
+Correct Sonic Jump Animation), and 17 of the others already exist as built-in codes.
+
 ### Executable patches and Khronos
 
 The recompiled game is native code, so patches written for the Xbox executable

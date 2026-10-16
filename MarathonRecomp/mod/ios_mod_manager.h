@@ -4,6 +4,7 @@
 #include <string_view>
 #include <vector>
 #include <unordered_map>
+#include "umm_patch.h"
 
 namespace ios_mod_manager
 {
@@ -39,6 +40,7 @@ namespace ios_mod_manager
         std::unordered_map<std::string, std::filesystem::path> m_paths;
         std::unordered_map<std::string, std::vector<std::filesystem::path>> m_directories;
         std::filesystem::path m_saveFile;
+        std::vector<patch::MemoryWrite> m_memoryWrites;
 
     public:
         void Load(const std::filesystem::path& userPath);
@@ -46,5 +48,7 @@ namespace ios_mod_manager
         std::vector<std::filesystem::path> SearchDirectories(std::string_view guestPath) const;
         std::vector<std::filesystem::path>* IncludeDirectories(size_t index);
         const std::filesystem::path& SaveFile() const { return m_saveFile; }
+        // Data writes from enabled .mlua patches, applied once the game image is loaded.
+        const std::vector<patch::MemoryWrite>& MemoryWrites() const { return m_memoryWrites; }
     };
 }

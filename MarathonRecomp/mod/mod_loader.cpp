@@ -8,6 +8,7 @@ static ios_mod_manager::FileOverlay g_iosMods;
 #include <cpu/guest_stack_var.h>
 #include <kernel/function.h>
 #include <kernel/heap.h>
+#include <kernel/memory.h>
 #include <user/config.h>
 #include <user/paths.h>
 #include <os/logger.h>
@@ -139,6 +140,21 @@ void ModLoader::SaveBuiltInCodes(const std::vector<Code>& codes)
             }
     }
     Config::Save();
+}
+
+void ModLoader::ApplyMemoryPatches()
+{
+#ifdef MARATHON_RECOMP_IOS
+    size_t bytes = 0;
+    for (const auto& write : g_iosMods.MemoryWrites())
+    {
+        memcpy(g_memory.Translate(write.address), write.bytes.data(), write.bytes.size());
+        bytes += write.bytes.size();
+    }
+
+    if (!g_iosMods.MemoryWrites().empty())
+        LOGFN("Applied {} patch writes ({} bytes) to the game image.", g_iosMods.MemoryWrites().size(), bytes);
+#endif
 }
 
 void ModLoader::Init()

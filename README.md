@@ -87,6 +87,7 @@ A list of everything fixed and added in this iOS port, on top of the original Ma
 | **Floating stick** | The movement stick stays hidden until your thumb touches the lower left of the screen, then appears right under it, like ARMSX2's dynamic stick. Switch back to the fixed stick with **STICK** in the layout editor. |
 | **Up to 120 FPS** | The frame rate goes up to 120 FPS on ProMotion iPhones and iPads, and is capped there. Older 60 Hz screens still run at 60. Set a lower limit under **Options → Frame Rate**. |
 | **Native mod manager** | Import extracted Sonic '06 asset mods, enable or disable them, drag to set priority and choose built-in codes before starting the game. See [iOS mod support](docs/IOS_MODS.md) for supported formats and limits. |
+| **Sonic '06 Mod Manager patches** | Import a folder of `.mlua` patches (such as [Knuxfan24's collection](https://github.com/Knuxfan24/Sonic-06-Mod-Manager-Patches)) and toggle them in the mod manager. Patches that edit archives, packages or game data run; those that rewrite game code or edit compiled Lua scripts are listed with the reason. See [iOS mod support](docs/IOS_MODS.md#sonic-06-mod-manager-patches-mlua). |
 | **Mobile graphics defaults** | MSAA off, 1024 shadows, quarter-resolution reflections and 4x anisotropic filtering by default, so the game runs smoothly on a phone. All of them can still be raised in the options menu. |
 
 ### iOS Fixes
